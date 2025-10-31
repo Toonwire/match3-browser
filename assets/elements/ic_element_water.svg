@@ -1,0 +1,43 @@
+<svg id="vector" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 512 512">
+    <defs>
+        <radialGradient gradientUnits="userSpaceOnUse" cx="256.12" cy="-256" r="250" id="gradient_0">
+            <stop stop-color="#F03639" offset="0" />
+            <stop stop-color="#F03639" offset="0.6345" />
+            <stop stop-color="#C92D39" offset="0.8908" />
+        </radialGradient>
+        <radialGradient gradientUnits="userSpaceOnUse" cx="256.35" cy="768" r="250" id="gradient_1">
+            <stop stop-color="#3A7F0D" offset="0" />
+            <stop stop-color="#3A7F0D" offset="0.6303" />
+            <stop stop-color="#30690A" offset="1" />
+        </radialGradient>
+        <radialGradient gradientUnits="userSpaceOnUse" cx="139.89008" cy="662.0089" r="108.77" id="gradient_2">
+            <stop stop-color="#FFFFFF" stop-opacity="0.09803921568627451" offset="0.0084" />
+            <stop stop-color="#FFFFFF" stop-opacity="0.2980392156862745" offset="0.0084" />
+            <stop stop-color="#DBDBDB" stop-opacity="0.2980392156862745" offset="1" />
+        </radialGradient>
+        <radialGradient gradientUnits="userSpaceOnUse" cx="255.41" cy="256" r="250" id="gradient_3">
+            <stop stop-color="#0C7CBA" offset="0" />
+            <stop stop-color="#0C7CBA" offset="0.6303" />
+            <stop stop-color="#096191" offset="1" />
+        </radialGradient>
+        <radialGradient gradientUnits="userSpaceOnUse" cx="139.89006" cy="146.00894" r="108.77" id="gradient_4">
+            <stop stop-color="#FFFFFF" stop-opacity="0.09803921568627451" offset="0.0084" />
+            <stop stop-color="#FFFFFF" stop-opacity="0.2980392156862745" offset="0.0084" />
+            <stop stop-color="#DBDBDB" stop-opacity="0.2980392156862745" offset="1" />
+        </radialGradient>
+    </defs>
+    <path fill="#f2dbbb" d="M512.12,-256c0,141.38 -114.62,256 -256,256 -141.4,0 -256,-114.62 -256,-256s114.6,-256 256,-256c141.38,0 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_0" />
+    <path fill="url(#gradient_0)" d="M506.12,-256c0,138.07 -111.93,250 -250,250s-250,-111.93 -250,-250 111.93,-250 250,-250 250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_1" />
+    <path fill="#f2dbbb" d="M512.12,768c0,141.38 -114.62,256 -256,256 -141.4,0 -256,-114.62 -256,-256s114.6,-256 256,-256c141.38,0 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_2" />
+    <path fill="url(#gradient_1)" d="M506.35,768c0,138.07 -111.92,250 -250,250 -138.07,0 -250,-111.93 -250,-250s111.93,-250 250,-250c138.08,0 250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_3" />
+    <path fill="url(#gradient_2)" d="M202.992,725.097c-42.483,42.483 -105.168,48.67 -140.014,13.824 -34.86,-34.86 -28.666,-97.538 13.81,-140.014 42.469,-42.469 105.154,-48.656 140,-13.81 34.839,34.839 28.652,97.524 -13.824,140z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_4" />
+    <path fill="#f2dbbb" d="M511.88,256c0,141.38 -114.6,256 -256,256 -141.38,0 -256,-114.62 -256,-256S114.5,0 255.88,0c141.4,0 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_5" />
+    <path fill="url(#gradient_3)" d="M505.4,256c0,138.07 -111.92,250 -250,250 -138.06,0 -250,-111.93 -250,-250S117.35,6 255.4,6c138.08,0 250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_6" />
+    <path fill="#fff" d="M493.04,221.72c1.9,10.46 1.9,19.22 0,19.57 -1.9,0.34 -5,-7.86 -6.92,-18.32 -1.9,-10.46 -1.9,-19.22 0,-19.57 1.9,-0.34 5,7.86 6.92,18.32z" fill-opacity="0.81" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_7" />
+    <path fill="#c1e4f7" d="M362.86,298.05c0,57.8 -49.5,103.95 -110,103.95s-110,-46.14 -110,-103.95c0,-57.82 110,-188.05 110,-188.05s110,130.82 110,188.05z" stroke="#000" stroke-opacity="0" stroke-width=".29" id="path_8" />
+    <path fill="#0c7cba" d="M365.9,361.54c-15.06,41.2 -72.8,57.97 -128.97,37.44 -56.18,-20.53 -89.5,-70.57 -74.45,-111.77l30.5,11.16c-10.53,28.84 12.8,63.87 52.12,78.24 39.32,14.37 79.74,2.64 90.28,-26.2z" id="path_9" />
+    <path fill="#0c7cba" d="M365.9,361.54c-15.06,41.2 -72.8,57.97 -128.97,37.44 -22.47,-8.2 -39.94,-19.77 -54.58,-36.1l24.55,-11.55c10.25,11.43 22.48,19.52 38.2,25.27 39.32,14.37 79.74,2.64 90.28,-26.2z" id="path_10" />
+    <path fill="#c1e4f7" d="M345.63,354.08c-31.17,38.52 -94,39.34 -140.37,1.83 -46.35,-37.5 -58.65,-99.14 -27.48,-137.66z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_11" />
+    <path fill="url(#gradient_4)" d="M202.992,209.097c-42.483,42.483 -105.168,48.67 -140.014,13.824 -34.86,-34.86 -28.666,-97.538 13.81,-140.014 42.469,-42.469 105.154,-48.656 140,-13.81 34.839,34.839 28.652,97.524 -13.824,140z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_12" />
+    <path fill="#fff" d="M88.23,174.62c-7.2,11.7 -20.88,16.35 -30.57,10.4 -9.7,-5.97 -11.7,-20.3 -4.5,-31.98 7.18,-11.7 20.87,-16.35 30.56,-10.4 9.7,5.97 11.7,20.28 4.5,31.98zM95.44,210.68c-2.7,4.4 -8.85,5.54 -13.73,2.53 -4.86,-3 -6.62,-8.98 -3.92,-13.38s8.85,-5.53 13.73,-2.53c4.9,3 6.65,9 3.94,13.38z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_13" />
+</svg>
