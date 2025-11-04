@@ -1,0 +1,10 @@
+- id: earth
+  name: Earth
+  level: Medium
+  primaryElement: Fire
+  stages: 5
+- id: neptune
+  name: Neptune
+  level: Easy
+  primaryElement: Water
+  stages: 4

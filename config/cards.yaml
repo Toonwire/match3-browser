@@ -1,0 +1,19 @@
+# Rank-1 basics for Shop
+- id: starter_fire
+  name: Whelp
+  rank: 1
+  attack: 4
+  hp: 2
+  elements: [Fire]
+- id: starter_water
+  name: Slime
+  rank: 1
+  attack: 2
+  hp: 4
+  elements: [Water]
+- id: starter_grass
+  name: Wisp
+  rank: 1
+  attack: 3
+  hp: 3
+  elements: [Grass]

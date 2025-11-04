@@ -1,0 +1,9 @@
+- id: default
+  entries:
+    - item: coin
+      chance: 0.8
+      amount: [5, 10]
+    - item: card:whelp
+      chance: 0.05
+    - item: card:slime
+      chance: 0.05
