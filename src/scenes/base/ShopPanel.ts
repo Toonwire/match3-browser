@@ -6,9 +6,37 @@ export function renderShopPanel(
   x: number,
   y: number,
   width: number,
-  cards: Card[]
+  cards: Card[],
+  gold: number,
+  plovmand: number,
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ) {
-  drawText(ctx, "Plovmand: 2    Gold: 123g", x, y);
+  const iconSize = 16;
+  const iconGap = 6;
+  const textSize = 16; // drawText default size
+  const textY = y;
+  const iconY = textY - iconSize + 2; // Align icon with text baseline
+
+  // Set font for text measurement (drawText will set it again, but we need it for measureText)
+  ctx.font = `${textSize}px system-ui`;
+
+  // Draw gold amount and icon
+  const goldAmountText = `${gold}`;
+  drawText(ctx, goldAmountText, x, textY);
+  const goldTextWidth = ctx.measureText(goldAmountText).width;
+  if (drawIcon) {
+    drawIcon("/assets/currencies/coin.png", x + goldTextWidth + iconGap, iconY, iconSize, iconSize);
+  }
+  const goldTotalWidth = goldTextWidth + (drawIcon ? iconSize + iconGap : 0);
+
+  // Draw plovmand amount and icon
+  const gap = 28;
+  const plovmandText = `${plovmand}`;
+  drawText(ctx, plovmandText, x + goldTotalWidth + gap, textY);
+  const plovmandTextWidth = ctx.measureText(plovmandText).width;
+  if (drawIcon) {
+    drawIcon("/assets/currencies/plovmand.png", x + goldTotalWidth + gap + plovmandTextWidth + iconGap, iconY, iconSize, iconSize);
+  }
   let cy = y + 28;
   const items = cards.filter(
     (c) =>

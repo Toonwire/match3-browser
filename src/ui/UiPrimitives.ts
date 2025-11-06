@@ -52,7 +52,8 @@ export function drawTopBar(
   ctx: CanvasRenderingContext2D,
   canvasWidth: number,
   gold: number,
-  plovmand: number
+  plovmand: number,
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ) {
   const height = 36;
   // Background strip
@@ -65,14 +66,31 @@ export function drawTopBar(
   ctx.lineTo(canvasWidth, height + 0.5);
   ctx.stroke();
 
-  // Text
+  // Text and icons
   ctx.fillStyle = "#e5e7eb";
   ctx.font = "14px system-ui";
   const leftPad = 12;
   const gap = 28;
-  ctx.fillText(`Gold: ${gold}`, leftPad, 22);
-  const goldWidth = ctx.measureText(`Gold: ${gold}`).width;
-  ctx.fillText(`Plovmand: ${plovmand}`, leftPad + goldWidth + gap, 22);
+  const iconSize = 16;
+  const iconGap = 6;
+  const textY = 22;
+  
+  // Gold: amount + icon
+  const goldText = `${gold}`;
+  ctx.fillText(goldText, leftPad, textY);
+  const goldTextWidth = ctx.measureText(goldText).width;
+  if (drawIcon) {
+    drawIcon("/assets/currencies/coin.png", leftPad + goldTextWidth + iconGap, (height - iconSize) / 2, iconSize, iconSize);
+  }
+  const goldTotalWidth = goldTextWidth + (drawIcon ? iconSize + iconGap : 0);
+  
+  // Plovmand: amount + icon
+  const plovmandText = `${plovmand}`;
+  ctx.fillText(plovmandText, leftPad + goldTotalWidth + gap, textY);
+  const plovmandTextWidth = ctx.measureText(plovmandText).width;
+  if (drawIcon) {
+    drawIcon("/assets/currencies/plovmand.png", leftPad + goldTotalWidth + gap + plovmandTextWidth + iconGap, (height - iconSize) / 2, iconSize, iconSize);
+  }
 
   // Save/Load buttons on the right
   const buttonHeight = 24;

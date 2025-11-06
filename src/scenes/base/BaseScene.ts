@@ -8,7 +8,7 @@ import {
   drawPanel,
   drawText,
   drawTopBar,
-  getTopBarButtonRegions,
+  getTopBarButtonRegions
 } from "../../ui/UiPrimitives";
 import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel } from "./ShopPanel";
@@ -68,7 +68,8 @@ export class BaseScene extends Scene {
       ctx,
       CanvasSize.width,
       this.state.currencies.gold,
-      this.state.currencies.plovmand
+      this.state.currencies.plovmand,
+      (iconPath, x, y, w, h) => this.drawIcon(ctx, iconPath, x, y, w, h)
     );
 
     // Active popup overlay
@@ -86,6 +87,35 @@ export class BaseScene extends Scene {
     return img;
   }
 
+  private drawIconWithAspectRatio(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    w: number,
+    h: number
+  ) {
+    // Preserve aspect ratio
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const targetAspect = w / h;
+    let drawWidth = w;
+    let drawHeight = h;
+    let drawX = x;
+    let drawY = y;
+    
+    if (imgAspect > targetAspect) {
+      // Image is wider - fit to width
+      drawHeight = w / imgAspect;
+      drawY = y + (h - drawHeight) / 2;
+    } else {
+      // Image is taller - fit to height
+      drawWidth = h * imgAspect;
+      drawX = x + (w - drawWidth) / 2;
+    }
+    
+    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+  }
+
   private drawIcon(
     ctx: CanvasRenderingContext2D,
     path: string,
@@ -96,11 +126,12 @@ export class BaseScene extends Scene {
   ) {
     const cached = this.iconCache.get(path);
     if (cached) {
-      ctx.drawImage(cached, x, y, w, h);
+      this.drawIconWithAspectRatio(ctx, cached, x, y, w, h);
       return;
     }
     this.getIcon(path).then(() => {
-      ctx.drawImage(this.iconCache.get(path)!, x, y, w, h);
+      const img = this.iconCache.get(path)!;
+      this.drawIconWithAspectRatio(ctx, img, x, y, w, h);
     });
   }
 
@@ -169,7 +200,16 @@ export class BaseScene extends Scene {
       ty = py + 44;
 
     if (kind === "shop") {
-      renderShopPanel(ctx, tx, ty, pw - 32, this.cards);
+      renderShopPanel(
+        ctx,
+        tx,
+        ty,
+        pw - 32,
+        this.cards,
+        this.state.currencies.gold,
+        this.state.currencies.plovmand,
+        (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
+      );
     } else if (kind === "armory") {
       renderArmoryPanel(ctx, tx, ty, pw - 32);
     } else if (kind === "worlds") {
