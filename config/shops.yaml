@@ -22,7 +22,7 @@
         unit: plovmand
         stock: 1
     consumables:
-      - id: item_healing_potion
+      - id: item_01_healing_potion
         cost: 10
         unit: gold
         stock: 2

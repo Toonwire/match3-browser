@@ -1,4 +1,3 @@
-# Rank-1 basics for Shop
 - id: card_01_whelp
   name: Whelp
   rank: 1
@@ -19,9 +18,9 @@
     - description: Deal 1.25x fire dmg
       effect:
         - type: damage
-          element: [Fire]
-          multiplier: [1.25]
-          target: [Enemy]
+          elements: [Fire]
+          multipliers: [1.25]
+          targets: [Enemy]
 
 - id: card_03_whelpiest
   name: Whelpiest
@@ -34,9 +33,9 @@
     - description: Deal 1.5x fire dmg
       effect:
         - type: damage
-          element: [Fire]
-          multiplier: [1.5]
-          target: [Enemy]
+          elements: [Fire]
+          multipliers: [1.5]
+          targets: [Enemy]
 
 - id: card_04_slime
   name: Slime
@@ -58,9 +57,9 @@
     - description: Deal 1.25x boss dmg
       effect:
         - type: damage
-          element: [Fire, Water, Grass, Dark, Light]
-          multiplier: [1.25, 1.25, 1.25, 1.25, 1.25]
-          target: [Boss]
+          elements: [Fire, Water, Grass, Dark, Light]
+          multipliers: [1.25, 1.25, 1.25, 1.25, 1.25]
+          targets: [Boss]
 
 - id: card_06_slimest
   name: Slimest
@@ -73,9 +72,9 @@
     - description: Deal 1.5x boss dmg
       effect:
         - type: damage
-          element: [Fire, Water, Grass, Dark, Light]
-          multiplier: [1.5, 1.5, 1.5, 1.5, 1.5]
-          target: [Boss]
+          elements: [Fire, Water, Grass, Dark, Light]
+          multipliers: [1.5, 1.5, 1.5, 1.5, 1.5]
+          targets: [Boss]
 
 - id: card_07_wisp
   name: Wisp
@@ -103,9 +102,9 @@
   elements: [Grass, Light]
   imagePath: /assets/cards/card_09_wispiest.png
   leaderPassive:
-    - description: Multi-element cards deal full dmg
+    - description: Multi-elements cards deal full dmg
       effect:
         - type: damage
-          element: [Fire, Water, Grass, Light, Dark]
-          multiplier: [1.33, 1.33, 1.33, 1.33, 1.33] # base dmg for multi-element dmg is 0.75; this is 1.33x that ~= 1x total dmg
-          target: [Enemy]
+          elements: [Fire, Water, Grass, Light, Dark]
+          multipliers: [1.33, 1.33, 1.33, 1.33, 1.33] # base dmg for multi-elements dmg is 0.75; this is 1.33x that ~= 1x total dmg
+          targets: [Enemy]

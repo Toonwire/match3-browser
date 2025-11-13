@@ -1,0 +1,9 @@
+- id: item_01_healing_potion
+  name: Healing Potion
+  description: Heals 10 hp.
+  imagePath: /assets/items/item_01_healing_potion.png
+  elements: [Healing]
+  effect:
+    - type: heal
+      amount: 10
+      targets: [Player]
