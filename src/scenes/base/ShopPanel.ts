@@ -91,12 +91,15 @@ export function renderShopPanel(
   const nameColX = x + 80; // Start after NPC icon area
   const elementColX = nameColX + 120;
   const costColX = elementColX + 120;
+  const stockColX = costColX + 80;
+  const buyColX = x + width - 60; // Rightmost column for buy button
   const rowHeight = 22;
-  const rowWidth = width - (nameColX - x);
+  const buyButtonSize = 18;
 
   drawText(ctx, "NAME", nameColX, headerY);
   drawText(ctx, "ELEMENT", elementColX, headerY);
   drawText(ctx, "COST", costColX, headerY);
+  drawText(ctx, "STOCK", stockColX, headerY);
 
   let cy = itemStartY;
   const regions: ShopItemRegion[] = [];
@@ -113,13 +116,6 @@ export function renderShopPanel(
         : plovmand >= shopItem.cost;
     const hasStock = shopItem.stock > 0;
 
-    // Draw bounding box
-    ctx.strokeStyle = canAfford && hasStock ? "#4b5563" : "#374151";
-    ctx.fillStyle =
-      canAfford && hasStock ? "rgba(75, 85, 99, 0.1)" : "rgba(55, 65, 81, 0.1)";
-    ctx.fillRect(nameColX - 4, cy - 16, rowWidth, rowHeight);
-    ctx.strokeRect(nameColX - 4, cy - 16, rowWidth, rowHeight);
-
     const name = card.name;
     const elements = card.elements.join(", ");
     const costText =
@@ -127,24 +123,69 @@ export function renderShopPanel(
         ? `${shopItem.cost}g`
         : `${shopItem.cost} plovmand`;
 
-    // Draw text with appropriate color based on affordability
+    // Draw text
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
     drawText(ctx, name, nameColX, cy);
     drawText(ctx, elements, elementColX, cy);
     drawText(ctx, costText, costColX, cy);
 
+    // Draw stock count
+    const stockText = shopItem.stock.toString();
+    drawText(ctx, stockText, stockColX, cy);
+
+    // Draw buy button/icon at rightmost column
+    const buyButtonY = cy - 16;
+    const buyButtonX = buyColX;
+
+    if (canAfford && hasStock) {
+      // Draw buy button background
+      ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+      ctx.strokeStyle = "#3b82f6";
+      ctx.fillRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+      ctx.strokeRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+
+      // Draw "Buy" text
+      ctx.fillStyle = "#3b82f6";
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Buy", buyButtonX + 25, buyButtonY + buyButtonSize / 2);
+
+      // Reset text alignment
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    } else {
+      // Draw disabled buy button
+      ctx.fillStyle = "rgba(107, 114, 128, 0.1)";
+      ctx.strokeStyle = "#6b7280";
+      ctx.fillRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+      ctx.strokeRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+
+      // Draw "Buy" text (grayed out)
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Buy", buyButtonX + 25, buyButtonY + buyButtonSize / 2);
+
+      // Reset text alignment
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
     // Reset fill style
     ctx.fillStyle = "#e5e7eb";
+    ctx.font = `${textSize}px system-ui`;
 
-    // Store clickable region
+    // Store clickable region (only for the buy button)
     regions.push({
       itemId: shopItem.id,
       itemType: "card",
       shopItem,
-      x: nameColX - 4,
-      y: cy - 16,
-      w: rowWidth,
-      h: rowHeight,
+      x: buyButtonX,
+      y: buyButtonY,
+      w: 50,
+      h: buyButtonSize,
       enabled: canAfford && hasStock,
     });
 
@@ -165,38 +206,76 @@ export function renderShopPanel(
         : plovmand >= shopItem.cost;
     const hasStock = shopItem.stock > 0;
 
-    // Draw bounding box
-    ctx.strokeStyle = canAfford && hasStock ? "#4b5563" : "#374151";
-    ctx.fillStyle =
-      canAfford && hasStock ? "rgba(75, 85, 99, 0.1)" : "rgba(55, 65, 81, 0.1)";
-    ctx.fillRect(nameColX - 4, cy - 16, rowWidth, rowHeight);
-    ctx.strokeRect(nameColX - 4, cy - 16, rowWidth, rowHeight);
-
     const name = shopItem.id.replace("item_", "").replace(/_/g, " ");
     const costText =
       shopItem.unit === "gold"
         ? `${shopItem.cost}g`
         : `${shopItem.cost} plovmand`;
 
-    // Draw text with appropriate color based on affordability
+    // Draw text
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
     // For consumables, show "???" for element
     drawText(ctx, name, nameColX, cy);
     drawText(ctx, "???", elementColX, cy);
     drawText(ctx, costText, costColX, cy);
 
+    // Draw stock count
+    const stockText = shopItem.stock.toString();
+    drawText(ctx, stockText, stockColX, cy);
+
+    // Draw buy button/icon at rightmost column
+    const buyButtonY = cy - 16;
+    const buyButtonX = buyColX;
+
+    if (canAfford && hasStock) {
+      // Draw buy button background
+      ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+      ctx.strokeStyle = "#3b82f6";
+      ctx.fillRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+      ctx.strokeRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+
+      // Draw "Buy" text
+      ctx.fillStyle = "#3b82f6";
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Buy", buyButtonX + 25, buyButtonY + buyButtonSize / 2);
+
+      // Reset text alignment
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    } else {
+      // Draw disabled buy button
+      ctx.fillStyle = "rgba(107, 114, 128, 0.1)";
+      ctx.strokeStyle = "#6b7280";
+      ctx.fillRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+      ctx.strokeRect(buyButtonX, buyButtonY, 50, buyButtonSize);
+
+      // Draw "Buy" text (grayed out)
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Buy", buyButtonX + 25, buyButtonY + buyButtonSize / 2);
+
+      // Reset text alignment
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
     // Reset fill style
     ctx.fillStyle = "#e5e7eb";
+    ctx.font = `${textSize}px system-ui`;
 
-    // Store clickable region
+    // Store clickable region (only for the buy button)
     regions.push({
       itemId: shopItem.id,
       itemType: "consumable",
       shopItem,
-      x: nameColX - 4,
-      y: cy - 16,
-      w: rowWidth,
-      h: rowHeight,
+      x: buyButtonX,
+      y: buyButtonY,
+      w: 50,
+      h: buyButtonSize,
       enabled: canAfford && hasStock,
     });
 
