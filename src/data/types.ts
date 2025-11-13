@@ -7,14 +7,17 @@ export interface Card {
   attack: number;
   hp: number;
   elements: Element[];
+  imagePath?: string;
   leaderPassive?: string;
 }
 
 export interface Enemy {
   id: string;
   name: string;
+  attack: number;
   hp: number;
   element?: Element;
+  isBoss: boolean;
 }
 
 export interface LootEntry {
@@ -38,7 +41,7 @@ export interface WorldDef {
 
 export interface Loadout {
   leader: string; // card id
-  members: string[]; // card ids
+  members: [string, string, string]; // card ids in fixed slots (empty string = empty slot)
 }
 
 

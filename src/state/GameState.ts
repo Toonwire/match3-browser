@@ -27,12 +27,26 @@ export class GameState {
   private state: PersistedState;
 
   constructor(initial?: Partial<PersistedState>) {
+    // Normalize loadout members to fixed tuple format
+    let normalizedLoadout: Loadout = { leader: "", members: ["", "", ""] };
+    if (initial?.loadout) {
+      normalizedLoadout.leader = initial.loadout.leader || "";
+      // Migrate from old array format to new tuple format
+      if (Array.isArray(initial.loadout.members)) {
+        normalizedLoadout.members = [
+          initial.loadout.members[0] || "",
+          initial.loadout.members[1] || "",
+          initial.loadout.members[2] || ""
+        ];
+      }
+    }
+    
     this.state = {
       currencies: { gold: 0, plovmand: 0 },
       collection: { cards: {} },
-      loadout: { leader: "", members: [] },
       progression: { discoveredWorlds: {} },
       ...initial,
+      loadout: normalizedLoadout, // Override with normalized loadout
     } as PersistedState;
   }
 
@@ -61,5 +75,54 @@ export class GameState {
   }
   get progression() {
     return this.state.progression;
+  }
+
+  addCardToLoadout(cardId: string) {
+    const loadout = this.state.loadout;
+    
+    // If leader slot is empty, fill it
+    if (!loadout.leader) {
+      loadout.leader = cardId;
+      this.save();
+      return true;
+    }
+    
+    // Find first empty member slot
+    for (let i = 0; i < 3; i++) {
+      if (!loadout.members[i]) {
+        loadout.members[i] = cardId;
+        this.save();
+        return true;
+      }
+    }
+    
+    // Loadout is full
+    return false;
+  }
+
+  removeCardFromLoadout(slotIndex: number) {
+    const loadout = this.state.loadout;
+    
+    // Slot 0 is leader, slots 1-3 are members
+    if (slotIndex === 0) {
+      // Remove leader
+      if (loadout.leader) {
+        loadout.leader = "";
+        this.save();
+        return true;
+      }
+    } else {
+      // Remove from members (slotIndex 1-3 maps to tuple index 0-2)
+      const memberIndex = slotIndex - 1;
+      if (memberIndex >= 0 && memberIndex < 3) {
+        if (loadout.members[memberIndex]) {
+          loadout.members[memberIndex] = "";
+          this.save();
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 }

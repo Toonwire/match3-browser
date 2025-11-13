@@ -21,6 +21,7 @@ export class BaseScene extends Scene {
   private activePopup: "shop" | "armory" | "worlds" | null = null;
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
+  private armoryRegions: { galleryCards: Array<{ cardId: string; x: number; y: number; w: number; h: number }>; loadoutSlots: Array<{ slotIndex: number; x: number; y: number; w: number; h: number }> } | null = null;
 
   private shopPoly = [
     { x: 15, y: 85 },
@@ -139,10 +140,36 @@ export class BaseScene extends Scene {
     if (e.type === "scene-click") {
       const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
 
-      // Close popup on outside click
+      // Handle clicks inside popup
       if (this.activePopup) {
-        if (!this.pointInRect(x, y, { x: 140, y: 100, w: 520, h: 380 })) {
+        const px = 140, py = 100, pw = 520, ph = 380;
+        
+        // Handle armory panel clicks
+        if (this.activePopup === "armory" && this.armoryRegions) {
+          // Check if click is on a loadout slot (prioritize removing over adding)
+          for (const slotRegion of this.armoryRegions.loadoutSlots) {
+            if (this.pointInRect(x, y, slotRegion)) {
+              this.state.removeCardFromLoadout(slotRegion.slotIndex);
+              return;
+            }
+          }
+          
+          // Check if click is on a gallery card
+          for (const cardRegion of this.armoryRegions.galleryCards) {
+            if (this.pointInRect(x, y, cardRegion)) {
+              const success = this.state.addCardToLoadout(cardRegion.cardId);
+              if (!success) {
+                console.log("Loadout is full");
+              }
+              return;
+            }
+          }
+        }
+        
+        // Close popup on outside click
+        if (!this.pointInRect(x, y, { x: px, y: py, w: pw, h: ph })) {
           this.activePopup = null;
+          this.armoryRegions = null;
         }
         return;
       }
@@ -211,7 +238,17 @@ export class BaseScene extends Scene {
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
     } else if (kind === "armory") {
-      renderArmoryPanel(ctx, tx, ty, pw - 32);
+      this.armoryRegions = renderArmoryPanel(
+        ctx, 
+        tx, 
+        ty, 
+        pw - 32, 
+        py, 
+        ph,
+        this.cards,
+        this.state.loadout,
+        (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
+      );
     } else if (kind === "worlds") {
       const w = this.worlds[0];
       renderWorldsPanel(
@@ -226,16 +263,6 @@ export class BaseScene extends Scene {
         elementIconPath
       );
     }
-
-    // Close hint
-    drawText(
-      ctx,
-      "Click outside to close",
-      px + pw - 200,
-      py + ph - 16,
-      12,
-      "#9aa3b2"
-    );
   }
 
   private pointInRect(
