@@ -1,19 +1,111 @@
 # Rank-1 basics for Shop
-- id: starter_fire
+- id: whelp
   name: Whelp
   rank: 1
   attack: 4
   hp: 2
   elements: [Fire]
-- id: starter_water
+  imagePath: /assets/cards/card_01_whelp.png
+  leaderPassive: null
+
+- id: whelpier
+  name: Whelpier
+  rank: 2
+  attack: 6
+  hp: 4
+  elements: [Fire]
+  imagePath: /assets/cards/card_02_whelpier.png
+  leaderPassive:
+    - description: Deal 1.25x fire dmg
+      effect:
+        - type: damage
+          element: [Fire]
+          multiplier: [1.25]
+          target: [Enemy]
+
+- id: whelpiest
+  name: Whelpiest
+  rank: 3
+  attack: 10
+  hp: 7
+  elements: [Fire]
+  imagePath: /assets/cards/card_03_whelpiest.png
+  leaderPassive:
+    - description: Deal 1.5x fire dmg
+      effect:
+        - type: damage
+          element: [Fire]
+          multiplier: [1.5]
+          target: [Enemy]
+
+- id: slime
   name: Slime
   rank: 1
   attack: 2
   hp: 4
   elements: [Water]
-- id: starter_grass
+  imagePath: /assets/cards/card_04_slime.png
+  leaderPassive: null
+
+- id: slimer
+  name: Slimer
+  rank: 2
+  attack: 4
+  hp: 6
+  elements: [Water, Grass]
+  imagePath: /assets/cards/card_05_slimer.png
+  leaderPassive:
+    - description: Deal 1.25x boss dmg
+      effect:
+        - type: damage
+          element: [Fire, Water, Grass, Dark, Light]
+          multiplier: [1.25, 1.25, 1.25, 1.25, 1.25]
+          target: [Boss]
+
+- id: slimest
+  name: Slimest
+  rank: 3
+  attack: 7
+  hp: 10
+  elements: [Water, Grass]
+  imagePath: /assets/cards/card_06_slimest.png
+  leaderPassive:
+    - description: Deal 1.5x boss dmg
+      effect:
+        - type: damage
+          element: [Fire, Water, Grass, Dark, Light]
+          multiplier: [1.5, 1.5, 1.5, 1.5, 1.5]
+          target: [Boss]
+
+- id: wisp
   name: Wisp
   rank: 1
   attack: 3
   hp: 3
   elements: [Grass]
+  imagePath: /assets/cards/card_07_wisp.png
+  leaderPassive: null
+
+- id: wispier
+  name: Wispier
+  rank: 2
+  attack: 5
+  hp: 5
+  elements: [Grass, Light]
+  imagePath: /assets/cards/card_08_wispier.png
+  leaderPassive: null
+
+- id: wispiest
+  name: Wispest
+  rank: 3
+  attack: 9
+  hp: 8
+  elements: [Grass, Light]
+  imagePath: /assets/cards/card_09_wispiest.png
+  leaderPassive:
+    - description: Multi-element cards deal full dmg
+      effect:
+        - type: damage
+          element: [Fire, Water, Grass, Light, Dark]
+          multiplier: [1.33, 1.33, 1.33, 1.33, 1.33] # base dmg for multi-element dmg is 0.75; this is 1.33x that ~= 1x total dmg
+          target: [Enemy]
