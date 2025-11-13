@@ -1,0 +1,28 @@
+- id: shop_01_base
+  name: Base Shop
+  description: The base shop sells basic cards and consumables. Sometimes mysterious items appear.
+  imagePath: /assets/shop/shop_base.png
+  npcId: npc_01_edgars
+  items:
+    cards:
+      - id: card_01_whelp
+        cost: 5
+        unit: gold
+        stock: 1
+      - id: card_04_slime
+        cost: 5
+        unit: gold
+        stock: 1
+      - id: card_07_wisp
+        cost: 5
+        unit: gold
+        stock: 1
+      - id: card_10_mutagen
+        cost: 1
+        unit: plovmand
+        stock: 1
+    consumables:
+      - id: item_healing_potion
+        cost: 10
+        unit: gold
+        stock: 2

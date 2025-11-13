@@ -1,5 +1,5 @@
 # Rank-1 basics for Shop
-- id: whelp
+- id: card_01_whelp
   name: Whelp
   rank: 1
   attack: 4
@@ -8,7 +8,7 @@
   imagePath: /assets/cards/card_01_whelp.png
   leaderPassive: null
 
-- id: whelpier
+- id: card_02_whelpier
   name: Whelpier
   rank: 2
   attack: 6
@@ -23,7 +23,7 @@
           multiplier: [1.25]
           target: [Enemy]
 
-- id: whelpiest
+- id: card_03_whelpiest
   name: Whelpiest
   rank: 3
   attack: 10
@@ -38,7 +38,7 @@
           multiplier: [1.5]
           target: [Enemy]
 
-- id: slime
+- id: card_04_slime
   name: Slime
   rank: 1
   attack: 2
@@ -47,7 +47,7 @@
   imagePath: /assets/cards/card_04_slime.png
   leaderPassive: null
 
-- id: slimer
+- id: card_05_slimer
   name: Slimer
   rank: 2
   attack: 4
@@ -62,7 +62,7 @@
           multiplier: [1.25, 1.25, 1.25, 1.25, 1.25]
           target: [Boss]
 
-- id: slimest
+- id: card_06_slimest
   name: Slimest
   rank: 3
   attack: 7
@@ -77,7 +77,7 @@
           multiplier: [1.5, 1.5, 1.5, 1.5, 1.5]
           target: [Boss]
 
-- id: wisp
+- id: card_07_wisp
   name: Wisp
   rank: 1
   attack: 3
@@ -86,7 +86,7 @@
   imagePath: /assets/cards/card_07_wisp.png
   leaderPassive: null
 
-- id: wispier
+- id: card_08_wispier
   name: Wispier
   rank: 2
   attack: 5
@@ -95,8 +95,8 @@
   imagePath: /assets/cards/card_08_wispier.png
   leaderPassive: null
 
-- id: wispiest
-  name: Wispest
+- id: card_09_wispiest
+  name: Wispiest
   rank: 3
   attack: 9
   hp: 8

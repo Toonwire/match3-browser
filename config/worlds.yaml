@@ -1,10 +1,12 @@
-- id: earth
+- id: world_01_earth
   name: Earth
-  level: Medium
+  level: Easy
   primaryElement: Fire
   stages: 5
-- id: neptune
+  imagePath: /assets/worlds/world_01_earth.png
+- id: world_02_neptune
   name: Neptune
-  level: Easy
+  level: Medium
   primaryElement: Water
   stages: 4
+  imagePath: /assets/worlds/world_02_neptune.png
