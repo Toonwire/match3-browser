@@ -9,14 +9,19 @@ export interface Progression {
   discoveredWorlds: Record<string, WorldDef>;
 }
 
+export interface Inventory {
+  cardCollection: Record<string, number>;
+  items: Record<string, number>; // Consumables and other items
+}
+
 export interface PersistedState {
   currencies: PlayerCurrencies;
-  cardCollection: Record<string, number>;
+  inventory: Inventory;
   loadout: Loadout;
   progression: Progression;
 }
 
-const STORAGE_KEY = "match3_state_v1";
+const STORAGE_KEY = "match3_state_v2";
 
 export class GameState {
   private state: PersistedState;
@@ -27,7 +32,10 @@ export class GameState {
     } else {
       this.state = {
         currencies: { gold: 5, plovmand: 0 },
-        cardCollection: { card_01_whelp: 1 },
+        inventory: {
+          cardCollection: {},
+          items: {},
+        },
         progression: { discoveredWorlds: {} },
         loadout: { leader: "", members: ["", "", ""] },
       } as PersistedState;
@@ -51,8 +59,11 @@ export class GameState {
   get currencies() {
     return this.state.currencies;
   }
+  get inventory() {
+    return this.state.inventory;
+  }
   get cardCollection() {
-    return this.state.cardCollection;
+    return this.state.inventory.cardCollection;
   }
   get loadout() {
     return this.state.loadout;
@@ -63,7 +74,7 @@ export class GameState {
 
   addCardToLoadout(cardId: string) {
     const loadout = this.state.loadout;
-    const collection = this.state.cardCollection;
+    const collection = this.state.inventory.cardCollection;
 
     // Check if card is available in collection
     const currentCount = collection[cardId] || 0;
@@ -95,7 +106,7 @@ export class GameState {
 
   removeCardFromLoadout(slotIndex: number) {
     const loadout = this.state.loadout;
-    const collection = this.state.cardCollection;
+    const collection = this.state.inventory.cardCollection;
 
     // Slot 0 is leader, slots 1-3 are members
     if (slotIndex === 0) {
@@ -134,7 +145,7 @@ export class GameState {
     stock: number
   ): boolean {
     const currencies = this.state.currencies;
-    const collection = this.state.cardCollection;
+    const inventory = this.state.inventory;
 
     // Check if player has enough currency
     if (unit === "gold") {
@@ -159,31 +170,16 @@ export class GameState {
       currencies.plovmand -= cost;
     }
 
-    // Add item to collection
+    // Add item to appropriate inventory location
     if (itemType === "card") {
-      collection[itemId] = (collection[itemId] || 0) + 1;
+      inventory.cardCollection[itemId] =
+        (inventory.cardCollection[itemId] || 0) + 1;
     } else {
-      // For consumables, we could add to an inventory system later
-      // For now, just track them in collection too
-      collection[itemId] = (collection[itemId] || 0) + 1;
+      // Add consumables to items
+      inventory.items[itemId] = (inventory.items[itemId] || 0) + 1;
     }
 
     this.save();
     return true;
   }
-
-  // initializeTestCollection(cards: Card[]) {
-  //   // Only initialize if collection is empty (fresh state, not loaded from storage)
-  //   if (Object.keys(this.state.collection.cards).length === 0) {
-  //     // Add starter cards from cards.yaml: whelp, slime, wisp
-  //     const starterCardIds = ['01_whelp', '04_slime', '07_wisp'];
-  //     for (const cardId of starterCardIds) {
-  //       const card = cards.find(c => c.id === cardId);
-  //       if (card) {
-  //         this.state.collection.cards[cardId] = card;
-  //       }
-  //     }
-  //     this.save();
-  //   }
-  // }
 }
