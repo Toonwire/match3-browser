@@ -4,7 +4,7 @@ export function drawPanel(
   y: number,
   w: number,
   h: number,
-  title?: string
+  title?: string,
 ) {
   ctx.fillStyle = "#141720";
   ctx.fillRect(x, y, w, h);
@@ -23,7 +23,7 @@ export function drawText(
   x: number,
   y: number,
   size = 16,
-  color = "#e5e7eb"
+  color = "#e5e7eb",
 ) {
   ctx.fillStyle = color;
   ctx.font = `${size}px system-ui`;
@@ -38,7 +38,7 @@ export function drawProgressBar(
   h: number,
   ratio: number,
   fg = "#3b82f6",
-  bg = "#23262d"
+  bg = "#23262d",
 ) {
   ctx.fillStyle = bg;
   ctx.fillRect(x, y, w, h);
@@ -53,7 +53,13 @@ export function drawTopBar(
   canvasWidth: number,
   gold: number,
   plovmand: number,
-  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
+  drawIcon?: (
+    iconPath: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ) => void,
 ) {
   const height = 36;
   // Background strip
@@ -74,22 +80,34 @@ export function drawTopBar(
   const iconSize = 16;
   const iconGap = 6;
   const textY = 22;
-  
+
   // Gold: amount + icon
   const goldText = `${gold}`;
   ctx.fillText(goldText, leftPad, textY);
   const goldTextWidth = ctx.measureText(goldText).width;
   if (drawIcon) {
-    drawIcon("/assets/currencies/coin.png", leftPad + goldTextWidth + iconGap, (height - iconSize) / 2, iconSize, iconSize);
+    drawIcon(
+      "/assets/currencies/coin.png",
+      leftPad + goldTextWidth + iconGap,
+      (height - iconSize) / 2,
+      iconSize,
+      iconSize,
+    );
   }
   const goldTotalWidth = goldTextWidth + (drawIcon ? iconSize + iconGap : 0);
-  
+
   // Plovmand: amount + icon
   const plovmandText = `${plovmand}`;
   ctx.fillText(plovmandText, leftPad + goldTotalWidth + gap, textY);
   const plovmandTextWidth = ctx.measureText(plovmandText).width;
   if (drawIcon) {
-    drawIcon("/assets/currencies/plovmand.png", leftPad + goldTotalWidth + gap + plovmandTextWidth + iconGap, (height - iconSize) / 2, iconSize, iconSize);
+    drawIcon(
+      "/assets/currencies/plovmand.png",
+      leftPad + goldTotalWidth + gap + plovmandTextWidth + iconGap,
+      (height - iconSize) / 2,
+      iconSize,
+      iconSize,
+    );
   }
 
   // Save/Load buttons on the right
@@ -133,7 +151,7 @@ export interface TopBarButtonRegions {
 }
 
 export function getTopBarButtonRegions(
-  canvasWidth: number
+  canvasWidth: number,
 ): TopBarButtonRegions {
   const height = 36;
   const buttonHeight = 24;

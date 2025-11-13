@@ -1,4 +1,4 @@
-export type Element = 'Fire' | 'Water' | 'Grass' | 'Dark' | 'Light' | 'Healing';
+export type Element = "Fire" | "Water" | "Grass" | "Dark" | "Light" | "Healing";
 
 export interface Card {
   id: string;
@@ -7,7 +7,7 @@ export interface Card {
   attack: number;
   hp: number;
   elements: Element[];
-  imagePath?: string;
+  imagePath: string;
   leaderPassive?: string;
 }
 
@@ -34,7 +34,7 @@ export interface LootTable {
 export interface WorldDef {
   id: string;
   name: string;
-  level: 'Easy' | 'Medium' | 'Hard';
+  level: "Easy" | "Medium" | "Hard";
   primaryElement: Element;
   stages: number;
 }
@@ -44,4 +44,27 @@ export interface Loadout {
   members: [string, string, string]; // card ids in fixed slots (empty string = empty slot)
 }
 
+export interface ShopItem {
+  id: string;
+  cost: number;
+  unit: "gold" | "plovmand";
+  stock: number;
+}
 
+export interface Shop {
+  id: string;
+  name: string;
+  description: string;
+  imagePath: string;
+  npcId: string;
+  items: {
+    cards: ShopItem[];
+    consumables: ShopItem[];
+  };
+}
+
+export interface NPC {
+  id: string;
+  name: string;
+  imagePath: string;
+}

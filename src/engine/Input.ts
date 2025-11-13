@@ -5,15 +5,15 @@ export class Input {
   private pointerY = 0;
 
   constructor(private readonly element: HTMLElement) {
-    window.addEventListener('keydown', (e) => this.pressedKeys.add(e.key));
-    window.addEventListener('keyup', (e) => this.pressedKeys.delete(e.key));
+    window.addEventListener("keydown", (e) => this.pressedKeys.add(e.key));
+    window.addEventListener("keyup", (e) => this.pressedKeys.delete(e.key));
 
-    element.addEventListener('pointerdown', (e) => {
+    element.addEventListener("pointerdown", (e) => {
       this.pointerDown = true;
       this.updatePointer(e);
     });
-    element.addEventListener('pointermove', (e) => this.updatePointer(e));
-    window.addEventListener('pointerup', () => {
+    element.addEventListener("pointermove", (e) => this.updatePointer(e));
+    window.addEventListener("pointerup", () => {
       this.pointerDown = false;
     });
   }
@@ -36,5 +36,3 @@ export class Input {
     this.pointerY = e.clientY - rect.top;
   }
 }
-
-

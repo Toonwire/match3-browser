@@ -9,8 +9,14 @@ export function renderWorldsPanel(
   panelY: number,
   panelW: number,
   world: WorldDef | undefined,
-  drawIcon: (iconPath: string, x: number, y: number, w: number, h: number) => void,
-  elementIconPath: (el: WorldDef["primaryElement"]) => string
+  drawIcon: (
+    iconPath: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ) => void,
+  elementIconPath: (el: WorldDef["primaryElement"]) => string,
 ) {
   if (!world) {
     drawText(ctx, "No worlds", textX, textY);
@@ -22,5 +28,3 @@ export function renderWorldsPanel(
   const p = elementIconPath(world.primaryElement);
   drawIcon(p, panelX + panelW - 56, panelY + 20, 28, 28);
 }
-
-

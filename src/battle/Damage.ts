@@ -1,5 +1,5 @@
-import type { Loadout, Element } from '../data/types';
-import type { Match } from './MatchLogic';
+import type { Loadout, Element } from "../data/types";
+import type { Match } from "./MatchLogic";
 
 export interface DamageInstance {
   element: Element;
@@ -8,31 +8,38 @@ export interface DamageInstance {
 }
 
 const triangle: Record<Element, Element[]> = {
-  Fire: ['Grass'],
-  Grass: ['Water'],
-  Water: ['Fire'],
-  Dark: ['Light'],
-  Light: ['Dark'],
+  Fire: ["Grass"],
+  Grass: ["Water"],
+  Water: ["Fire"],
+  Dark: ["Light"],
+  Light: ["Dark"],
   Healing: [],
 };
 
-export function elementalMultiplier(attacking: Element, defending?: Element): number {
+export function elementalMultiplier(
+  attacking: Element,
+  defending?: Element,
+): number {
   if (!defending) return 1;
-  if (attacking === 'Dark' && defending === 'Light') return 1.5;
-  if (attacking === 'Light' && defending === 'Dark') return 1.5;
+  if (attacking === "Dark" && defending === "Light") return 1.5;
+  if (attacking === "Light" && defending === "Dark") return 1.5;
   if (triangle[attacking]?.includes(defending)) return 1.5;
   if (triangle[defending]?.includes(attacking)) return 0.75;
   return 1;
 }
 
-export function computeDamageFromMatches(matches: Match[], loadout: Loadout, enemyElement?: Element): DamageInstance[] {
+export function computeDamageFromMatches(
+  matches: Match[],
+  loadout: Loadout,
+  enemyElement?: Element,
+): DamageInstance[] {
   // Tally by element count
   const tally = new Map<Element, { count: number; aoe: boolean }>();
   for (const m of matches) {
     const el = m.element as Element;
     const rec = tally.get(el) ?? { count: 0, aoe: false };
     rec.count += m.cells.length; // 1:1 damage per matched element
-    rec.aoe = rec.aoe || (m.shape === 'L' || m.shape === 'T');
+    rec.aoe = rec.aoe || m.shape === "L" || m.shape === "T";
     tally.set(el, rec);
   }
 
@@ -50,5 +57,3 @@ export function computeDamageFromMatches(matches: Match[], loadout: Loadout, ene
   }
   return out;
 }
-
-

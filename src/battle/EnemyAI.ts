@@ -2,11 +2,14 @@ export interface EnemyState {
   id: string;
   name: string;
   hp: number;
-  element?: 'Fire' | 'Water' | 'Grass' | 'Dark' | 'Light' | 'Healing';
+  element?: "Fire" | "Water" | "Grass" | "Dark" | "Light" | "Healing";
   attack: number;
 }
 
-export function enemyTurn(enemies: EnemyState[], playerHp: number): { playerHp: number } {
+export function enemyTurn(
+  enemies: EnemyState[],
+  playerHp: number,
+): { playerHp: number } {
   let hp = playerHp;
   for (const e of enemies) {
     if (e.hp > 0) {
@@ -15,5 +18,3 @@ export function enemyTurn(enemies: EnemyState[], playerHp: number): { playerHp: 
   }
   return { playerHp: Math.max(0, hp) };
 }
-
-

@@ -13,5 +13,3 @@ export const BaseLayout = {
   armory: { x: 440, y: 40, w: 320, h: 220 },
   worlds: { x: 120, y: 300, w: 560, h: 240 },
 };
-
-

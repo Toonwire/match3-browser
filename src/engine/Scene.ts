@@ -4,5 +4,3 @@ export abstract class Scene {
   render(_ctx: CanvasRenderingContext2D): void {}
   onEvent(_e: Event): void {}
 }
-
-

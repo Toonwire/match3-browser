@@ -5,7 +5,9 @@ export class Assets {
     if (this.imageCache.has(src)) return this.imageCache.get(src)!;
     const img = new Image();
     img.src = src;
-    await img.decode().catch(() => new Promise((res) => (img.onload = () => res(undefined))));
+    await img
+      .decode()
+      .catch(() => new Promise((res) => (img.onload = () => res(undefined))));
     this.imageCache.set(src, img);
     return img;
   }
@@ -16,5 +18,3 @@ export class Assets {
     return await res.text();
   }
 }
-
-

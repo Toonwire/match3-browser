@@ -1,5 +1,5 @@
-import type { Cell, Match } from './MatchLogic';
-import { findMatches } from './MatchLogic';
+import type { Cell, Match } from "./MatchLogic";
+import { findMatches } from "./MatchLogic";
 
 export class Match3Grid {
   private grid: Cell[][];
@@ -7,9 +7,18 @@ export class Match3Grid {
   constructor(
     public readonly width = 5,
     public readonly height = 5,
-    private readonly elements: Cell[] = ['Fire', 'Water', 'Grass', 'Dark', 'Light', 'Healing']
+    private readonly elements: Cell[] = [
+      "Fire",
+      "Water",
+      "Grass",
+      "Dark",
+      "Light",
+      "Healing",
+    ],
   ) {
-    this.grid = Array.from({ length: height }, () => Array<Cell>(width).fill(''));
+    this.grid = Array.from({ length: height }, () =>
+      Array<Cell>(width).fill(""),
+    );
     this.refillAll();
     // Ensure no immediate matches on spawn by reshuffling offending cells
     while (findMatches(this.grid).length > 0) {
@@ -21,9 +30,16 @@ export class Match3Grid {
     return this.grid;
   }
 
-  swap(x1: number, y1: number, x2: number, y2: number): { valid: boolean; matches: Match[] } {
-    if (!this.inBounds(x1, y1) || !this.inBounds(x2, y2)) return { valid: false, matches: [] };
-    if (Math.abs(x1 - x2) + Math.abs(y1 - y2) !== 1) return { valid: false, matches: [] };
+  swap(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ): { valid: boolean; matches: Match[] } {
+    if (!this.inBounds(x1, y1) || !this.inBounds(x2, y2))
+      return { valid: false, matches: [] };
+    if (Math.abs(x1 - x2) + Math.abs(y1 - y2) !== 1)
+      return { valid: false, matches: [] };
     this.swapCells(x1, y1, x2, y2);
     const matches = findMatches(this.grid);
     if (matches.length === 0) {
@@ -34,7 +50,11 @@ export class Match3Grid {
     return { valid: true, matches };
   }
 
-  resolveAll(): { totalCleared: number; cascades: number; lastMatches: Match[] } {
+  resolveAll(): {
+    totalCleared: number;
+    cascades: number;
+    lastMatches: Match[];
+  } {
     let cascades = 0;
     let totalCleared = 0;
     let last: Match[] = [];
@@ -65,8 +85,8 @@ export class Match3Grid {
       for (const c of m.cells) toClear.add(`${c.x},${c.y}`);
     }
     for (const key of toClear) {
-      const [x, y] = key.split(',').map(Number);
-      this.grid[y][x] = '' as Cell; // empty
+      const [x, y] = key.split(",").map(Number);
+      this.grid[y][x] = "" as Cell; // empty
     }
     return toClear.size;
   }
@@ -77,9 +97,9 @@ export class Match3Grid {
       let writeY = this.height - 1;
       for (let y = this.height - 1; y >= 0; y--) {
         const cell = this.grid[y][x];
-        if (cell !== '' && cell !== undefined) {
+        if (cell !== "" && cell !== undefined) {
           this.grid[writeY][x] = cell;
-          if (writeY !== y) this.grid[y][x] = '' as Cell;
+          if (writeY !== y) this.grid[y][x] = "" as Cell;
           writeY--;
         }
       }
@@ -103,5 +123,3 @@ export class Match3Grid {
     return this.elements[i];
   }
 }
-
-

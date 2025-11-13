@@ -13,5 +13,3 @@ export class Timer {
     this.elapsed = 0;
   }
 }
-
-

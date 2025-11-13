@@ -1,10 +1,13 @@
 export type Cell = string; // element id
 
-export interface MatchCell { x: number; y: number }
+export interface MatchCell {
+  x: number;
+  y: number;
+}
 export interface Match {
   element: Cell;
   cells: MatchCell[];
-  shape: 'line' | 'L' | 'T';
+  shape: "line" | "L" | "T";
 }
 
 export function cloneGrid(grid: Cell[][]): Cell[][] {
@@ -14,7 +17,9 @@ export function cloneGrid(grid: Cell[][]): Cell[][] {
 export function findMatches(grid: Cell[][]): Match[] {
   const width = grid[0]?.length ?? 0;
   const height = grid.length;
-  const visited = Array.from({ length: height }, () => Array(width).fill(false));
+  const visited = Array.from({ length: height }, () =>
+    Array(width).fill(false),
+  );
   const matches: Match[] = [];
 
   // horizontal
@@ -30,7 +35,7 @@ export function findMatches(grid: Cell[][]): Match[] {
           cells.push({ x: x + i, y });
           visited[y][x + i] = true;
         }
-        matches.push({ element: e, cells, shape: 'line' });
+        matches.push({ element: e, cells, shape: "line" });
       }
       x += len;
     }
@@ -49,7 +54,7 @@ export function findMatches(grid: Cell[][]): Match[] {
           cells.push({ x, y: y + i });
           visited[y + i][x] = true;
         }
-        matches.push({ element: e, cells, shape: 'line' });
+        matches.push({ element: e, cells, shape: "line" });
       }
       y += len;
     }
@@ -70,19 +75,26 @@ export function findMatches(grid: Cell[][]): Match[] {
       }
       if (!appended) merged.push({ ...m });
     }
-    return merged.map((m) => ({ ...m, cells: uniqueCells(m.cells), shape: detectShape(m.cells) }));
+    return merged.map((m) => ({
+      ...m,
+      cells: uniqueCells(m.cells),
+      shape: detectShape(m.cells),
+    }));
   }
 
   return [];
 }
 
-function overlaps(a: MatchCell[] | undefined, b: MatchCell[] | undefined): boolean {
+function overlaps(
+  a: MatchCell[] | undefined,
+  b: MatchCell[] | undefined,
+): boolean {
   if (!a || !b) return false;
   const set = new Set(a.map((c) => `${c.x},${c.y}`));
   return b.some((c) => set.has(`${c.x},${c.y}`));
 }
 
-function detectShape(cells: MatchCell[]): 'line' | 'L' | 'T' {
+function detectShape(cells: MatchCell[]): "line" | "L" | "T" {
   // Simple heuristic: if both axes have at least 3 covered coordinates, call it L/T
   const xs = new Map<number, number>();
   const ys = new Map<number, number>();
@@ -92,7 +104,7 @@ function detectShape(cells: MatchCell[]): 'line' | 'L' | 'T' {
   }
   const hasLineX = [...ys.values()].some((v) => v >= 3);
   const hasLineY = [...xs.values()].some((v) => v >= 3);
-  return hasLineX && hasLineY ? 'T' : 'line';
+  return hasLineX && hasLineY ? "T" : "line";
 }
 
 function uniqueCells(cells: MatchCell[]): MatchCell[] {
@@ -107,5 +119,3 @@ function uniqueCells(cells: MatchCell[]): MatchCell[] {
   }
   return out;
 }
-
-

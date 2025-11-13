@@ -1,5 +1,5 @@
 import { loadYaml } from "../../data/loadYaml";
-import type { Card, WorldDef } from "../../data/types";
+import type { Card, NPC, Shop, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -8,20 +8,39 @@ import {
   drawPanel,
   drawText,
   drawTopBar,
-  getTopBarButtonRegions
+  getTopBarButtonRegions,
 } from "../../ui/UiPrimitives";
 import { renderArmoryPanel } from "./ArmoryPanel";
-import { renderShopPanel } from "./ShopPanel";
+import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
 import { renderWorldsPanel } from "./WorldsPanel";
 
 export class BaseScene extends Scene {
   private cards: Card[] = [];
   private worlds: WorldDef[] = [];
+  private shop?: Shop;
+  private npcs: NPC[] = [];
   private iconCache = new Map<string, HTMLImageElement>();
   private activePopup: "shop" | "armory" | "worlds" | null = null;
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
-  private armoryRegions: { galleryCards: Array<{ cardId: string; x: number; y: number; w: number; h: number }>; loadoutSlots: Array<{ slotIndex: number; x: number; y: number; w: number; h: number }> } | null = null;
+  private armoryRegions: {
+    galleryCards: Array<{
+      cardId: string;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      enabled: boolean;
+    }>;
+    loadoutSlots: Array<{
+      slotIndex: number;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    }>;
+  } | null = null;
+  private shopRegions: ShopPanelRegions | null = null;
 
   private shopPoly = [
     { x: 15, y: 85 },
@@ -46,12 +65,18 @@ export class BaseScene extends Scene {
     try {
       this.cards = await loadYaml<Card[]>("/config/cards.yaml");
       this.worlds = await loadYaml<WorldDef[]>("/config/worlds.yaml");
+      const shops = await loadYaml<Shop[]>("/config/shops.yaml");
+      this.shop = shops.find((shop) => shop.id === "shop_01_base");
+      this.npcs = await loadYaml<NPC[]>("/config/npcs.yaml");
       const bg = new Image();
       bg.src = "/assets/backgrounds/base_background.png";
       await bg
         .decode()
         .catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
+
+      // Initialize test collection with cards from cards.yaml
+      // this.state.initializeTestCollection(this.cards);
     } catch {}
   }
 
@@ -103,7 +128,7 @@ export class BaseScene extends Scene {
     let drawHeight = h;
     let drawX = x;
     let drawY = y;
-    
+
     if (imgAspect > targetAspect) {
       // Image is wider - fit to width
       drawHeight = w / imgAspect;
@@ -113,7 +138,7 @@ export class BaseScene extends Scene {
       drawWidth = h * imgAspect;
       drawX = x + (w - drawWidth) / 2;
     }
-    
+
     ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
   }
 
@@ -142,8 +167,36 @@ export class BaseScene extends Scene {
 
       // Handle clicks inside popup
       if (this.activePopup) {
-        const px = 140, py = 100, pw = 520, ph = 380;
-        
+        const px = 140,
+          py = 100,
+          pw = 520,
+          ph = 380;
+
+        // Handle shop panel clicks
+        if (this.activePopup === "shop" && this.shopRegions) {
+          for (const itemRegion of this.shopRegions.items) {
+            if (this.pointInRect(x, y, itemRegion) && itemRegion.enabled) {
+              const success = this.state.buyItem(
+                itemRegion.itemId,
+                itemRegion.itemType,
+                itemRegion.shopItem.cost,
+                itemRegion.shopItem.unit,
+                itemRegion.shopItem.stock
+              );
+              if (success) {
+                console.log(`Bought ${itemRegion.itemId}`);
+                // Decrement stock (in a real implementation, this would be in shop state)
+                itemRegion.shopItem.stock -= 1;
+              } else {
+                console.log(
+                  "Cannot buy item (insufficient funds or out of stock)"
+                );
+              }
+              return;
+            }
+          }
+        }
+
         // Handle armory panel clicks
         if (this.activePopup === "armory" && this.armoryRegions) {
           // Check if click is on a loadout slot (prioritize removing over adding)
@@ -153,10 +206,10 @@ export class BaseScene extends Scene {
               return;
             }
           }
-          
-          // Check if click is on a gallery card
+
+          // Check if click is on a gallery card (only if enabled)
           for (const cardRegion of this.armoryRegions.galleryCards) {
-            if (this.pointInRect(x, y, cardRegion)) {
+            if (this.pointInRect(x, y, cardRegion) && cardRegion.enabled) {
               const success = this.state.addCardToLoadout(cardRegion.cardId);
               if (!success) {
                 console.log("Loadout is full");
@@ -165,11 +218,12 @@ export class BaseScene extends Scene {
             }
           }
         }
-        
+
         // Close popup on outside click
         if (!this.pointInRect(x, y, { x: px, y: py, w: pw, h: ph })) {
           this.activePopup = null;
           this.armoryRegions = null;
+          this.shopRegions = null;
         }
         return;
       }
@@ -227,11 +281,15 @@ export class BaseScene extends Scene {
       ty = py + 44;
 
     if (kind === "shop") {
-      renderShopPanel(
+      if (!this.shop) return;
+      const npc = this.npcs.find((npc) => npc.id === this.shop!.npcId);
+      this.shopRegions = renderShopPanel(
         ctx,
         tx,
         ty,
         pw - 32,
+        this.shop,
+        npc,
         this.cards,
         this.state.currencies.gold,
         this.state.currencies.plovmand,
@@ -239,13 +297,14 @@ export class BaseScene extends Scene {
       );
     } else if (kind === "armory") {
       this.armoryRegions = renderArmoryPanel(
-        ctx, 
-        tx, 
-        ty, 
-        pw - 32, 
-        py, 
+        ctx,
+        tx,
+        ty,
+        pw - 32,
+        py,
         ph,
         this.cards,
+        this.state.cardCollection,
         this.state.loadout,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
