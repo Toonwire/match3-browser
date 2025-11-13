@@ -1,4 +1,12 @@
-import type { Card, NPC, Shop, ShopItem } from "../../data/types";
+import type {
+  Card,
+  Element,
+  Item,
+  NPC,
+  Shop,
+  ShopItem,
+} from "../../data/types";
+import { elementIconPath } from "../../ui/ElementIcons";
 import { drawText } from "../../ui/UiPrimitives";
 
 export interface ShopItemRegion {
@@ -24,6 +32,7 @@ export function renderShopPanel(
   shop: Shop,
   npc: NPC | undefined,
   cards: Card[],
+  items: Item[],
   gold: number,
   plovmand: number,
   drawIcon?: (
@@ -38,8 +47,9 @@ export function renderShopPanel(
   const iconGap = 6;
   const textSize = 16;
   const npcIconSize = 64;
-  const headerY = y + 60;
+  const headerY = y + 96;
   const itemStartY = headerY + 24;
+  const elementIconSize = 16;
 
   // Set font for text measurement
   ctx.font = `${textSize}px system-ui`;
@@ -88,12 +98,12 @@ export function renderShopPanel(
   }
 
   // Draw header row
-  const nameColX = x + 80; // Start after NPC icon area
+  const nameColX = x + 20;
   const elementColX = nameColX + 120;
   const costColX = elementColX + 120;
   const stockColX = costColX + 80;
   const buyColX = x + width - 60; // Rightmost column for buy button
-  const rowHeight = 22;
+  const rowHeight = 32;
   const buyButtonSize = 18;
 
   drawText(ctx, "NAME", nameColX, headerY);
@@ -117,7 +127,6 @@ export function renderShopPanel(
     const hasStock = shopItem.stock > 0;
 
     const name = card.name;
-    const elements = card.elements.join(", ");
     const costText =
       shopItem.unit === "gold"
         ? `${shopItem.cost}g`
@@ -126,7 +135,28 @@ export function renderShopPanel(
     // Draw text
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
     drawText(ctx, name, nameColX, cy);
-    drawText(ctx, elements, elementColX, cy);
+
+    // Draw element icons or text
+    if (card.elements && card.elements.length > 0 && drawIcon) {
+      // Draw element icons
+      const elementIconY = cy - elementIconSize + 2;
+      card.elements.forEach((element: Element, idx: number) => {
+        const elementIconX = elementColX + idx * (elementIconSize + iconGap);
+        const iconPath = elementIconPath(element);
+        drawIcon(
+          iconPath,
+          elementIconX,
+          elementIconY,
+          elementIconSize,
+          elementIconSize
+        );
+      });
+    } else if (card.elements && card.elements.length > 0) {
+      // Fallback to text if drawIcon not available
+      const elements = card.elements.join(", ");
+      drawText(ctx, elements, elementColX, cy);
+    }
+
     drawText(ctx, costText, costColX, cy);
 
     // Draw stock count
@@ -206,7 +236,9 @@ export function renderShopPanel(
         : plovmand >= shopItem.cost;
     const hasStock = shopItem.stock > 0;
 
-    const name = shopItem.id.replace("item_", "").replace(/_/g, " ");
+    const item = items.find((i) => i.id === shopItem.id);
+    const name =
+      item?.name || shopItem.id.replace("item_", "").replace(/_/g, " ");
     const costText =
       shopItem.unit === "gold"
         ? `${shopItem.cost}g`
@@ -214,9 +246,32 @@ export function renderShopPanel(
 
     // Draw text
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
-    // For consumables, show "???" for element
     drawText(ctx, name, nameColX, cy);
-    drawText(ctx, "???", elementColX, cy);
+
+    // Draw element icons or "???" if no element
+    if (item?.elements && item.elements.length > 0 && drawIcon) {
+      // Draw element icons
+      const elementIconY = cy - elementIconSize + 2;
+      item.elements.forEach((element: Element, idx: number) => {
+        const elementIconX = elementColX + idx * (elementIconSize + iconGap);
+        const iconPath = elementIconPath(element);
+        drawIcon(
+          iconPath,
+          elementIconX,
+          elementIconY,
+          elementIconSize,
+          elementIconSize
+        );
+      });
+    } else if (item?.elements && item.elements.length > 0) {
+      // Fallback to text if drawIcon not available
+      const elements = item.elements.join(", ");
+      drawText(ctx, elements, elementColX, cy);
+    } else {
+      // Show "???" if no element
+      drawText(ctx, "???", elementColX, cy);
+    }
+
     drawText(ctx, costText, costColX, cy);
 
     // Draw stock count

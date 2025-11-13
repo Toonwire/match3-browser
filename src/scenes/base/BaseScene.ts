@@ -1,5 +1,5 @@
 import { loadYaml } from "../../data/loadYaml";
-import type { Card, NPC, Shop, WorldDef } from "../../data/types";
+import type { Card, Item, NPC, Shop, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -16,6 +16,7 @@ import { renderWorldsPanel } from "./WorldsPanel";
 
 export class BaseScene extends Scene {
   private cards: Card[] = [];
+  private items: Item[] = [];
   private worlds: WorldDef[] = [];
   private shop?: Shop;
   private npcs: NPC[] = [];
@@ -64,6 +65,7 @@ export class BaseScene extends Scene {
   async init() {
     try {
       this.cards = await loadYaml<Card[]>("/config/cards.yaml");
+      this.items = await loadYaml<Item[]>("/config/items.yaml");
       this.worlds = await loadYaml<WorldDef[]>("/config/worlds.yaml");
       const shops = await loadYaml<Shop[]>("/config/shops.yaml");
       this.shop = shops.find((shop) => shop.id === "shop_01_base");
@@ -291,6 +293,7 @@ export class BaseScene extends Scene {
         this.shop,
         npc,
         this.cards,
+        this.items,
         this.state.currencies.gold,
         this.state.currencies.plovmand,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)

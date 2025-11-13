@@ -8,7 +8,7 @@ export interface Card {
   hp: number;
   elements: Element[];
   imagePath: string;
-  leaderPassive?: string;
+  leaderPassive?: unknown;
 }
 
 export interface Enemy {
@@ -67,4 +67,13 @@ export interface NPC {
   id: string;
   name: string;
   imagePath: string;
+}
+
+export interface Item {
+  id: string;
+  name: string;
+  description: string;
+  imagePath: string;
+  elements?: Element[];
+  effect?: unknown;
 }
