@@ -17,20 +17,20 @@ export class Game {
       this.currentScene.onEvent(ev);
     });
 
-    // Throttled mouse move logging for hit region tuning
-    let lastLog = 0;
-    this.canvas.addEventListener("mousemove", (e) => {
-      const now = performance.now();
-      if (now - lastLog < 50) return; // ~20 fps logging
-      lastLog = now;
-      const rect = this.canvas.getBoundingClientRect();
-      const scaleX = this.canvas.width / rect.width;
-      const scaleY = this.canvas.height / rect.height;
-      const x = (e.clientX - rect.left) * scaleX;
-      const y = (e.clientY - rect.top) * scaleY;
-      // Round for readability
-      console.log(`mouse: ${Math.round(x)}, ${Math.round(y)}`);
-    });
+    // // Throttled mouse move logging for hit region tuning
+    // let lastLog = 0;
+    // this.canvas.addEventListener("mousemove", (e) => {
+    //   const now = performance.now();
+    //   if (now - lastLog < 50) return; // ~20 fps logging
+    //   lastLog = now;
+    //   const rect = this.canvas.getBoundingClientRect();
+    //   const scaleX = this.canvas.width / rect.width;
+    //   const scaleY = this.canvas.height / rect.height;
+    //   const x = (e.clientX - rect.left) * scaleX;
+    //   const y = (e.clientY - rect.top) * scaleY;
+    //   // Round for readability
+    //   console.log(`mouse: ${Math.round(x)}, ${Math.round(y)}`);
+    // });
   }
 
   async start() {
