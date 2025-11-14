@@ -179,6 +179,14 @@ export class BattleScene extends Scene {
     const timerArea = BattleLayout.timer;
     drawProgressBar(ctx, timerArea.x, timerArea.y, timerArea.w, timerArea.h, this.timer, "#3b82f6", "#23262d");
 
+    const timerText = "⧗";
+    ctx.font = "12px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(timerText, timerArea.x + timerArea.w + 10, timerArea.y + timerArea.h / 2);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+
     // Draw player HP bar
     const playerHpArea = BattleLayout.playerHp;
     const playerHpRatio = this.playerHp / this.playerMaxHp;
@@ -194,15 +202,18 @@ export class BattleScene extends Scene {
     );
 
     // Draw HP text
+    const hpText = `${this.playerHp}/${this.playerMaxHp}`;
     ctx.font = "12px system-ui";
     ctx.fillStyle = "#e5e7eb";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(
-      `HP: ${this.playerHp}/${this.playerMaxHp}`,
-      playerHpArea.x + playerHpArea.w / 2,
+      hpText,
+      playerHpArea.x + playerHpArea.w - ctx.measureText(hpText).width,
       playerHpArea.y + playerHpArea.h / 2
     );
+    ctx.fillStyle = "#10b981";
+    ctx.fillText("♥", playerHpArea.x + playerHpArea.w + 10, playerHpArea.y + playerHpArea.h / 2);
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
