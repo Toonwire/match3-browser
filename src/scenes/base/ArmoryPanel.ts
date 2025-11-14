@@ -30,6 +30,7 @@ export function renderArmoryPanel(
   cards: Card[],
   cardCollection: Record<string, number>,
   loadout: Loadout,
+  scrollOffset: number = 0,
   drawIcon?: (
     iconPath: string,
     x: number,
@@ -59,6 +60,7 @@ export function renderArmoryPanel(
     panelHeight,
     cards,
     cardCollection,
+    scrollOffset,
     drawIcon
   );
 
@@ -169,6 +171,7 @@ function renderGallery(
   panelHeight: number,
   cards: Card[],
   cardCollection: Record<string, number>,
+  scrollOffset: number = 0,
   drawIcon?: (
     iconPath: string,
     x: number,
@@ -186,9 +189,7 @@ function renderGallery(
     enabled: boolean;
   }>;
 } {
-  // Draw 5x3 grid (5 columns, 3 rows) with square cells
   const cols = 5;
-  const rows = 2;
   const cellGap = 8;
   const gridMarginX = 16; // Horizontal margins on left and right
   const gridMarginY = 8; // Bottom margin
@@ -200,14 +201,37 @@ function renderGallery(
   const totalGapWidth = (cols - 1) * cellGap;
   const maxCellSizeByWidth = (availableWidth - totalGapWidth) / cols;
 
-  // Calculate available height
+  // Calculate available height for visible area
   const panelBottom = panelY + panelHeight;
   const availableHeight = panelBottom - gridStartY - gridMarginY;
-  const totalGapHeight = (rows - 1) * cellGap;
-  const maxCellSizeByHeight = (availableHeight - totalGapHeight) / rows;
 
-  // Use the smaller of the two to ensure cells fit within bounds and remain square
+  // Calculate how many rows we need based on total cards
+  const totalRows = Math.ceil(cards.length / cols);
+
+  // Calculate how many visible rows fit in the available height
+  // We'll use a temporary cell size to estimate
+  const tempCellSize = Math.min(maxCellSizeByWidth, 60); // Use a reasonable default
+  const cellHeight = tempCellSize + cellGap;
+  const visibleRows = Math.floor(availableHeight / cellHeight);
+
+  // Calculate actual cell size based on visible rows
+  const totalGapHeight = (visibleRows - 1) * cellGap;
+  const maxCellSizeByHeight = (availableHeight - totalGapHeight) / visibleRows;
   const cellSize = Math.min(maxCellSizeByWidth, maxCellSizeByHeight);
+
+  // Calculate max scroll offset (in pixels)
+  const totalContentHeight = totalRows * (cellSize + cellGap) - cellGap;
+  const maxScrollOffset = Math.max(0, totalContentHeight - availableHeight);
+
+  // Clamp scroll offset
+  const clampedScrollOffset = Math.max(
+    0,
+    Math.min(maxScrollOffset, scrollOffset)
+  );
+
+  // Calculate which rows to render (only visible ones)
+  const startRow = Math.floor(clampedScrollOffset / (cellSize + cellGap));
+  const endRow = Math.min(totalRows, startRow + visibleRows + 1); // +1 for partial row at bottom
 
   const galleryRegions: {
     galleryCards: Array<{
@@ -220,10 +244,17 @@ function renderGallery(
     }>;
   } = { galleryCards: [] };
 
-  for (let row = 0; row < rows; row++) {
+  // Set up clipping region for the gallery area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(gridStartX, gridStartY, availableWidth, availableHeight);
+  ctx.clip();
+
+  for (let row = startRow; row < endRow; row++) {
     for (let col = 0; col < cols; col++) {
       const cellX = gridStartX + col * (cellSize + cellGap);
-      const cellY = gridStartY + row * (cellSize + cellGap);
+      const cellY =
+        gridStartY + row * (cellSize + cellGap) - clampedScrollOffset;
 
       // Draw cell background
       ctx.fillStyle = "#23262d";
@@ -236,6 +267,12 @@ function renderGallery(
       // Draw card image
       if (drawIcon) {
         const cardIndex = row * cols + col; // 0-based index
+
+        // Skip if card index is out of bounds
+        if (cardIndex >= cards.length) {
+          continue;
+        }
+
         const card = cards[cardIndex];
 
         if (card) {
@@ -312,5 +349,6 @@ function renderGallery(
     }
   }
 
+  ctx.restore();
   return galleryRegions;
 }

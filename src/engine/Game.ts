@@ -4,10 +4,7 @@ export class Game {
   private currentScene: Scene;
   private lastTime = performance.now();
 
-  constructor(
-    private readonly canvas: HTMLCanvasElement,
-    scene: Scene,
-  ) {
+  constructor(private readonly canvas: HTMLCanvasElement, scene: Scene) {
     this.currentScene = scene;
     // Forward pointer clicks to the active scene with canvas-space coordinates
     this.canvas.addEventListener("click", (e) => {
@@ -18,6 +15,20 @@ export class Game {
       const y = (e.clientY - rect.top) * scaleY;
       const ev = new CustomEvent("scene-click", { detail: { x, y } });
       this.currentScene.onEvent(ev);
+    });
+
+    // Forward wheel events for scrolling
+    this.canvas.addEventListener("wheel", (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      const ev = new CustomEvent("scene-wheel", {
+        detail: { x, y, deltaY: e.deltaY },
+      });
+      this.currentScene.onEvent(ev);
+      e.preventDefault();
     });
 
     // // Throttled mouse move logging for hit region tuning
