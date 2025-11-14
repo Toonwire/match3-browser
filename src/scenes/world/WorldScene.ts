@@ -56,9 +56,13 @@ export class WorldScene extends Scene {
       await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 
-      // Load world progression from state (if any)
-      // For now, start at stage 0
-      this.currentStageIndex = 0;
+      // Discover world if not already discovered
+      this.state.discoverWorld(this.worldId);
+
+      // Load world progression from state
+      const highestCompleted = this.state.getHighestCompletedStage(this.worldId);
+      // Start at the next unlocked stage (highestCompleted + 1), or 0 if none completed
+      this.currentStageIndex = highestCompleted !== undefined ? Math.max(0, highestCompleted + 1) : 0;
     } catch (error) {
       console.error("Failed to initialize WorldScene:", error);
     }
@@ -131,9 +135,11 @@ export class WorldScene extends Scene {
 
     this.world.stages.forEach((stage, index) => {
       const stageY = stagesStartY + index * (stageHeight + stageGap);
-      const isCompleted = index < this.currentStageIndex;
-      const isCurrent = index === this.currentStageIndex;
-      const isLocked = index > this.currentStageIndex;
+      const isUnlocked = this.state.isStageUnlocked(this.worldId, index);
+      const highestCompleted = this.state.getHighestCompletedStage(this.worldId);
+      const isCompleted = highestCompleted !== undefined && index <= highestCompleted;
+      const isCurrent = index === this.currentStageIndex && isUnlocked;
+      const isLocked = !isUnlocked;
 
       // Stage panel
       const bgColor = isCurrent ? "#1a2332" : isCompleted ? "#1a241a" : "#1a1a1a";
@@ -300,15 +306,26 @@ export class WorldScene extends Scene {
       // Stage clicks
       for (const stageRegion of this.stageRegions) {
         if (this.pointInRect(x, y, stageRegion) && stageRegion.enabled) {
-          console.log(`Clicked stage ${stageRegion.stageIndex}: ${this.world?.stages[stageRegion.stageIndex].name}`);
-          // TODO: Navigate to battle scene with this stage
-          // For now, just update current stage if clicking ahead
-          if (stageRegion.stageIndex === this.currentStageIndex) {
-            // Enter battle
+          const clickedStageIndex = stageRegion.stageIndex;
+          const isUnlocked = this.state.isStageUnlocked(this.worldId, clickedStageIndex);
+
+          if (!isUnlocked) {
+            console.log(`Stage ${clickedStageIndex} is locked`);
+            return;
+          }
+
+          console.log(`Clicked stage ${clickedStageIndex}: ${this.world?.stages[clickedStageIndex].name}`);
+
+          if (clickedStageIndex === this.currentStageIndex) {
+            // Enter battle for current stage
             console.log("Entering battle...");
-          } else if (stageRegion.stageIndex < this.currentStageIndex) {
+            // TODO: Navigate to battle scene with this stage
+          } else if (clickedStageIndex < this.currentStageIndex) {
             // View completed stage
-            this.currentStageIndex = stageRegion.stageIndex;
+            this.currentStageIndex = clickedStageIndex;
+          } else if (clickedStageIndex === this.currentStageIndex + 1) {
+            // Clicked next unlocked stage - make it current
+            this.currentStageIndex = clickedStageIndex;
           }
           return;
         }

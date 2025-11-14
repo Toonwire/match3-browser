@@ -1,4 +1,4 @@
-import type { Card, Loadout, WorldDef } from "../data/types";
+import type { Card, Loadout } from "../data/types";
 
 export interface PlayerCurrencies {
   gold: number;
@@ -6,7 +6,7 @@ export interface PlayerCurrencies {
 }
 
 export interface Progression {
-  discoveredWorlds: Record<string, WorldDef>;
+  worldStages: Record<string, number>; // worldId -> highest completed stage index (0-based, -1 means world discovered but no stages completed)
 }
 
 export interface Inventory {
@@ -36,7 +36,7 @@ export class GameState {
           cardCollection: {},
           items: {},
         },
-        progression: { discoveredWorlds: {} },
+        progression: { worldStages: {} },
         loadout: { leader: "", members: ["", "", ""] },
       } as PersistedState;
     }
@@ -180,5 +180,73 @@ export class GameState {
 
     this.save();
     return true;
+  }
+
+  /**
+   * Get the highest completed stage index for a world.
+   * Returns undefined if world hasn't been discovered yet.
+   * Returns -1 if world discovered but no stages completed (stage 0 is unlocked).
+   * Returns 0+ for completed stages (0 = stage 0 completed, so stage 1 is unlocked).
+   */
+  getHighestCompletedStage(worldId: string): number | undefined {
+    if (!(worldId in this.state.progression.worldStages)) {
+      return undefined; // World not discovered
+    }
+    return this.state.progression.worldStages[worldId];
+  }
+
+  /**
+   * Check if a specific stage is unlocked for a world.
+   * Stage 0 is always unlocked if the world is discovered.
+   * Next stage unlocks after completing the previous one.
+   */
+  isStageUnlocked(worldId: string, stageIndex: number): boolean {
+    const highestCompleted = this.getHighestCompletedStage(worldId);
+    if (highestCompleted === undefined) {
+      // World not discovered - only stage 0 is available when first entering
+      return stageIndex === 0;
+    }
+    // Stage 0 is always unlocked if world is discovered
+    // Next stage unlocks after completing previous one
+    return stageIndex <= highestCompleted + 1;
+  }
+
+  /**
+   * Discover a world (mark as discovered and unlock first stage).
+   * Called when entering a world for the first time.
+   */
+  discoverWorld(worldId: string): void {
+    if (!(worldId in this.state.progression.worldStages)) {
+      // First time discovering this world - mark as discovered, no stages completed yet
+      // The value indicates the highest completed stage
+      // (-1 = discovered but none completed, 0+ = highest completed stage index).
+      this.state.progression.worldStages[worldId] = -1;
+      this.save();
+    }
+  }
+
+  /**
+   * Complete a stage, unlocking the next stage.
+   * Returns true if successful, false if stage was already completed or invalid.
+   */
+  completeStage(worldId: string, stageIndex: number): boolean {
+    // Can only complete stages that are unlocked
+    if (!this.isStageUnlocked(worldId, stageIndex)) {
+      return false;
+    }
+
+    const currentHighest = this.getHighestCompletedStage(worldId);
+    if (currentHighest === undefined) {
+      return false; // World not discovered
+    }
+
+    // If this stage is higher than current highest, mark it as completed
+    if (stageIndex > currentHighest) {
+      this.state.progression.worldStages[worldId] = stageIndex;
+      this.save();
+      return true;
+    }
+
+    return false;
   }
 }
