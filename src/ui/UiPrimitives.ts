@@ -4,7 +4,7 @@ export function drawPanel(
   y: number,
   w: number,
   h: number,
-  title?: string,
+  title?: string
 ) {
   ctx.fillStyle = "#141720";
   ctx.fillRect(x, y, w, h);
@@ -23,7 +23,7 @@ export function drawText(
   x: number,
   y: number,
   size = 16,
-  color = "#e5e7eb",
+  color = "#e5e7eb"
 ) {
   ctx.fillStyle = color;
   ctx.font = `${size}px system-ui`;
@@ -38,7 +38,7 @@ export function drawProgressBar(
   h: number,
   ratio: number,
   fg = "#3b82f6",
-  bg = "#23262d",
+  bg = "#23262d"
 ) {
   ctx.fillStyle = bg;
   ctx.fillRect(x, y, w, h);
@@ -58,8 +58,8 @@ export function drawTopBar(
     x: number,
     y: number,
     w: number,
-    h: number,
-  ) => void,
+    h: number
+  ) => void
 ) {
   const height = 36;
   // Background strip
@@ -91,7 +91,7 @@ export function drawTopBar(
       leftPad + goldTextWidth + iconGap,
       (height - iconSize) / 2,
       iconSize,
-      iconSize,
+      iconSize
     );
   }
   const goldTotalWidth = goldTextWidth + (drawIcon ? iconSize + iconGap : 0);
@@ -106,9 +106,23 @@ export function drawTopBar(
       leftPad + goldTotalWidth + gap + plovmandTextWidth + iconGap,
       (height - iconSize) / 2,
       iconSize,
-      iconSize,
+      iconSize
     );
   }
+  const plovmandTotalWidth = goldTotalWidth + gap + plovmandTextWidth + iconGap;
+
+  // loadout attack and hp values in center of the top bar
+  const loadoutAttack = 0;
+  const loadoutHp = 0;
+  const attackText = `Attack: ${loadoutAttack}`;
+  ctx.fillText(attackText, (canvasWidth - 80) / 2, textY);
+  const loadoutAttackWidth = ctx.measureText(attackText).width;
+  const hpText = `HP: ${loadoutHp}`;
+  ctx.fillText(
+    hpText,
+    (canvasWidth - 80) / 2 + loadoutAttackWidth + gap,
+    textY
+  );
 
   // Save/Load buttons on the right
   const buttonHeight = 24;
@@ -151,7 +165,7 @@ export interface TopBarButtonRegions {
 }
 
 export function getTopBarButtonRegions(
-  canvasWidth: number,
+  canvasWidth: number
 ): TopBarButtonRegions {
   const height = 36;
   const buttonHeight = 24;
