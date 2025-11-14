@@ -5,15 +5,9 @@ function createCanvas(width: number, height: number): HTMLCanvasElement {
   return canvas;
 }
 
-function fitCanvasToContainer(
-  canvas: HTMLCanvasElement,
-  container: HTMLElement
-) {
+function fitCanvasToContainer(canvas: HTMLCanvasElement, container: HTMLElement) {
   const resize = () => {
-    const scale = Math.min(
-      container.clientWidth / canvas.width,
-      container.clientHeight / canvas.height
-    );
+    const scale = Math.min(container.clientWidth / canvas.width, container.clientHeight / canvas.height);
     canvas.style.width = `${Math.floor(canvas.width * scale)}px`;
     canvas.style.height = `${Math.floor(canvas.height * scale)}px`;
   };
@@ -24,6 +18,7 @@ function fitCanvasToContainer(
 import { Game } from "./engine/Game";
 import { BaseScene } from "./scenes/base/BaseScene";
 import { WorldScene } from "./scenes/world/WorldScene";
+import { BattleScene } from "./scenes/battle/BattleScene";
 
 const app = document.getElementById("app")!;
 const canvas = createCanvas(800, 600);
@@ -33,11 +28,32 @@ fitCanvasToContainer(canvas, app);
 let baseScene: BaseScene;
 let game: Game;
 
-const navigateToWorld = (worldId: string) => {
-  const worldScene = new WorldScene(worldId, () => {
-    // Return to base scene
-    game.setScene(baseScene);
+const navigateToBattle = (worldId: string, stageId: string) => {
+  const battleScene = new BattleScene(worldId, stageId, () => {
+    // Return to world scene
+    const worldScene = new WorldScene(
+      worldId,
+      () => {
+        game.setScene(baseScene);
+      },
+      navigateToBattle
+    );
+    game.setScene(worldScene);
+    worldScene.init();
   });
+  game.setScene(battleScene);
+  battleScene.init();
+};
+
+const navigateToWorld = (worldId: string) => {
+  const worldScene = new WorldScene(
+    worldId,
+    () => {
+      // Return to base scene
+      game.setScene(baseScene);
+    },
+    navigateToBattle
+  );
   game.setScene(worldScene);
   worldScene.init();
 };

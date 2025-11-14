@@ -30,10 +30,16 @@ export class WorldScene extends Scene {
     h: number;
   } | null = null;
   private onBackToBase?: () => void;
+  private onEnterBattle?: (worldId: string, stageId: string) => void;
 
-  constructor(private worldId: string, onBackToBase?: () => void) {
+  constructor(
+    private worldId: string,
+    onBackToBase?: () => void,
+    onEnterBattle?: (worldId: string, stageId: string) => void
+  ) {
     super();
     this.onBackToBase = onBackToBase;
+    this.onEnterBattle = onEnterBattle;
   }
 
   async init() {
@@ -332,8 +338,10 @@ export class WorldScene extends Scene {
 
           if (clickedStageIndex === this.currentStageIndex) {
             // Enter battle for current stage
-            console.log("Entering battle of stage", clickedStageIndex);
-            // TODO: Navigate to battle scene with this stage
+            if (this.onEnterBattle && this.world) {
+              const stage = this.world.stages[clickedStageIndex];
+              this.onEnterBattle(this.worldId, stage.id);
+            }
           } else if (clickedStageIndex != this.currentStageIndex && isUnlocked) {
             this.currentStageIndex = clickedStageIndex;
           }
