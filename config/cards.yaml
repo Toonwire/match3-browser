@@ -33,11 +33,11 @@
   elements: [Fire]
   imagePath: /assets/cards/card_03_whelpiest.png
   leaderPassive:
-    - description: Deal 1.5x fire dmg
+    - description: Deal 1.75x fire dmg
       effect:
         - type: damage
           elements: [Fire]
-          multipliers: [1.5]
+          multipliers: [1.75]
           targets: [Enemy]
 
 - id: card_04_slime
@@ -111,11 +111,11 @@
   elements: [Grass, Light]
   imagePath: /assets/cards/card_09_wispiest.png
   leaderPassive:
-    - description: Multi-elements cards deal full dmg
+    - description: Deals 1.5x grass and light dmg
       effect:
         - type: damage
-          elements: [Fire, Water, Grass, Light, Dark]
-          multipliers: [1.33, 1.33, 1.33, 1.33, 1.33] # base dmg for multi-elements dmg is 0.75; this is 1.33x that ~= 1x total dmg
+          elements: [Grass, Light]
+          multipliers: [1.5, 1.5]
           targets: [Enemy]
 
 - id: card_10_mutagen
@@ -127,3 +127,29 @@
   elements: [Dark, Light]
   imagePath: /assets/cards/card_10_mutagen.png
   leaderPassive: null
+
+- id: card_11_icy
+  name: Icy
+  description: A cold and icy creature
+  rank: 2
+  attack: 5
+  hp: 8
+  elements: [Water, Dark]
+  imagePath: /assets/cards/card_11_icy.png
+  leaderPassive: null
+
+- id: card_12_glacier
+  name: Glacier
+  description: A giant block of angry ice
+  rank: 3
+  attack: 9
+  hp: 12
+  elements: [Water, Dark, Light]
+  imagePath: /assets/cards/card_12_glacier.png
+  leaderPassive:
+    - description: Multi-elements cards deal full dmg
+      effect:
+        - type: damage
+          elements: [Fire, Water, Grass, Light, Dark]
+          multipliers: [1.33, 1.33, 1.33, 1.33, 1.33]
+          targets: [Enemy]
