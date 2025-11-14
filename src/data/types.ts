@@ -11,13 +11,14 @@ export interface Card {
   leaderPassive?: unknown;
 }
 
-export interface Enemy {
+export interface Unit {
   id: string;
   name: string;
   attack: number;
   hp: number;
-  element?: Element;
-  isBoss: boolean;
+  elements?: Element[];
+  tags: string[];
+  imagePath?: string;
 }
 
 export interface LootEntry {
@@ -31,12 +32,32 @@ export interface LootTable {
   entries: LootEntry[];
 }
 
+export interface StageUnit {
+  unitId: string; // References unit in units.yaml
+  position: number; // 0-3, left to right
+}
+
+export type LootConfig =
+  | string // Loot table id reference
+  | LootEntry[] // Inline entries
+  | { tableId?: string; entries?: LootEntry[] }; // Both (merged)
+
+export interface StageDef {
+  id: string;
+  name: string;
+  description?: string;
+  imagePath?: string;
+  units: StageUnit[];
+  loot?: LootConfig;
+}
+
 export interface WorldDef {
   id: string;
   name: string;
   difficulty: "Easy" | "Medium" | "Hard";
+  description?: string;
   primaryElement: Element;
-  stages: number;
+  stages: StageDef[];
   imagePath: string;
 }
 

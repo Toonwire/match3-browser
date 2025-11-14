@@ -1,0 +1,74 @@
+# Enemy Units
+# These are separate from player cards and define enemy units that appear in stages
+
+- id: unit_wisp
+  name: Wisp
+  attack: 3
+  hp: 3
+  elements: [Grass]
+  tags: [Enemy]
+  imagePath: /assets/cards/card_07_wisp.png
+
+- id: unit_whelp
+  name: Whelp
+  attack: 4
+  hp: 2
+  elements: [Fire]
+  tags: [Enemy]
+  imagePath: /assets/cards/card_01_whelp.png
+
+- id: unit_slime
+  name: Slime
+  attack: 2
+  hp: 4
+  elements: [Water]
+  tags: [Enemy]
+  imagePath: /assets/cards/card_04_slime.png
+
+- id: unit_wisp_lieutenant
+  name: Soldier Wisp
+  attack: 5
+  hp: 8
+  elements: [Grass]
+  tags: [Enemy]
+  imagePath: /assets/cards/card_09_wispier.png
+
+- id: unit_wisp_boss
+  name: Ancient Wisp
+  attack: 8
+  hp: 15
+  elements: [Grass]
+  tags: [Enemy, Boss]
+  imagePath: /assets/cards/card_09_wispiest.png
+
+- id: unit_whelp_lieutenant
+  name: Grown Whelp
+  attack: 6
+  hp: 4
+  elements: [Fire]
+  tags: [Enemy]
+  imagePath: /assets/cards/card_02_whelpier.png
+
+- id: unit_whelp_boss
+  name: Inferno Whelp
+  attack: 10
+  hp: 12
+  elements: [Fire]
+  tags: [Enemy, Boss]
+  imagePath: /assets/cards/card_03_whelpiest.png
+
+- id: unit_slime_lieutenant
+  name: Jungle Slime
+  attack: 4
+  hp: 6
+  elements: [Water, Grass]
+  tags: [Enemy]
+  imagePath: /assets/cards/card_05_slimer.png
+
+- id: unit_slime_boss
+  name: Abyssal Slime
+  attack: 6
+  hp: 18
+  elements: [Water]
+  tags: [Enemy, Boss]
+  imagePath: /assets/cards/card_06_slimest.png

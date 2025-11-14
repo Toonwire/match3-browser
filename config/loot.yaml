@@ -1,9 +1,8 @@
-- id: default
+- id: loot_table_coins_common
   entries:
     - item: coin
-      chance: 0.8
-      amount: [5, 10]
-    - item: card:whelp
-      chance: 0.05
-    - item: card:slime
-      chance: 0.05
+      chance: 0.5
+      amount: [1, 2]
+    - item: coin
+      chance: 0.1
+      amount: [3, 4]

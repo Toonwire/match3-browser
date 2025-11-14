@@ -1,20 +1,207 @@
 - id: world_01_green
   name: Green
   difficulty: Easy
+  description: A lush world covered in grass and trees.
   primaryElement: Grass
-  stages: 5
   imagePath: /assets/worlds/world_01_green.png
+  stages:
+    - id: world_01_stage_01
+      name: Tree Tops
+      description: The outer defenses
+      imagePath: /assets/worlds/world_01_green.png
+      units:
+        - unitId: unit_wisp
+          position: 0
+        - unitId: unit_wisp
+          position: 1
+      loot: loot_table_common_coins
+
+    - id: world_01_stage_02
+      name: Canopy Layer
+      description: Deeper into the forest
+      imagePath: /assets/worlds/world_01_green.png
+      units:
+        - unitId: unit_wisp
+          position: 0
+        - unitId: unit_wisp
+          position: 1
+        - unitId: unit_wisp
+          position: 2
+      loot: loot_table_common_coins
+
+    - id: world_01_stage_03
+      name: Forest Floor
+      description: The heart of the forest
+      imagePath: /assets/worlds/world_01_green.png
+      units:
+        - unitId: unit_wisp
+          position: 0
+        - unitId: unit_wisp
+          position: 1
+        - unitId: unit_wisp
+          position: 2
+        - unitId: unit_wisp_lieutenant
+          position: 3
+      loot:
+        tableId: loot_table_common_coins
+        entries:
+          - item: card:card_07_wisp
+            chance: 0.1
+          - item: item:item_01_healing_potion
+            chance: 0.05
+
+    - id: world_01_stage_04
+      name: Root System
+      description: Ancient roots guard the core
+      imagePath: /assets/worlds/world_01_green.png
+      units:
+        - unitId: unit_wisp
+          position: 0
+        - unitId: unit_wisp_lieutenant
+          position: 1
+        - unitId: unit_wisp_lieutenant
+          position: 2
+        - unitId: unit_wisp_boss
+          position: 3
+      loot:
+        entries:
+          - item: coin
+            chance: 1.0
+            amount: [8, 12]
+          - item: card:card_07_wisp
+            chance: 0.3
+          - item: card:card_08_wispier
+            chance: 0.05
+          - item: card:card_09_wispiest
+            chance: 0.01
 
 - id: world_02_red
   name: Red
   difficulty: Medium
+  description: A fiery world covered in lava and ash.
   primaryElement: Fire
-  stages: 4
   imagePath: /assets/worlds/world_02_red.png
+  stages:
+    - id: world_02_stage_01
+      name: Ash Plains
+      description: The scorched surface
+      imagePath: /assets/worlds/world_02_red.png
+      units:
+        - unitId: unit_whelp
+          position: 0
+        - unitId: unit_whelp
+          position: 1
+      loot: loot_table_common_coins
+    - id: world_02_stage_02
+      name: Lava Flows
+      description: Rivers of molten rock
+      imagePath: /assets/worlds/world_02_red.png
+      units:
+        - unitId: unit_whelp
+          position: 0
+        - unitId: unit_whelp
+          position: 1
+        - unitId: unit_whelp
+          position: 2
+      loot: loot_table_common_coins
+    - id: world_02_stage_03
+      name: Magma Chambers
+      description: Deep underground
+      imagePath: /assets/worlds/world_02_red.png
+      units:
+        - unitId: unit_whelp
+          position: 0
+        - unitId: unit_whelp
+          position: 1
+        - unitId: unit_whelp
+          position: 2
+        - unitId: unit_whelp
+          position: 3
+      loot:
+        tableId: loot_table_common_coins
+        entries:
+          - item: card:card_01_whelp
+            chance: 0.1
+    - id: world_02_stage_04
+      name: Core
+      description: The heart of fire
+      imagePath: /assets/worlds/world_02_red.png
+      units:
+        - unitId: unit_whelp_boss
+          position: 1
+      loot:
+        entries:
+          - item: coin
+            chance: 1.0
+            amount: [30, 40]
+          - item: card:card_01_whelp
+            chance: 0.3
 
 - id: world_03_blue
   name: Blue
   difficulty: Hard
+  description: A frigid world covered in ice and snow.
   primaryElement: Water
-  stages: 3
   imagePath: /assets/worlds/world_03_blue.png
+  stages:
+    - id: world_03_stage_01
+      name: Ice Fields
+      description: Frozen wasteland
+      imagePath: /assets/worlds/world_03_blue.png
+      units:
+        - unitId: unit_slime
+          position: 0
+        - unitId: unit_slime
+          position: 1
+      loot: loot_table_common_coins
+
+    - id: world_03_stage_02
+      name: Glacier
+      description: Massive ice formations
+      imagePath: /assets/worlds/world_03_blue.png
+      units:
+        - unitId: unit_slime
+          position: 0
+        - unitId: unit_slime
+          position: 1
+        - unitId: unit_slime
+          position: 2
+      loot: loot_table_common_coins
+
+    - id: world_03_stage_03
+      name: Deep Freeze
+      description: The coldest depths
+      imagePath: /assets/worlds/world_03_blue.png
+      units:
+        - unitId: unit_slime
+          position: 0
+        - unitId: unit_slime_lieutenant
+          position: 1
+        - unitId: unit_slime
+          position: 2
+        - unitId: unit_slime_lieutenant
+          position: 3
+      loot:
+        tableId: loot_table_common_coins
+        entries:
+          - item: card:card_04_slime
+            chance: 0.1
+          - item: card:card_05_slimer
+            chance: 0.05
+          - item: item:item_01_healing_potion
+            chance: 0.05
+
+    - id: world_03_stage_04
+      name: Frozen Core
+      description: The absolute zero center
+      imagePath: /assets/worlds/world_03_blue.png
+      units:
+        - unitId: unit_slime_boss
+          position: 1
+      loot:
+        entries:
+          - item: coin
+            chance: 1.0
+            amount: [40, 50]
+          - item: card:card_04_slime
+            chance: 0.3
