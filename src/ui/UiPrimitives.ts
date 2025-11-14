@@ -114,10 +114,10 @@ export function drawTopBar(
 
   // loadout attack and hp values in center of the top bar
 
-  const attackText = `Attack: ${loadoutAttack}`;
+  const attackText = `⚔ ${loadoutAttack}`;
   ctx.fillText(attackText, (canvasWidth - 80) / 2, textY);
   const loadoutAttackWidth = ctx.measureText(attackText).width;
-  const hpText = `HP: ${loadoutHp}`;
+  const hpText = `♥ ${loadoutHp}`;
   ctx.fillText(hpText, (canvasWidth - 80) / 2 + loadoutAttackWidth + gap, textY);
 
   // Save/Load buttons on the right
