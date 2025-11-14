@@ -1,5 +1,6 @@
 - id: card_01_whelp
   name: Whelp
+  description: A small fire creature
   rank: 1
   attack: 4
   hp: 2
@@ -9,6 +10,7 @@
 
 - id: card_02_whelpier
   name: Whelpier
+  description: A fiery whelp
   rank: 2
   attack: 6
   hp: 4
@@ -24,6 +26,7 @@
 
 - id: card_03_whelpiest
   name: Whelpiest
+  description: Very cute, very fire
   rank: 3
   attack: 10
   hp: 7
@@ -39,6 +42,7 @@
 
 - id: card_04_slime
   name: Slime
+  description: A common slime
   rank: 1
   attack: 2
   hp: 4
@@ -48,6 +52,7 @@
 
 - id: card_05_slimer
   name: Slimer
+  description: A very slimy slime
   rank: 2
   attack: 4
   hp: 6
@@ -63,6 +68,7 @@
 
 - id: card_06_slimest
   name: Slimest
+  description: More heads, more slime
   rank: 3
   attack: 7
   hp: 10
@@ -78,6 +84,7 @@
 
 - id: card_07_wisp
   name: Wisp
+  description: A common wisp
   rank: 1
   attack: 3
   hp: 3
@@ -87,6 +94,7 @@
 
 - id: card_08_wispier
   name: Wispier
+  description: This wisp looks battle-ready!
   rank: 2
   attack: 5
   hp: 5
@@ -96,6 +104,7 @@
 
 - id: card_09_wispiest
   name: Wispiest
+  description: The wispiest of wisps
   rank: 3
   attack: 9
   hp: 8
@@ -108,3 +117,13 @@
           elements: [Fire, Water, Grass, Light, Dark]
           multipliers: [1.33, 1.33, 1.33, 1.33, 1.33] # base dmg for multi-elements dmg is 0.75; this is 1.33x that ~= 1x total dmg
           targets: [Enemy]
+
+- id: card_10_mutagen
+  name: Mutagen
+  description: A mysterious substance that can be used to mutate cards.
+  rank: 1
+  attack: 3
+  hp: 3
+  elements: [Dark, Light]
+  imagePath: /assets/cards/card_10_mutagen.png
+  leaderPassive: null
