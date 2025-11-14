@@ -1,5 +1,5 @@
 import { loadYaml } from "../../data/loadYaml";
-import type { Card, StageDef, Unit, WorldDef } from "../../data/types";
+import type { Card, Element, StageDef, Unit, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -33,6 +33,9 @@ export class BattleScene extends Scene {
     w: number;
     h: number;
   } | null = null;
+  private grid: (Element | null)[][] = []; // 5x5 grid of elements
+  private readonly gridCols = 5;
+  private readonly gridRows = 5;
 
   constructor(private worldId: string, private stageId: string, onBackToWorld?: () => void) {
     super();
@@ -90,8 +93,38 @@ export class BattleScene extends Scene {
       });
       this.playerMaxHp = totalHp || 100;
       this.playerHp = this.playerMaxHp;
+
+      // Initialize and populate the match3 grid
+      this.initializeGrid();
+      this.populateGrid();
     } catch (error) {
       console.error("Failed to initialize BattleScene:", error);
+    }
+  }
+
+  private initializeGrid() {
+    // Initialize grid as 5x5 array of nulls
+    this.grid = [];
+    for (let row = 0; row < this.gridRows; row++) {
+      this.grid[row] = [];
+      for (let col = 0; col < this.gridCols; col++) {
+        this.grid[row][col] = null;
+      }
+    }
+  }
+
+  private populateGrid() {
+    const elements: Element[] = ["Fire", "Water", "Grass", "Dark", "Light", "Healing"];
+
+    // Iterate through each tile and populate with random element if empty
+    for (let row = 0; row < this.gridRows; row++) {
+      for (let col = 0; col < this.gridCols; col++) {
+        if (this.grid[row][col] === null) {
+          // Pick a random element
+          const randomIndex = Math.floor(Math.random() * elements.length);
+          this.grid[row][col] = elements[randomIndex];
+        }
+      }
     }
   }
 
@@ -219,17 +252,15 @@ export class BattleScene extends Scene {
 
     // Draw 5x5 match3 grid
     const gridArea = BattleLayout.grid;
-    const gridCols = 5;
-    const gridRows = 5;
     const cellGap = 4;
     const cellSize = Math.min(
-      (gridArea.w - (gridCols - 1) * cellGap) / gridCols,
-      (gridArea.h - (gridRows - 1) * cellGap) / gridRows
+      (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
     );
 
     // Calculate total grid width and height
-    const totalGridWidth = gridCols * cellSize + (gridCols - 1) * cellGap;
-    const totalGridHeight = gridRows * cellSize + (gridRows - 1) * cellGap;
+    const totalGridWidth = this.gridCols * cellSize + (this.gridCols - 1) * cellGap;
+    const totalGridHeight = this.gridRows * cellSize + (this.gridRows - 1) * cellGap;
 
     // Calculate offsets to center the grid
     const gridOffsetX = (gridArea.w - totalGridWidth) / 2;
@@ -241,9 +272,9 @@ export class BattleScene extends Scene {
     ctx.strokeStyle = "#2b2f3a";
     ctx.strokeRect(gridArea.x + 0.5, gridArea.y + 0.5, gridArea.w - 1, gridArea.h - 1);
 
-    // Draw grid cells (placeholder for now)
-    for (let row = 0; row < gridRows; row++) {
-      for (let col = 0; col < gridCols; col++) {
+    // Draw grid cells with element icons
+    for (let row = 0; row < this.gridRows; row++) {
+      for (let col = 0; col < this.gridCols; col++) {
         const cellX = gridArea.x + gridOffsetX + col * (cellSize + cellGap);
         const cellY = gridArea.y + gridOffsetY + row * (cellSize + cellGap);
 
@@ -253,7 +284,15 @@ export class BattleScene extends Scene {
         ctx.strokeStyle = "#2b2f3a";
         ctx.strokeRect(cellX + 0.5, cellY + 0.5, cellSize - 1, cellSize - 1);
 
-        // TODO: Draw match3 tiles here
+        // Draw element icon if tile has an element
+        const element = this.grid[row]?.[col];
+        if (element) {
+          const iconPath = elementIconPath(element);
+          const iconSize = cellSize * 1.0; // Icon takes up 100% of cell
+          const iconX = cellX + (cellSize - iconSize) / 2;
+          const iconY = cellY + (cellSize - iconSize) / 2;
+          this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+        }
       }
     }
 
