@@ -96,12 +96,8 @@ export class BaseScene extends Scene {
     }
 
     // Top bar
-    drawTopBar(
-      ctx,
-      CanvasSize.width,
-      this.state.currencies.gold,
-      this.state.currencies.plovmand,
-      (iconPath, x, y, w, h) => this.drawIcon(ctx, iconPath, x, y, w, h)
+    drawTopBar(ctx, CanvasSize.width, this.state, this.cards, (iconPath, x, y, w, h) =>
+      this.drawIcon(ctx, iconPath, x, y, w, h)
     );
 
     // Active popup overlay

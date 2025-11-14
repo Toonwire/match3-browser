@@ -1,3 +1,6 @@
+import { Card } from "../data/types";
+import { GameState } from "../state/GameState";
+
 export function drawPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, title?: string) {
   ctx.fillStyle = "#141720";
   ctx.fillRect(x, y, w, h);
@@ -44,8 +47,8 @@ export function drawProgressBar(
 export function drawTopBar(
   ctx: CanvasRenderingContext2D,
   canvasWidth: number,
-  gold: number,
-  plovmand: number,
+  state: GameState,
+  cards: Card[],
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ) {
   const height = 36;
@@ -67,6 +70,18 @@ export function drawTopBar(
   const iconSize = 16;
   const iconGap = 6;
   const textY = 22;
+
+  const gold = state.currencies.gold;
+  const plovmand = state.currencies.plovmand;
+  // map reduce loadout leader and member attack and hp
+  const loadoutAttack = [state.loadout.leader, ...state.loadout.members].reduce(
+    (acc, cardId) => acc + (cards.find((card) => card.id === cardId)?.attack ?? 0),
+    0
+  );
+  const loadoutHp = [state.loadout.leader, ...state.loadout.members].reduce(
+    (acc, cardId) => acc + (cards.find((card) => card.id === cardId)?.hp ?? 0),
+    0
+  );
 
   // Gold: amount + icon
   const goldText = `${gold}`;
@@ -96,11 +111,9 @@ export function drawTopBar(
       iconSize
     );
   }
-  const plovmandTotalWidth = goldTotalWidth + gap + plovmandTextWidth + iconGap;
 
   // loadout attack and hp values in center of the top bar
-  const loadoutAttack = 0;
-  const loadoutHp = 0;
+
   const attackText = `Attack: ${loadoutAttack}`;
   ctx.fillText(attackText, (canvasWidth - 80) / 2, textY);
   const loadoutAttackWidth = ctx.measureText(attackText).width;

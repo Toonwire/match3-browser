@@ -1,5 +1,5 @@
 import { loadYaml } from "../../data/loadYaml";
-import type { Unit, WorldDef } from "../../data/types";
+import type { Card, Unit, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -8,6 +8,7 @@ import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../u
 
 export class WorldScene extends Scene {
   private world?: WorldDef;
+  private cards: Card[] = [];
   private units: Unit[] = [];
   private unitsMap = new Map<string, Unit>();
   private iconCache = new Map<string, HTMLImageElement>();
@@ -37,7 +38,7 @@ export class WorldScene extends Scene {
 
   async init() {
     try {
-      // Load world
+      this.cards = await loadYaml<Card[]>("/config/cards.yaml");
       const worlds = await loadYaml<WorldDef[]>("/config/worlds.yaml");
       this.world = worlds.find((w) => w.id === this.worldId);
 
@@ -78,12 +79,8 @@ export class WorldScene extends Scene {
     }
 
     // Top bar
-    drawTopBar(
-      ctx,
-      CanvasSize.width,
-      this.state.currencies.gold,
-      this.state.currencies.plovmand,
-      (iconPath, x, y, w, h) => this.drawIcon(ctx, iconPath, x, y, w, h)
+    drawTopBar(ctx, CanvasSize.width, this.state, this.cards, (iconPath, x, y, w, h) =>
+      this.drawIcon(ctx, iconPath, x, y, w, h)
     );
 
     if (!this.world) {
