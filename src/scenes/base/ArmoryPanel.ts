@@ -35,8 +35,8 @@ export function renderArmoryPanel(
     x: number,
     y: number,
     w: number,
-    h: number,
-  ) => void,
+    h: number
+  ) => void
 ): ArmoryPanelRegions {
   drawText(ctx, "Loadout", x, y + 5);
   const loadoutRegions = renderLoadout(
@@ -47,7 +47,7 @@ export function renderArmoryPanel(
     100,
     cards,
     loadout,
-    drawIcon,
+    drawIcon
   );
   drawText(ctx, "Gallery", x, y + 145);
   const galleryRegions = renderGallery(
@@ -59,7 +59,7 @@ export function renderArmoryPanel(
     panelHeight,
     cards,
     cardCollection,
-    drawIcon,
+    drawIcon
   );
 
   return {
@@ -81,8 +81,8 @@ function renderLoadout(
     x: number,
     y: number,
     w: number,
-    h: number,
-  ) => void,
+    h: number
+  ) => void
 ): {
   loadoutSlots: Array<{
     slotIndex: number;
@@ -174,8 +174,8 @@ function renderGallery(
     x: number,
     y: number,
     w: number,
-    h: number,
-  ) => void,
+    h: number
+  ) => void
 ): {
   galleryCards: Array<{
     cardId: string;
@@ -303,7 +303,7 @@ function renderGallery(
                 iconStartX,
                 iconY,
                 elementIconSize,
-                elementIconSize,
+                elementIconSize
               );
             });
           }
