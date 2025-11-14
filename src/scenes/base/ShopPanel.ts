@@ -128,9 +128,7 @@ export function renderShopPanel(
 
     const name = card.name;
     const costText =
-      shopItem.unit === "gold"
-        ? `${shopItem.cost}g`
-        : `${shopItem.cost} plovmand`;
+      shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plov`;
 
     // Draw text
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
@@ -267,9 +265,6 @@ export function renderShopPanel(
       // Fallback to text if drawIcon not available
       const elements = item.elements.join(", ");
       drawText(ctx, elements, elementColX, cy);
-    } else {
-      // Show "???" if no element
-      drawText(ctx, "???", elementColX, cy);
     }
 
     drawText(ctx, costText, costColX, cy);
