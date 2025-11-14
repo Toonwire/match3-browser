@@ -227,6 +227,14 @@ export class BattleScene extends Scene {
       (gridArea.h - (gridRows - 1) * cellGap) / gridRows
     );
 
+    // Calculate total grid width and height
+    const totalGridWidth = gridCols * cellSize + (gridCols - 1) * cellGap;
+    const totalGridHeight = gridRows * cellSize + (gridRows - 1) * cellGap;
+
+    // Calculate offsets to center the grid
+    const gridOffsetX = (gridArea.w - totalGridWidth) / 2;
+    const gridOffsetY = (gridArea.h - totalGridHeight) / 2;
+
     // Draw grid background
     ctx.fillStyle = "#1a1d24";
     ctx.fillRect(gridArea.x, gridArea.y, gridArea.w, gridArea.h);
@@ -236,8 +244,8 @@ export class BattleScene extends Scene {
     // Draw grid cells (placeholder for now)
     for (let row = 0; row < gridRows; row++) {
       for (let col = 0; col < gridCols; col++) {
-        const cellX = gridArea.x + col * (cellSize + cellGap);
-        const cellY = gridArea.y + row * (cellSize + cellGap);
+        const cellX = gridArea.x + gridOffsetX + col * (cellSize + cellGap);
+        const cellY = gridArea.y + gridOffsetY + row * (cellSize + cellGap);
 
         // Draw cell background
         ctx.fillStyle = "#23262d";
