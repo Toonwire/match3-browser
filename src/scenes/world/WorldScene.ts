@@ -206,7 +206,9 @@ export class WorldScene extends Scene {
           if (unit.tags.includes("Boss")) {
             ctx.fillStyle = "#ef4444";
             ctx.font = "10px system-ui";
-            ctx.fillText("BOSS", unitX, unitsY - 2);
+            const bossText = "👑";
+            const bossTextWidth = ctx.measureText(bossText).width;
+            ctx.fillText("👑", unitX + unitIconSize / 2 - bossTextWidth / 2, unitsY - 2);
           }
         }
       });
