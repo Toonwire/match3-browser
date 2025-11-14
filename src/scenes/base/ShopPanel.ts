@@ -72,17 +72,19 @@ export function renderShopPanel(
 
   // Draw header row
   const nameColX = x + 20;
-  const elementColX = nameColX + 120;
-  const costColX = elementColX + 120;
+  const elementColX = nameColX + 200;
+  const costColX = elementColX + 80;
   const stockColX = costColX + 80;
   const buyColX = x + width - 60; // Rightmost column for buy button
   const rowHeight = 32;
   const buyButtonSize = 18;
+  const itemIconSize = 24; // Size for card/item icons before name
+  const itemIconGap = 8; // Gap between icon and name
 
-  drawText(ctx, "NAME", nameColX, headerY);
-  drawText(ctx, "ELEMENT", elementColX, headerY);
-  drawText(ctx, "COST", costColX, headerY);
-  drawText(ctx, "STOCK", stockColX, headerY);
+  // drawText(ctx, "NAME", nameColX, headerY);
+  // drawText(ctx, "ELEMENT", elementColX, headerY);
+  // drawText(ctx, "COST", costColX, headerY);
+  // drawText(ctx, "STOCK", stockColX, headerY);
 
   let cy = itemStartY;
   const regions: ShopItemRegion[] = [];
@@ -99,9 +101,16 @@ export function renderShopPanel(
     const name = card.name;
     const costText = shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plov`;
 
-    // Draw text
+    // Draw card icon before name
+    const iconY = cy - itemIconSize + 2;
+    if (card.imagePath && drawIcon) {
+      drawIcon(card.imagePath, nameColX, iconY, itemIconSize, itemIconSize);
+    }
+
+    // Draw text (adjusted for icon)
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
-    drawText(ctx, name, nameColX, cy);
+    const nameX = nameColX + (card.imagePath && drawIcon ? itemIconSize + itemIconGap : 0);
+    drawText(ctx, name, nameX, cy);
 
     // Draw element icons or text
     if (card.elements && card.elements.length > 0 && drawIcon) {
@@ -121,7 +130,7 @@ export function renderShopPanel(
     drawText(ctx, costText, costColX, cy);
 
     // Draw stock count
-    const stockText = shopItem.stock.toString();
+    const stockText = `(${shopItem.stock.toString()})`;
     drawText(ctx, stockText, stockColX, cy);
 
     // Draw buy button/icon at rightmost column
@@ -198,9 +207,16 @@ export function renderShopPanel(
     const name = item?.name || shopItem.id.replace("item_", "").replace(/_/g, " ");
     const costText = shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plovmand`;
 
-    // Draw text
+    // Draw item icon before name
+    const iconY = cy - itemIconSize + 2;
+    if (item?.imagePath && drawIcon) {
+      drawIcon(item.imagePath, nameColX, iconY, itemIconSize, itemIconSize);
+    }
+
+    // Draw text (adjusted for icon)
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
-    drawText(ctx, name, nameColX, cy);
+    const nameX = nameColX + (item?.imagePath && drawIcon ? itemIconSize + itemIconGap : 0);
+    drawText(ctx, name, nameX, cy);
 
     // Draw element icons or "???" if no element
     if (item?.elements && item.elements.length > 0 && drawIcon) {
@@ -220,7 +236,7 @@ export function renderShopPanel(
     drawText(ctx, costText, costColX, cy);
 
     // Draw stock count
-    const stockText = shopItem.stock.toString();
+    const stockText = `(${shopItem.stock.toString()})`;
     drawText(ctx, stockText, stockColX, cy);
 
     // Draw buy button/icon at rightmost column
