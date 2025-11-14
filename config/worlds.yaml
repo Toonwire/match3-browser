@@ -1,12 +1,20 @@
-- id: world_01_earth
-  name: Earth
-  level: Easy
-  primaryElement: Fire
+- id: world_01_green
+  name: Green
+  difficulty: Easy
+  primaryElement: Grass
   stages: 5
-  imagePath: /assets/worlds/world_01_earth.png
-- id: world_02_neptune
-  name: Neptune
-  level: Medium
-  primaryElement: Water
+  imagePath: /assets/worlds/world_01_green.png
+
+- id: world_02_red
+  name: Red
+  difficulty: Medium
+  primaryElement: Fire
   stages: 4
-  imagePath: /assets/worlds/world_02_neptune.png
+  imagePath: /assets/worlds/world_02_red.png
+
+- id: world_03_blue
+  name: Blue
+  difficulty: Hard
+  primaryElement: Water
+  stages: 3
+  imagePath: /assets/worlds/world_03_blue.png
