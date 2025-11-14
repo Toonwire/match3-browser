@@ -172,8 +172,7 @@ export class GameState {
 
     // Add item to appropriate inventory location
     if (itemType === "card") {
-      inventory.cardCollection[itemId] =
-        (inventory.cardCollection[itemId] || 0) + 1;
+      inventory.cardCollection[itemId] = (inventory.cardCollection[itemId] || 0) + 1;
     } else {
       // Add consumables to items
       inventory.items[itemId] = (inventory.items[itemId] || 0) + 1;

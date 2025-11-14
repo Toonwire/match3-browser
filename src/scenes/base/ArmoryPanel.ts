@@ -31,25 +31,10 @@ export function renderArmoryPanel(
   cardCollection: Record<string, number>,
   loadout: Loadout,
   scrollOffset: number = 0,
-  drawIcon?: (
-    iconPath: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) => void
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
   drawText(ctx, "Loadout", x, y + 5);
-  const loadoutRegions = renderLoadout(
-    ctx,
-    x,
-    y + 10,
-    width,
-    100,
-    cards,
-    loadout,
-    drawIcon
-  );
+  const loadoutRegions = renderLoadout(ctx, x, y + 10, width, 100, cards, loadout, drawIcon);
   drawText(ctx, "Gallery", x, y + 145);
   const galleryRegions = renderGallery(
     ctx,
@@ -78,13 +63,7 @@ function renderLoadout(
   height: number,
   cards: Card[],
   loadout: Loadout,
-  drawIcon?: (
-    iconPath: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) => void
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): {
   loadoutSlots: Array<{
     slotIndex: number;
@@ -172,13 +151,7 @@ function renderGallery(
   cards: Card[],
   cardCollection: Record<string, number>,
   scrollOffset: number = 0,
-  drawIcon?: (
-    iconPath: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) => void
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): {
   galleryCards: Array<{
     cardId: string;
@@ -224,10 +197,7 @@ function renderGallery(
   const maxScrollOffset = Math.max(0, totalContentHeight - availableHeight);
 
   // Clamp scroll offset
-  const clampedScrollOffset = Math.max(
-    0,
-    Math.min(maxScrollOffset, scrollOffset)
-  );
+  const clampedScrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset));
 
   // Calculate which rows to render (only visible ones)
   const startRow = Math.floor(clampedScrollOffset / (cellSize + cellGap));
@@ -253,8 +223,7 @@ function renderGallery(
   for (let row = startRow; row < endRow; row++) {
     for (let col = 0; col < cols; col++) {
       const cellX = gridStartX + col * (cellSize + cellGap);
-      const cellY =
-        gridStartY + row * (cellSize + cellGap) - clampedScrollOffset;
+      const cellY = gridStartY + row * (cellSize + cellGap) - clampedScrollOffset;
 
       // Draw cell background
       ctx.fillStyle = "#23262d";
@@ -335,13 +304,7 @@ function renderGallery(
             card.elements.forEach((element: Element, idx: number) => {
               const iconY = iconStartY + idx * (elementIconSize + iconGap);
               const iconPath = elementIconPath(element);
-              drawIcon(
-                iconPath,
-                iconStartX,
-                iconY,
-                elementIconSize,
-                elementIconSize
-              );
+              drawIcon(iconPath, iconStartX, iconY, elementIconSize, elementIconSize);
             });
           }
         }

@@ -4,12 +4,7 @@ import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
 import { CanvasSize } from "../../ui/Layouts";
-import {
-  drawPanel,
-  drawText,
-  drawTopBar,
-  getTopBarButtonRegions,
-} from "../../ui/UiPrimitives";
+import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
 
 export class WorldScene extends Scene {
   private world?: WorldDef;
@@ -58,9 +53,7 @@ export class WorldScene extends Scene {
       // Load background
       const bg = new Image();
       bg.src = this.world.imagePath;
-      await bg
-        .decode()
-        .catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
+      await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 
       // Load world progression from state (if any)
@@ -116,12 +109,7 @@ export class WorldScene extends Scene {
     ctx.fillStyle = "#23262d";
     ctx.fillRect(backButtonX, backButtonY, backButtonW, backButtonH);
     ctx.strokeStyle = "#2b2f3a";
-    ctx.strokeRect(
-      backButtonX + 0.5,
-      backButtonY + 0.5,
-      backButtonW - 1,
-      backButtonH - 1
-    );
+    ctx.strokeRect(backButtonX + 0.5, backButtonY + 0.5, backButtonW - 1, backButtonH - 1);
     ctx.fillStyle = "#e5e7eb";
     ctx.font = "14px system-ui";
     ctx.fillText("Back", backButtonX + 20, backButtonY + 20);
@@ -148,11 +136,7 @@ export class WorldScene extends Scene {
       const isLocked = index > this.currentStageIndex;
 
       // Stage panel
-      const bgColor = isCurrent
-        ? "#1a2332"
-        : isCompleted
-        ? "#1a241a"
-        : "#1a1a1a";
+      const bgColor = isCurrent ? "#1a2332" : isCompleted ? "#1a241a" : "#1a1a1a";
       ctx.fillStyle = bgColor;
       ctx.fillRect(stageX, stageY, stageW, stageHeight);
       ctx.strokeStyle = isCurrent ? "#3b82f6" : "#2b2f3a";
@@ -202,23 +186,11 @@ export class WorldScene extends Scene {
           ctx.fillStyle = isLocked ? "#2b2f3a" : "#23262d";
           ctx.fillRect(unitX, unitsY, unitIconSize, unitIconSize);
           ctx.strokeStyle = "#2b2f3a";
-          ctx.strokeRect(
-            unitX + 0.5,
-            unitsY + 0.5,
-            unitIconSize - 1,
-            unitIconSize - 1
-          );
+          ctx.strokeRect(unitX + 0.5, unitsY + 0.5, unitIconSize - 1, unitIconSize - 1);
 
           // Draw unit image if available
           if (unit.imagePath) {
-            this.drawIcon(
-              ctx,
-              unit.imagePath,
-              unitX,
-              unitsY,
-              unitIconSize,
-              unitIconSize
-            );
+            this.drawIcon(ctx, unit.imagePath, unitX, unitsY, unitIconSize, unitIconSize);
           }
 
           // Draw element icon overlay (small, top-right)
@@ -227,14 +199,7 @@ export class WorldScene extends Scene {
             const elementIconX = unitX + unitIconSize - elementIconSize - 2;
             const elementIconY = unitsY + 2;
             const iconPath = elementIconPath(unit.elements[0]);
-            this.drawIcon(
-              ctx,
-              iconPath,
-              elementIconX,
-              elementIconY,
-              elementIconSize,
-              elementIconSize
-            );
+            this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
           }
 
           // Boss indicator
@@ -262,9 +227,7 @@ export class WorldScene extends Scene {
     if (this.iconCache.has(path)) return this.iconCache.get(path)!;
     const img = new Image();
     img.src = path;
-    await img
-      .decode()
-      .catch(() => new Promise((res) => (img.onload = () => res(undefined))));
+    await img.decode().catch(() => new Promise((res) => (img.onload = () => res(undefined))));
     this.iconCache.set(path, img);
     return img;
   }
@@ -295,14 +258,7 @@ export class WorldScene extends Scene {
     ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
   }
 
-  private drawIcon(
-    ctx: CanvasRenderingContext2D,
-    path: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) {
+  private drawIcon(ctx: CanvasRenderingContext2D, path: string, x: number, y: number, w: number, h: number) {
     const cached = this.iconCache.get(path);
     if (cached) {
       this.drawIconWithAspectRatio(ctx, cached, x, y, w, h);
@@ -332,10 +288,7 @@ export class WorldScene extends Scene {
       }
 
       // Back button
-      if (
-        this.backButtonRegion &&
-        this.pointInRect(x, y, this.backButtonRegion)
-      ) {
+      if (this.backButtonRegion && this.pointInRect(x, y, this.backButtonRegion)) {
         if (this.onBackToBase) {
           this.onBackToBase();
         }
@@ -345,11 +298,7 @@ export class WorldScene extends Scene {
       // Stage clicks
       for (const stageRegion of this.stageRegions) {
         if (this.pointInRect(x, y, stageRegion) && stageRegion.enabled) {
-          console.log(
-            `Clicked stage ${stageRegion.stageIndex}: ${
-              this.world?.stages[stageRegion.stageIndex].name
-            }`
-          );
+          console.log(`Clicked stage ${stageRegion.stageIndex}: ${this.world?.stages[stageRegion.stageIndex].name}`);
           // TODO: Navigate to battle scene with this stage
           // For now, just update current stage if clicking ahead
           if (stageRegion.stageIndex === this.currentStageIndex) {
@@ -365,11 +314,7 @@ export class WorldScene extends Scene {
     }
   }
 
-  private pointInRect(
-    x: number,
-    y: number,
-    r: { x: number; y: number; w: number; h: number }
-  ): boolean {
+  private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
     return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
   }
 }

@@ -4,12 +4,7 @@ import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
 import { CanvasSize } from "../../ui/Layouts";
-import {
-  drawPanel,
-  drawText,
-  drawTopBar,
-  getTopBarButtonRegions,
-} from "../../ui/UiPrimitives";
+import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
 import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
 import { renderWorldsPanel, type WorldsPanelRegions } from "./WorldsPanel";
@@ -83,9 +78,7 @@ export class BaseScene extends Scene {
       this.npcs = await loadYaml<NPC[]>("/config/npcs.yaml");
       const bg = new Image();
       bg.src = "/assets/backgrounds/base_background.png";
-      await bg
-        .decode()
-        .catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
+      await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 
       // Initialize test collection with cards from cards.yaml
@@ -119,9 +112,7 @@ export class BaseScene extends Scene {
     if (this.iconCache.has(path)) return this.iconCache.get(path)!;
     const img = new Image();
     img.src = path;
-    await img
-      .decode()
-      .catch(() => new Promise((res) => (img.onload = () => res(undefined))));
+    await img.decode().catch(() => new Promise((res) => (img.onload = () => res(undefined))));
     this.iconCache.set(path, img);
     return img;
   }
@@ -155,14 +146,7 @@ export class BaseScene extends Scene {
     ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
   }
 
-  private drawIcon(
-    ctx: CanvasRenderingContext2D,
-    path: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) {
+  private drawIcon(ctx: CanvasRenderingContext2D, path: string, x: number, y: number, w: number, h: number) {
     const cached = this.iconCache.get(path);
     if (cached) {
       this.drawIconWithAspectRatio(ctx, cached, x, y, w, h);
@@ -192,12 +176,7 @@ export class BaseScene extends Scene {
         const galleryHeight = ph - 150 - 44; // Available height for gallery
 
         // Check if mouse is over gallery area
-        if (
-          x >= px &&
-          x <= px + pw &&
-          y >= galleryY &&
-          y <= galleryY + galleryHeight
-        ) {
+        if (x >= px && x <= px + pw && y >= galleryY && y <= galleryY + galleryHeight) {
           // Scroll the gallery
           const scrollSpeed = 20;
           this.galleryScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
@@ -235,9 +214,7 @@ export class BaseScene extends Scene {
                 // Decrement stock (in a real implementation, this would be in shop state)
                 itemRegion.shopItem.stock -= 1;
               } else {
-                console.log(
-                  "Cannot buy item (insufficient funds or out of stock)"
-                );
+                console.log("Cannot buy item (insufficient funds or out of stock)");
               }
               return;
             }
@@ -333,10 +310,7 @@ export class BaseScene extends Scene {
     }
   }
 
-  private renderPopup(
-    ctx: CanvasRenderingContext2D,
-    kind: "shop" | "armory" | "worlds"
-  ) {
+  private renderPopup(ctx: CanvasRenderingContext2D, kind: "shop" | "armory" | "worlds") {
     // Dim background
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
@@ -345,14 +319,7 @@ export class BaseScene extends Scene {
       py = 100,
       pw = 520,
       ph = 380;
-    drawPanel(
-      ctx,
-      px,
-      py,
-      pw,
-      ph,
-      kind.charAt(0).toUpperCase() + kind.slice(1)
-    );
+    drawPanel(ctx, px, py, pw, ph, kind.charAt(0).toUpperCase() + kind.slice(1));
     const tx = px + 16,
       ty = py + 44;
 
@@ -402,27 +369,18 @@ export class BaseScene extends Scene {
     }
   }
 
-  private pointInRect(
-    x: number,
-    y: number,
-    r: { x: number; y: number; w: number; h: number }
-  ): boolean {
+  private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
     return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
   }
 
-  private pointInPolygon(
-    x: number,
-    y: number,
-    pts: { x: number; y: number }[]
-  ): boolean {
+  private pointInPolygon(x: number, y: number, pts: { x: number; y: number }[]): boolean {
     let inside = false;
     for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
       const xi = pts[i].x,
         yi = pts[i].y;
       const xj = pts[j].x,
         yj = pts[j].y;
-      const intersect =
-        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+      const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
       if (intersect) inside = !inside;
     }
     return inside;

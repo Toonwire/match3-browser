@@ -8,9 +8,7 @@ import { loadYaml } from "./loadYaml";
  * - Array: treats as inline entries
  * - Object: merges shared table with stage-specific entries (stage-specific takes precedence)
  */
-export async function resolveLootConfig(
-  config: LootConfig | undefined
-): Promise<LootTable | null> {
+export async function resolveLootConfig(config: LootConfig | undefined): Promise<LootTable | null> {
   if (!config) {
     return null;
   }

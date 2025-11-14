@@ -1,11 +1,4 @@
-export function drawPanel(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  title?: string
-) {
+export function drawPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, title?: string) {
   ctx.fillStyle = "#141720";
   ctx.fillRect(x, y, w, h);
   ctx.strokeStyle = "#2b2f3a";
@@ -53,13 +46,7 @@ export function drawTopBar(
   canvasWidth: number,
   gold: number,
   plovmand: number,
-  drawIcon?: (
-    iconPath: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) => void
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ) {
   const height = 36;
   // Background strip
@@ -118,11 +105,7 @@ export function drawTopBar(
   ctx.fillText(attackText, (canvasWidth - 80) / 2, textY);
   const loadoutAttackWidth = ctx.measureText(attackText).width;
   const hpText = `HP: ${loadoutHp}`;
-  ctx.fillText(
-    hpText,
-    (canvasWidth - 80) / 2 + loadoutAttackWidth + gap,
-    textY
-  );
+  ctx.fillText(hpText, (canvasWidth - 80) / 2 + loadoutAttackWidth + gap, textY);
 
   // Save/Load buttons on the right
   const buttonHeight = 24;
@@ -164,9 +147,7 @@ export interface TopBarButtonRegions {
   load: { x: number; y: number; w: number; h: number };
 }
 
-export function getTopBarButtonRegions(
-  canvasWidth: number
-): TopBarButtonRegions {
+export function getTopBarButtonRegions(canvasWidth: number): TopBarButtonRegions {
   const height = 36;
   const buttonHeight = 24;
   const buttonY = (height - buttonHeight) / 2;

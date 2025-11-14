@@ -17,13 +17,7 @@ export function renderWorldsPanel(
   panelW: number,
   worlds: WorldDef[],
   selectedWorldIndex: number,
-  drawIcon: (
-    iconPath: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) => void,
+  drawIcon: (iconPath: string, x: number, y: number, w: number, h: number) => void,
   elementIconPath: (el: WorldDef["primaryElement"]) => string
 ): WorldsPanelRegions {
   const arrowSize = 32;
@@ -40,10 +34,7 @@ export function renderWorldsPanel(
   }
 
   // Clamp selected index to valid range
-  const clampedIndex = Math.max(
-    0,
-    Math.min(selectedWorldIndex, worlds.length - 1)
-  );
+  const clampedIndex = Math.max(0, Math.min(selectedWorldIndex, worlds.length - 1));
   const world = worlds[clampedIndex];
 
   const statBlockWidth = 150;
@@ -84,12 +75,7 @@ export function renderWorldsPanel(
   drawText(ctx, `Name: ${world.name}`, statBlockX, worldY);
 
   // Difficulty
-  drawText(
-    ctx,
-    `Difficulty: ${world.difficulty}`,
-    statBlockX,
-    worldY + lineHeight
-  );
+  drawText(ctx, `Difficulty: ${world.difficulty}`, statBlockX, worldY + lineHeight);
 
   // Primary Element
   const elementText = "Primary element:";
@@ -101,13 +87,7 @@ export function renderWorldsPanel(
   const elementIconX = statBlockX + elementTextWidth + 8;
   const elementIconY = worldY + lineHeight * 2 - elementIconSize + 2;
   const iconPath = elementIconPath(world.primaryElement);
-  drawIcon(
-    iconPath,
-    elementIconX,
-    elementIconY,
-    elementIconSize,
-    elementIconSize
-  );
+  drawIcon(iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
 
   // Draw selected world's image on the right
   if (world.imagePath) {
@@ -122,21 +102,12 @@ export function renderWorldsPanel(
   ctx.fillStyle = "#3b82f6";
   ctx.fillRect(enterButtonX, enterButtonY, enterButtonW, enterButtonH);
   ctx.strokeStyle = "#2563eb";
-  ctx.strokeRect(
-    enterButtonX + 0.5,
-    enterButtonY + 0.5,
-    enterButtonW - 1,
-    enterButtonH - 1
-  );
+  ctx.strokeRect(enterButtonX + 0.5, enterButtonY + 0.5, enterButtonW - 1, enterButtonH - 1);
   ctx.fillStyle = "#ffffff";
   ctx.font = "14px system-ui";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(
-    "Enter World",
-    enterButtonX + enterButtonW / 2,
-    enterButtonY + enterButtonH / 2
-  );
+  ctx.fillText("Enter World", enterButtonX + enterButtonW / 2, enterButtonY + enterButtonH / 2);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
 

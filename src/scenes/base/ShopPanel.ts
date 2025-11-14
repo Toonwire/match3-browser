@@ -1,11 +1,4 @@
-import type {
-  Card,
-  Element,
-  Item,
-  NPC,
-  Shop,
-  ShopItem,
-} from "../../data/types";
+import type { Card, Element, Item, NPC, Shop, ShopItem } from "../../data/types";
 import { elementIconPath } from "../../ui/ElementIcons";
 import { drawText } from "../../ui/UiPrimitives";
 
@@ -35,13 +28,7 @@ export function renderShopPanel(
   items: Item[],
   gold: number,
   plovmand: number,
-  drawIcon?: (
-    iconPath: string,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-  ) => void
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ShopPanelRegions {
   const iconSize = 16;
   const iconGap = 6;
@@ -66,35 +53,21 @@ export function renderShopPanel(
   // Calculate positions for right-aligned currencies
   const plovmandText = `Plovmand: ${plovmand}`;
   const plovmandTextWidth = ctx.measureText(plovmandText).width;
-  const plovmandX =
-    x + width - plovmandTextWidth - (drawIcon ? iconSize + iconGap : 0);
+  const plovmandX = x + width - plovmandTextWidth - (drawIcon ? iconSize + iconGap : 0);
 
   drawText(ctx, plovmandText, plovmandX, currencyY);
   if (drawIcon) {
-    drawIcon(
-      "/assets/currencies/plovmand.png",
-      plovmandX + plovmandTextWidth + iconGap,
-      iconY,
-      iconSize,
-      iconSize
-    );
+    drawIcon("/assets/currencies/plovmand.png", plovmandX + plovmandTextWidth + iconGap, iconY, iconSize, iconSize);
   }
 
   const goldText = `Gold: ${gold}g`;
   const goldTextWidth = ctx.measureText(goldText).width;
   const gap = 28;
-  const goldX =
-    plovmandX - goldTextWidth - gap - (drawIcon ? iconSize + iconGap : 0);
+  const goldX = plovmandX - goldTextWidth - gap - (drawIcon ? iconSize + iconGap : 0);
 
   drawText(ctx, goldText, goldX, currencyY);
   if (drawIcon) {
-    drawIcon(
-      "/assets/currencies/coin.png",
-      goldX + goldTextWidth + iconGap,
-      iconY,
-      iconSize,
-      iconSize
-    );
+    drawIcon("/assets/currencies/coin.png", goldX + goldTextWidth + iconGap, iconY, iconSize, iconSize);
   }
 
   // Draw header row
@@ -120,15 +93,11 @@ export function renderShopPanel(
     if (!card) continue;
 
     // Check if player can afford this item
-    const canAfford =
-      shopItem.unit === "gold"
-        ? gold >= shopItem.cost
-        : plovmand >= shopItem.cost;
+    const canAfford = shopItem.unit === "gold" ? gold >= shopItem.cost : plovmand >= shopItem.cost;
     const hasStock = shopItem.stock > 0;
 
     const name = card.name;
-    const costText =
-      shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plov`;
+    const costText = shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plov`;
 
     // Draw text
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
@@ -141,13 +110,7 @@ export function renderShopPanel(
       card.elements.forEach((element: Element, idx: number) => {
         const elementIconX = elementColX + idx * (elementIconSize + iconGap);
         const iconPath = elementIconPath(element);
-        drawIcon(
-          iconPath,
-          elementIconX,
-          elementIconY,
-          elementIconSize,
-          elementIconSize
-        );
+        drawIcon(iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
       });
     } else if (card.elements && card.elements.length > 0) {
       // Fallback to text if drawIcon not available
@@ -228,19 +191,12 @@ export function renderShopPanel(
   // Render consumable items
   for (const shopItem of shop.items.consumables) {
     // Check if player can afford this item
-    const canAfford =
-      shopItem.unit === "gold"
-        ? gold >= shopItem.cost
-        : plovmand >= shopItem.cost;
+    const canAfford = shopItem.unit === "gold" ? gold >= shopItem.cost : plovmand >= shopItem.cost;
     const hasStock = shopItem.stock > 0;
 
     const item = items.find((i) => i.id === shopItem.id);
-    const name =
-      item?.name || shopItem.id.replace("item_", "").replace(/_/g, " ");
-    const costText =
-      shopItem.unit === "gold"
-        ? `${shopItem.cost}g`
-        : `${shopItem.cost} plovmand`;
+    const name = item?.name || shopItem.id.replace("item_", "").replace(/_/g, " ");
+    const costText = shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plovmand`;
 
     // Draw text
     ctx.fillStyle = canAfford && hasStock ? "#e5e7eb" : "#6b7280";
@@ -253,13 +209,7 @@ export function renderShopPanel(
       item.elements.forEach((element: Element, idx: number) => {
         const elementIconX = elementColX + idx * (elementIconSize + iconGap);
         const iconPath = elementIconPath(element);
-        drawIcon(
-          iconPath,
-          elementIconX,
-          elementIconY,
-          elementIconSize,
-          elementIconSize
-        );
+        drawIcon(iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
       });
     } else if (item?.elements && item.elements.length > 0) {
       // Fallback to text if drawIcon not available
