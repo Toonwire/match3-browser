@@ -14,6 +14,8 @@ import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
 import { renderWorldsPanel, type WorldsPanelRegions } from "./WorldsPanel";
 
+export type OnNavigateToWorld = (worldId: string) => void;
+
 export class BaseScene extends Scene {
   private cards: Card[] = [];
   private items: Item[] = [];
@@ -24,6 +26,12 @@ export class BaseScene extends Scene {
   private activePopup: "shop" | "armory" | "worlds" | null = null;
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
+  private onNavigateToWorld?: OnNavigateToWorld;
+
+  constructor(onNavigateToWorld?: OnNavigateToWorld) {
+    super();
+    this.onNavigateToWorld = onNavigateToWorld;
+  }
   private armoryRegions: {
     galleryCards: Array<{
       cardId: string;
@@ -250,6 +258,14 @@ export class BaseScene extends Scene {
           if (this.pointInRect(x, y, this.worldsRegions.nextArrow)) {
             if (this.selectedWorldIndex < this.worlds.length - 1) {
               this.selectedWorldIndex++;
+            }
+            return;
+          }
+
+          // Check if click is on enter world button
+          if (this.pointInRect(x, y, this.worldsRegions.enterWorld)) {
+            if (this.onNavigateToWorld) {
+              this.onNavigateToWorld(this.worldsRegions.worldId);
             }
             return;
           }

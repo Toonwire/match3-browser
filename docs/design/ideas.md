@@ -179,7 +179,7 @@ Window which
 |                --------------------------------------        |
 |                |     |     |     |     |     |      |        |
 |                |     |     |     |     |     |      |        |
-|				 -------------------------------------|        |
+|				         -------------------------------------|        |
 |                |     |     |     |     |     |      |        |
 |                |     |     |     |     |     |      |        |
 |                --------------------------------------        |
@@ -293,7 +293,7 @@ Window which
 - Can drop cards (rare)
 - Can drop coins (common)
 
-## Leader passives
+## Leader passives examples
 
 - Deals 2x boss dmg
 - 1.5x of specific element dmg

@@ -4,6 +4,8 @@ import { drawText } from "../../ui/UiPrimitives";
 export interface WorldsPanelRegions {
   prevArrow: { x: number; y: number; w: number; h: number };
   nextArrow: { x: number; y: number; w: number; h: number };
+  enterWorld: { x: number; y: number; w: number; h: number };
+  worldId: string;
 }
 
 export function renderWorldsPanel(
@@ -32,6 +34,8 @@ export function renderWorldsPanel(
     return {
       prevArrow: { x: 0, y: 0, w: 0, h: 0 },
       nextArrow: { x: 0, y: 0, w: 0, h: 0 },
+      enterWorld: { x: 0, y: 0, w: 0, h: 0 },
+      worldId: "",
     };
   }
 
@@ -110,6 +114,32 @@ export function renderWorldsPanel(
     drawIcon(world.imagePath, imageX, imageY, imageSize, imageSize);
   }
 
+  // Draw "Enter World" button below the image
+  const enterButtonY = imageY + imageSize + 16;
+  const enterButtonW = imageSize;
+  const enterButtonH = 32;
+  const enterButtonX = imageX;
+  ctx.fillStyle = "#3b82f6";
+  ctx.fillRect(enterButtonX, enterButtonY, enterButtonW, enterButtonH);
+  ctx.strokeStyle = "#2563eb";
+  ctx.strokeRect(
+    enterButtonX + 0.5,
+    enterButtonY + 0.5,
+    enterButtonW - 1,
+    enterButtonH - 1
+  );
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "14px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(
+    "Enter World",
+    enterButtonX + enterButtonW / 2,
+    enterButtonY + enterButtonH / 2
+  );
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+
   // Draw navigation arrows
   const canGoPrev = clampedIndex > 0;
   const canGoNext = clampedIndex < worlds.length - 1;
@@ -155,5 +185,12 @@ export function renderWorldsPanel(
       w: arrowSize,
       h: arrowSize,
     },
+    enterWorld: {
+      x: enterButtonX,
+      y: enterButtonY,
+      w: enterButtonW,
+      h: enterButtonH,
+    },
+    worldId: world.id,
   };
 }
