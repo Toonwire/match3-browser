@@ -34,9 +34,10 @@ export interface LootTable {
 export interface WorldDef {
   id: string;
   name: string;
-  level: "Easy" | "Medium" | "Hard";
+  difficulty: "Easy" | "Medium" | "Hard";
   primaryElement: Element;
   stages: number;
+  imagePath: string;
 }
 
 export interface Loadout {

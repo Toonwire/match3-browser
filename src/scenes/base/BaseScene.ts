@@ -12,7 +12,7 @@ import {
 } from "../../ui/UiPrimitives";
 import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
-import { renderWorldsPanel } from "./WorldsPanel";
+import { renderWorldsPanel, type WorldsPanelRegions } from "./WorldsPanel";
 
 export class BaseScene extends Scene {
   private cards: Card[] = [];
@@ -42,6 +42,9 @@ export class BaseScene extends Scene {
     }>;
   } | null = null;
   private shopRegions: ShopPanelRegions | null = null;
+  private galleryScrollOffset: number = 0;
+  private selectedWorldIndex: number = 0;
+  private worldsRegions: WorldsPanelRegions | null = null;
 
   private shopPoly = [
     { x: 15, y: 85 },
@@ -164,6 +167,40 @@ export class BaseScene extends Scene {
   }
 
   onEvent(e: Event): void {
+    if (e.type === "scene-wheel") {
+      const { x, y, deltaY } = (e as CustomEvent).detail as {
+        x: number;
+        y: number;
+        deltaY: number;
+      };
+
+      // Handle wheel events for gallery scrolling
+      if (this.activePopup === "armory") {
+        const px = 140,
+          py = 100,
+          pw = 520,
+          ph = 380;
+        const galleryY = py + 44 + 150; // Gallery starts at ty + 150
+        const galleryHeight = ph - 150 - 44; // Available height for gallery
+
+        // Check if mouse is over gallery area
+        if (
+          x >= px &&
+          x <= px + pw &&
+          y >= galleryY &&
+          y <= galleryY + galleryHeight
+        ) {
+          // Scroll the gallery
+          const scrollSpeed = 20;
+          this.galleryScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
+          // Clamping will be done in renderGallery based on actual content height
+          this.galleryScrollOffset = Math.max(0, this.galleryScrollOffset);
+          return;
+        }
+      }
+      return;
+    }
+
     if (e.type === "scene-click") {
       const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
 
@@ -199,6 +236,25 @@ export class BaseScene extends Scene {
           }
         }
 
+        // Handle worlds panel clicks
+        if (this.activePopup === "worlds" && this.worldsRegions) {
+          // Check if click is on previous arrow
+          if (this.pointInRect(x, y, this.worldsRegions.prevArrow)) {
+            if (this.selectedWorldIndex > 0) {
+              this.selectedWorldIndex--;
+            }
+            return;
+          }
+
+          // Check if click is on next arrow
+          if (this.pointInRect(x, y, this.worldsRegions.nextArrow)) {
+            if (this.selectedWorldIndex < this.worlds.length - 1) {
+              this.selectedWorldIndex++;
+            }
+            return;
+          }
+        }
+
         // Handle armory panel clicks
         if (this.activePopup === "armory" && this.armoryRegions) {
           // Check if click is on a loadout slot (prioritize removing over adding)
@@ -226,6 +282,8 @@ export class BaseScene extends Scene {
           this.activePopup = null;
           this.armoryRegions = null;
           this.shopRegions = null;
+          this.worldsRegions = null;
+          this.galleryScrollOffset = 0; // Reset scroll when closing
         }
         return;
       }
@@ -309,18 +367,19 @@ export class BaseScene extends Scene {
         this.cards,
         this.state.cardCollection,
         this.state.loadout,
+        this.galleryScrollOffset,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
     } else if (kind === "worlds") {
-      const w = this.worlds[0];
-      renderWorldsPanel(
+      this.worldsRegions = renderWorldsPanel(
         ctx,
         tx,
         ty,
         px,
         py,
         pw,
-        w,
+        this.worlds,
+        this.selectedWorldIndex,
         (icon, x, y, iw, ih) => this.drawIcon(ctx, icon, x, y, iw, ih),
         elementIconPath
       );
