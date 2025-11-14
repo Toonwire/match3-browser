@@ -35,11 +35,15 @@ export function renderArmoryPanel(
 ): ArmoryPanelRegions {
   drawText(ctx, "Loadout", x, y + 5);
   const loadoutRegions = renderLoadout(ctx, x, y + 10, width, 100, cards, loadout, drawIcon);
-  drawText(ctx, "Gallery", x, y + 145);
+
+  const galleryStartY = y + 185;
+  drawText(ctx, "Gallery", x, galleryStartY);
+  const galleryY = galleryStartY + 5;
+
   const galleryRegions = renderGallery(
     ctx,
     x,
-    y + 150,
+    galleryY,
     width,
     panelY,
     panelHeight,
@@ -146,6 +150,32 @@ function renderLoadout(
       ctx.textBaseline = "top";
       ctx.fillText("Leader", cellX + cellSize / 2, textY);
       ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
+    // Check if leader has ability and get leader card
+    const leaderCard = loadout.leader ? cards.find((c) => c.id === loadout.leader) : undefined;
+    const hasLeaderAbility = leaderCard && leaderCard.leaderPassive && Array.isArray(leaderCard.leaderPassive);
+
+    // Draw leader ability description if leader is set and has ability
+    if (hasLeaderAbility && leaderCard && Array.isArray(leaderCard.leaderPassive)) {
+      const leaderPassive = leaderCard.leaderPassive;
+      const abilityY = y + 10 + 100 + 8; // Below loadout + gap
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
+      // Draw each ability description
+      leaderPassive.forEach((ability: any, idx: number) => {
+        if (ability && typeof ability === "object" && "description" in ability) {
+          const descY = abilityY + 16 + idx * 16;
+          ctx.fillStyle = "#9aa3b2";
+          ctx.fillText(`• ${ability.description}`, x + 8, descY);
+        }
+      });
+
+      // Reset text baseline
       ctx.textBaseline = "alphabetic";
     }
   }
