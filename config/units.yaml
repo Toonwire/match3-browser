@@ -31,7 +31,7 @@
   hp: 8
   elements: [Grass]
   tags: [Enemy]
-  imagePath: /assets/cards/card_09_wispier.png
+  imagePath: /assets/cards/card_08_wispier.png
 
 - id: unit_wisp_boss
   name: Ancient Wisp
