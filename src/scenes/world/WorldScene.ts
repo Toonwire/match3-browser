@@ -330,17 +330,11 @@ export class WorldScene extends Scene {
             return;
           }
 
-          console.log(`Clicked stage ${clickedStageIndex}: ${this.world?.stages[clickedStageIndex].name}`);
-
           if (clickedStageIndex === this.currentStageIndex) {
             // Enter battle for current stage
-            console.log("Entering battle...");
+            console.log("Entering battle of stage", clickedStageIndex);
             // TODO: Navigate to battle scene with this stage
-          } else if (clickedStageIndex < this.currentStageIndex) {
-            // View completed stage
-            this.currentStageIndex = clickedStageIndex;
-          } else if (clickedStageIndex === this.currentStageIndex + 1) {
-            // Clicked next unlocked stage - make it current
+          } else if (clickedStageIndex != this.currentStageIndex && isUnlocked) {
             this.currentStageIndex = clickedStageIndex;
           }
           return;
