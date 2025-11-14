@@ -178,43 +178,62 @@ export class WorldScene extends Scene {
         ctx.fillText(statusText, stageX + stageW - 100, stageY + 25);
       }
 
-      // Units preview (show unit icons)
+      // Units preview (show unit icons or question marks)
       const unitIconSize = 32;
       const unitGap = 5;
       const unitsStartX = stageX + 10;
       const unitsY = stageY + 55;
 
       stage.units.forEach((stageUnit, unitIndex) => {
-        const unit = this.unitsMap.get(stageUnit.unitId);
-        if (unit) {
-          const unitX = unitsStartX + unitIndex * (unitIconSize + unitGap);
-          // Draw unit icon placeholder (small square)
-          ctx.fillStyle = isLocked ? "#2b2f3a" : "#23262d";
+        const unitX = unitsStartX + unitIndex * (unitIconSize + unitGap);
+
+        if (isLocked) {
+          // Draw question mark for locked stages
+          ctx.fillStyle = "#2b2f3a";
           ctx.fillRect(unitX, unitsY, unitIconSize, unitIconSize);
           ctx.strokeStyle = "#2b2f3a";
           ctx.strokeRect(unitX + 0.5, unitsY + 0.5, unitIconSize - 1, unitIconSize - 1);
 
-          // Draw unit image if available
-          if (unit.imagePath) {
-            this.drawIcon(ctx, unit.imagePath, unitX, unitsY, unitIconSize, unitIconSize);
-          }
+          // Draw question mark
+          ctx.fillStyle = "#6b7280";
+          ctx.font = "20px system-ui";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("?", unitX + unitIconSize / 2, unitsY + unitIconSize / 2);
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
+        } else {
+          // Draw actual unit for unlocked stages
+          const unit = this.unitsMap.get(stageUnit.unitId);
+          if (unit) {
+            // Draw unit icon placeholder (small square)
+            ctx.fillStyle = "#23262d";
+            ctx.fillRect(unitX, unitsY, unitIconSize, unitIconSize);
+            ctx.strokeStyle = "#2b2f3a";
+            ctx.strokeRect(unitX + 0.5, unitsY + 0.5, unitIconSize - 1, unitIconSize - 1);
 
-          // Draw element icon overlay (small, top-right)
-          if (unit.elements && unit.elements.length > 0) {
-            const elementIconSize = 12;
-            const elementIconX = unitX + unitIconSize - elementIconSize - 2;
-            const elementIconY = unitsY + 2;
-            const iconPath = elementIconPath(unit.elements[0]);
-            this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
-          }
+            // Draw unit image if available
+            if (unit.imagePath) {
+              this.drawIcon(ctx, unit.imagePath, unitX, unitsY, unitIconSize, unitIconSize);
+            }
 
-          // Boss indicator
-          if (unit.tags.includes("Boss")) {
-            ctx.fillStyle = "#ef4444";
-            ctx.font = "10px system-ui";
-            const bossText = "👑";
-            const bossTextWidth = ctx.measureText(bossText).width;
-            ctx.fillText("👑", unitX + unitIconSize / 2 - bossTextWidth / 2, unitsY - 2);
+            // Draw element icon overlay (small, top-right)
+            if (unit.elements && unit.elements.length > 0) {
+              const elementIconSize = 12;
+              const elementIconX = unitX + unitIconSize - elementIconSize - 2;
+              const elementIconY = unitsY + 2;
+              const iconPath = elementIconPath(unit.elements[0]);
+              this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
+            }
+
+            // Boss indicator
+            if (unit.tags.includes("Boss")) {
+              ctx.fillStyle = "#ef4444";
+              ctx.font = "10px system-ui";
+              const bossText = "👑";
+              const bossTextWidth = ctx.measureText(bossText).width;
+              ctx.fillText("👑", unitX + unitIconSize / 2 - bossTextWidth / 2, unitsY - 2);
+            }
           }
         }
       });
