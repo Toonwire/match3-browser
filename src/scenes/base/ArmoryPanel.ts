@@ -136,6 +136,18 @@ function renderLoadout(
         }
       }
     }
+
+    // Draw "Leader" text below the leader slot (col 0)
+    if (col === 0) {
+      const textY = cellY + cellSize + 4;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("Leader", cellX + cellSize / 2, textY);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
   }
 
   return { loadoutSlots };
