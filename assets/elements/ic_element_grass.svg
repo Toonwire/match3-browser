@@ -1,41 +1,16 @@
-<svg id="vector" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 512 512">
-    <defs>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="256.35" cy="256" r="250" id="gradient_0">
-            <stop stop-color="#3A7F0D" offset="0" />
-            <stop stop-color="#3A7F0D" offset="0.6303" />
-            <stop stop-color="#30690A" offset="1" />
-        </radialGradient>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="139.89006" cy="150.00894" r="108.77" id="gradient_1">
-            <stop stop-color="#FFFFFF" stop-opacity="0.09803921568627451" offset="0.0084" />
-            <stop stop-color="#FFFFFF" stop-opacity="0.2980392156862745" offset="0.0084" />
-            <stop stop-color="#DBDBDB" stop-opacity="0.2980392156862745" offset="1" />
-        </radialGradient>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="255.88" cy="768" r="250" id="gradient_2">
-            <stop stop-color="#FCC438" offset="0.0252" />
-            <stop stop-color="#FCC438" offset="0.6303" />
-            <stop stop-color="#EF8D22" offset="0.9622" />
-        </radialGradient>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="139.88837" cy="663.56824" r="108.77" id="gradient_3">
-            <stop stop-color="#FFFFFF" stop-opacity="0.09803921568627451" offset="0.0084" />
-            <stop stop-color="#FFFFFF" stop-opacity="0.2980392156862745" offset="0.0084" />
-            <stop stop-color="#DBDBDB" stop-opacity="0.2980392156862745" offset="1" />
-        </radialGradient>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="255.41" cy="-256" r="250" id="gradient_4">
-            <stop stop-color="#0C7CBA" offset="0" />
-            <stop stop-color="#0C7CBA" offset="0.6303" />
-            <stop stop-color="#096191" offset="1" />
-        </radialGradient>
-    </defs>
-    <path fill="#f2dbbb" d="M512.12,256c0,141.38 -114.62,256 -256,256 -141.4,0 -256,-114.62 -256,-256s114.6,-256 256,-256c141.38,0 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_0" />
-    <path fill="url(#gradient_0)" d="M506.35,256c0,138.07 -111.92,250 -250,250 -138.07,0 -250,-111.93 -250,-250S118.28,6 256.35,6c138.08,0 250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_1" />
-    <path fill="#fff" d="M493.27,221.72c1.9,10.46 1.92,19.22 0,19.57 -1.9,0.34 -5,-7.86 -6.9,-18.32 -1.92,-10.46 -1.93,-19.22 -0.02,-19.57 1.9,-0.34 5,7.86 6.92,18.32z" fill-opacity="0.81" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_2" />
-    <path fill="#88eb37" d="M202.04,110s-25.96,63.07 84.92,105.4c60.06,23.08 106.48,82.06 51.26,173.46 -4.62,-40.88 -24.2,-130.82 -108.68,-151.26 0,0 78.54,29.2 85.58,161.77 -40.48,5.55 -135.08,9.35 -163.02,-72.4C114.92,218.9 202.04,110 202.04,110z" stroke="#000" stroke-opacity="0" stroke-width=".3" id="path_3" />
-    <path fill="#88eb37" d="M315.12,398.8c-85.8,-33.88 -148.06,-113.9 -156.64,-209.08 17.6,-47.3 43.56,-79.72 43.56,-79.72s-25.96,63.07 84.92,105.4c60.06,23.08 106.48,82.06 51.26,173.46 -4.62,-40.88 -24.2,-130.82 -108.68,-151.26 0,0 78.32,29.2 85.58,161.2z" stroke="#000" stroke-opacity="0" stroke-width=".3" id="path_4" />
-    <path fill="url(#gradient_1)" d="M202.992,213.097c-42.483,42.483 -105.168,48.67 -140.014,13.824 -34.86,-34.86 -28.666,-97.538 13.81,-140.014 42.469,-42.469 105.154,-48.656 140,-13.81 34.839,34.839 28.652,97.524 -13.824,140z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_5" />
-    <path fill="#fff" d="M88.23,174.62c-7.2,11.7 -20.88,16.35 -30.57,10.4 -9.7,-5.97 -11.7,-20.3 -4.5,-31.98 7.18,-11.7 20.87,-16.35 30.56,-10.4 9.7,5.97 11.7,20.28 4.5,31.98zM95.44,210.68c-2.7,4.4 -8.85,5.54 -13.73,2.53 -4.86,-3 -6.62,-8.98 -3.92,-13.38s8.85,-5.53 13.73,-2.53c4.9,3 6.65,9 3.94,13.38z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_6" />
-    <path fill="#f2dbbb" d="M511.88,768c0,141.38 -114.6,256 -256,256 -141.38,0 -256,-114.62 -256,-256s114.62,-256 256,-256c141.4,0 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_7" />
-    <path fill="url(#gradient_2)" d="M505.88,768c0,138.07 -111.93,250 -250,250s-250,-111.93 -250,-250 111.93,-250 250,-250 250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_8" />
-    <path fill="url(#gradient_3)" d="M202.983,726.663c-42.476,42.476 -105.161,48.663 -140.007,13.817 -34.86,-34.86 -28.666,-97.538 13.81,-140.014 42.483,-42.483 105.168,-48.67 140.014,-13.824 34.839,34.839 28.652,97.524 -13.824,140z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_9" />
-    <path fill="#f2dbbb" d="M511.88,-256c0,141.38 -114.6,256 -256,256C114.5,0 -0.12,-114.62 -0.12,-256s114.62,-256 256,-256c141.4,0 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_10" />
-    <path fill="url(#gradient_4)" d="M505.4,-256c0,138.07 -111.92,250 -250,250 -138.06,0 -250,-111.93 -250,-250s111.94,-250 250,-250c138.08,0 250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_11" />
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="grassGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3A7F0D" />
+      <stop offset="100%" stop-color="#30690A" />
+    </radialGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#grassGrad)" />
+  <!-- Leaf shape -->
+  <path d="M 64 100 Q 50 90 45 75 Q 40 60 50 50 Q 45 45 50 40 Q 55 45 60 50 Q 64 45 68 50 Q 73 45 78 40 Q 83 45 78 50 Q 88 60 83 75 Q 78 90 64 100 Z" fill="#88EB37" />
+  <!-- Leaf veins -->
+  <line x1="64" y1="100" x2="64" y2="50" stroke="#3A7F0D" stroke-width="2" />
+  <line x1="64" y1="70" x2="55" y2="65" stroke="#3A7F0D" stroke-width="1.5" />
+  <line x1="64" y1="70" x2="73" y2="65" stroke="#3A7F0D" stroke-width="1.5" />
 </svg>

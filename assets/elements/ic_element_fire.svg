@@ -1,34 +1,13 @@
-<svg id="vector" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 512 512">
-    <defs>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="256.24" cy="256" r="250" id="gradient_0">
-            <stop stop-color="#F03639" offset="0" />
-            <stop stop-color="#F03639" offset="0.6345" />
-            <stop stop-color="#C92D39" offset="0.8908" />
-        </radialGradient>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="140.00955" cy="150.01018" r="108.77" id="gradient_1">
-            <stop stop-color="#FFFFFF" stop-opacity="0.09803921568627451" offset="0.0084" />
-            <stop stop-color="#FFFFFF" stop-opacity="0.2980392156862745" offset="0.0084" />
-            <stop stop-color="#DBDBDB" stop-opacity="0.2980392156862745" offset="1" />
-        </radialGradient>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="255.53" cy="768" r="250" id="gradient_2">
-            <stop stop-color="#0C7CBA" offset="0" />
-            <stop stop-color="#0C7CBA" offset="0.6303" />
-            <stop stop-color="#096191" offset="1" />
-        </radialGradient>
-        <radialGradient gradientUnits="userSpaceOnUse" cx="140.00957" cy="662.0102" r="108.77" id="gradient_3">
-            <stop stop-color="#FFFFFF" stop-opacity="0.09803921568627451" offset="0.0084" />
-            <stop stop-color="#FFFFFF" stop-opacity="0.2980392156862745" offset="0.0084" />
-            <stop stop-color="#DBDBDB" stop-opacity="0.2980392156862745" offset="1" />
-        </radialGradient>
-    </defs>
-    <path fill="#f2dbbb" d="M512.24,256c0,141.38 -114.62,256 -256,256 -141.4,0 -256,-114.62 -256,-256s114.6,-256 256,-256c141.38,0 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_0" />
-    <path fill="url(#gradient_0)" d="M506.24,256c0,138.07 -111.93,250 -250,250s-250,-111.93 -250,-250S118.17,6 256.24,6s250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_1" />
-    <path fill="#ffd15c" d="M321.8,375.66c13.4,-15.47 26.8,-31.23 35.38,-49.9 8.57,-20.14 11,-43.5 6.82,-65.38 -4.4,-21.9 -14.07,-42.6 -28.13,-60.12 1.32,15.17 -4.18,30.93 -14.5,42.6 5.93,-29.18 -3.74,-61 -23.3,-84.05 -19.33,-23.04 -46.14,-38.5 -74.27,-48.73 14.07,14.6 15.82,37.65 10.33,57.2 -5.5,19.56 -16.92,36.5 -27.25,54.3 -10.32,17.5 -20.2,35.9 -20.65,56.03 -5.5,-10.5 -11.65,-20.72 -15.38,-32.4 -3.52,-11.38 -5.5,-23.64 -2.42,-35.3 -11,13.4 -16.92,26.84 -20,43.77 -3.07,17.2 -2.4,34.73 -0.66,51.95 2.42,18.67 7.26,38.23 17.58,54C177.65,378.57 197,392 218.3,399.3c37.8,6.7 74.94,1.17 103.5,-23.64z" stroke="#000" stroke-opacity="0" stroke-width=".29" id="path_2" />
-    <path fill="#f03639" d="M275.66,398.13c-49.88,19.56 -99.32,-39.7 -71.85,-85.22 0,-0.57 0.67,-0.57 0.67,-1.16 -2.42,24.8 3.5,43.2 15.16,53.4 -6.15,-14.58 -1.76,-31.5 5.5,-46.1 7.24,-14 17.57,-26.85 25.48,-40.28 7.92,-14 14.07,-29.76 10.34,-45.82 14.72,11.1 25.05,27.44 29.22,45.24 4.4,17.5 1.98,37.07 -5.93,53.4 9,-6.7 15.82,-17.5 16.26,-29.18 9.88,11.68 16.03,26.86 15.37,42.03 0,23.93 -18.9,45.24 -40.2,53.7z" stroke="#000" stroke-opacity="0" stroke-width=".29" id="path_3" />
-    <path fill="#fff" d="M490.6,218.94c1.92,10.46 1.93,19.22 0.02,19.57 -1.9,0.36 -5,-7.84 -6.92,-18.3 -1.9,-10.46 -1.92,-19.22 0,-19.57 1.9,-0.35 5,7.85 6.9,18.3z" fill-opacity="0.81" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_4" />
-    <path fill="url(#gradient_1)" d="M203.112,213.098c-42.483,42.483 -105.168,48.67 -140.014,13.824 -34.839,-34.839 -28.652,-97.524 13.824,-140 42.469,-42.469 105.154,-48.656 140,-13.81 34.86,34.86 28.666,97.538 -13.81,140.014z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_5" />
-    <path fill="#fff" d="M89.13,177.36c-7.2,11.7 -20.88,16.35 -30.57,10.4 -9.7,-5.97 -11.7,-20.28 -4.5,-31.98 7.18,-11.7 20.87,-16.35 30.56,-10.4 9.7,5.97 11.7,20.3 4.5,31.98zM96.34,213.43c-2.7,4.4 -8.85,5.53 -13.73,2.53 -4.87,-3 -6.63,-9 -3.92,-13.4 2.7,-4.4 8.85,-5.53 13.73,-2.53 4.9,3 6.65,9 3.94,13.4z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_6" />
-    <path fill="#f2dbbb" d="M512,768c0,141.38 -114.62,256 -256,256S0,909.38 0,768s114.62,-256 256,-256 256,114.62 256,256z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_7" />
-    <path fill="url(#gradient_2)" d="M505.53,768c0,138.07 -111.93,250 -250,250s-250,-111.93 -250,-250 111.93,-250 250,-250 250,111.93 250,250z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_8" />
-    <path fill="url(#gradient_3)" d="M203.112,725.098c-42.483,42.483 -105.168,48.67 -140.014,13.824 -34.839,-34.839 -28.652,-97.524 13.824,-140 42.469,-42.469 105.154,-48.656 140,-13.81 34.86,34.86 28.666,97.538 -13.81,140.014z" stroke="#000" stroke-opacity="0" stroke-width="2" id="path_9" />
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="fireGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF6B35" />
+      <stop offset="100%" stop-color="#C92D39" />
+    </radialGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#fireGrad)" />
+  <!-- Flame shape -->
+  <path d="M 64 100 Q 50 80 50 60 Q 50 50 55 45 Q 50 40 52 30 Q 60 35 64 40 Q 68 35 76 30 Q 78 40 73 45 Q 78 50 78 60 Q 78 80 64 100 Z" fill="#FFD15C" />
+  <path d="M 64 90 Q 55 75 55 60 Q 55 55 58 52 Q 55 50 56 45 Q 61 48 64 50 Q 67 48 72 45 Q 73 50 70 52 Q 73 55 73 60 Q 73 75 64 90 Z" fill="#FF6B35" />
 </svg>
