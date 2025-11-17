@@ -154,14 +154,14 @@
           multipliers: [1.33, 1.33, 1.33, 1.33, 1.33]
           targets: [Enemy]
 
-- id: card_13_leafbro
-  name: Leafbro
-  description: A leaf-covered bro
+- id: card_13_leafmane
+  name: Leafmane
+  description: Entity covered in sharp leaves
   rank: 2
-  attack: 7
-  hp: 7
+  attack: 9
+  hp: 9
   elements: [Grass]
-  imagePath: /assets/cards/card_13_leafbro.png
+  imagePath: /assets/cards/card_13_leafmane.png
   leaderPassive: null
 
 - id: card_14_rootold
@@ -172,4 +172,24 @@
   hp: 25
   elements: [Grass, Water]
   imagePath: /assets/cards/card_14_rootold.png
+  leaderPassive: null
+
+- id: card_15_firebro
+  name: Firebro
+  description: A fiery bro
+  rank: 2
+  attack: 12
+  hp: 10
+  elements: [Fire]
+  imagePath: /assets/cards/card_15_firebro.png
+  leaderPassive: null
+
+- id: card_16_coreguard
+  name: Coreguard
+  description: A guardian of the core
+  rank: 3
+  attack: 26
+  hp: 22
+  elements: [Fire, Dark]
+  imagePath: /assets/cards/card_16_coreguard.png
   leaderPassive: null
