@@ -153,3 +153,23 @@
           elements: [Fire, Water, Grass, Light, Dark]
           multipliers: [1.33, 1.33, 1.33, 1.33, 1.33]
           targets: [Enemy]
+
+- id: card_13_leafbro
+  name: Leafbro
+  description: A leaf-covered bro
+  rank: 2
+  attack: 7
+  hp: 7
+  elements: [Grass]
+  imagePath: /assets/cards/card_13_leafbro.png
+  leaderPassive: null
+
+- id: card_14_rootold
+  name: Rootold
+  description: An awakened root system
+  rank: 3
+  attack: 20
+  hp: 25
+  elements: [Grass, Water]
+  imagePath: /assets/cards/card_14_rootold.png
+  leaderPassive: null
