@@ -193,3 +193,13 @@
   elements: [Fire, Dark]
   imagePath: /assets/cards/card_16_coreguard.png
   leaderPassive: null
+
+- id: card_17_rimescale
+  name: Rimescale
+  description: Its fire burns cold
+  rank: 3
+  attack: 30
+  hp: 35
+  elements: [Water, Dark, Fire]
+  imagePath: /assets/cards/card_17_rimescale.png
+  leaderPassive: null
