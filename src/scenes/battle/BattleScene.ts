@@ -36,6 +36,16 @@ export class BattleScene extends Scene {
   private grid: (Element | null)[][] = []; // 5x5 grid of elements
   private readonly gridCols = 5;
   private readonly gridRows = 5;
+  private dragState: {
+    isDragging: boolean;
+    startRow: number;
+    startCol: number;
+    currentRow: number;
+    currentCol: number;
+    draggedElement: Element | null;
+    mouseX: number;
+    mouseY: number;
+  } | null = null;
 
   constructor(private worldId: string, private stageId: string, onBackToWorld?: () => void) {
     super();
@@ -285,16 +295,42 @@ export class BattleScene extends Scene {
         ctx.strokeStyle = "#2b2f3a";
         ctx.strokeRect(cellX + 0.5, cellY + 0.5, cellSize - 1, cellSize - 1);
 
-        // Draw element icon if tile has an element
-        const element = this.grid[row]?.[col];
-        if (element) {
-          const iconPath = elementIconPath(element);
-          const iconSize = cellSize * 1.0; // Icon takes up 100% of cell
-          const iconX = cellX + (cellSize - iconSize) / 2;
-          const iconY = cellY + (cellSize - iconSize) / 2;
-          this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+        // Skip drawing element at the current position if dragging (empty space follows the dragged element)
+        const isEmptySpace =
+          this.dragState?.isDragging && this.dragState.currentRow === row && this.dragState.currentCol === col;
+
+        // Draw element icon if tile has an element and it's not the empty space
+        if (!isEmptySpace) {
+          const element = this.grid[row]?.[col];
+          if (element) {
+            const iconPath = elementIconPath(element);
+            const iconSize = cellSize * 1.0; // Icon takes up 100% of cell
+            const iconX = cellX + (cellSize - iconSize) / 2;
+            const iconY = cellY + (cellSize - iconSize) / 2;
+            this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+          }
         }
       }
+    }
+
+    // Draw dragged element icon above the grid with transparency
+    if (this.dragState?.isDragging && this.dragState.draggedElement) {
+      const gridArea = BattleLayout.grid;
+      const cellGap = 6;
+      const cellSize = Math.min(
+        (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
+        (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+      );
+
+      // Draw only the icon at mouse position with transparency
+      ctx.save();
+      ctx.globalAlpha = 0.7; // 70% opacity
+      const iconPath = elementIconPath(this.dragState.draggedElement);
+      const iconSize = cellSize * 1.0;
+      const iconX = this.dragState.mouseX - iconSize / 2;
+      const iconY = this.dragState.mouseY - iconSize / 2;
+      this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+      ctx.restore();
     }
 
     // Draw turn indicator
@@ -398,12 +434,113 @@ export class BattleScene extends Scene {
         }
         return;
       }
+    }
 
-      // TODO: Handle match3 grid clicks
+    if (e.type === "scene-mousedown") {
+      const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
+
+      // Don't start dragging if clicking on UI elements
+      const buttonRegions = getTopBarButtonRegions(CanvasSize.width);
+      if (this.pointInRect(x, y, buttonRegions.save) || this.pointInRect(x, y, buttonRegions.load)) {
+        return;
+      }
+      if (this.retreatButtonRegion && this.pointInRect(x, y, this.retreatButtonRegion)) {
+        return;
+      }
+
+      // Check if clicking on grid
+      const gridCell = this.getGridCellAt(x, y);
+      if (gridCell && this.isPlayerTurn) {
+        this.dragState = {
+          isDragging: true,
+          startRow: gridCell.row,
+          startCol: gridCell.col,
+          currentRow: gridCell.row,
+          currentCol: gridCell.col,
+          draggedElement: this.grid[gridCell.row][gridCell.col],
+          mouseX: x,
+          mouseY: y,
+        };
+      }
+    }
+
+    if (e.type === "scene-mousemove") {
+      if (this.dragState?.isDragging) {
+        const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
+
+        // Update mouse position for drawing dragged tile
+        this.dragState.mouseX = x;
+        this.dragState.mouseY = y;
+
+        const gridCell = this.getGridCellAt(x, y);
+
+        if (gridCell) {
+          // Check if we've moved to a different cell
+          if (gridCell.row !== this.dragState.currentRow || gridCell.col !== this.dragState.currentCol) {
+            // Swap the tile at the new position with the empty space at current position
+            // The empty space follows the dragged element along the path
+            const temp = this.grid[this.dragState.currentRow][this.dragState.currentCol];
+            this.grid[this.dragState.currentRow][this.dragState.currentCol] = this.grid[gridCell.row][gridCell.col];
+            this.grid[gridCell.row][gridCell.col] = temp;
+
+            // Update current position (empty space moves to the new cell)
+            this.dragState.currentRow = gridCell.row;
+            this.dragState.currentCol = gridCell.col;
+          }
+        }
+      }
+    }
+
+    if (e.type === "scene-mouseup") {
+      if (this.dragState?.isDragging) {
+        // Move complete
+        this.dragState = null;
+        // TODO: Check for matches and process the move
+      }
     }
   }
 
   private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
     return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  }
+
+  private getGridCellAt(x: number, y: number): { row: number; col: number } | null {
+    const gridArea = BattleLayout.grid;
+    const cellGap = 6;
+    const cellSize = Math.min(
+      (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+    );
+
+    const totalGridWidth = this.gridCols * cellSize + (this.gridCols - 1) * cellGap;
+    const totalGridHeight = this.gridRows * cellSize + (this.gridRows - 1) * cellGap;
+    const gridOffsetX = (gridArea.w - totalGridWidth) / 2;
+    const gridOffsetY = (gridArea.h - totalGridHeight) / 2;
+
+    const relativeX = x - gridArea.x - gridOffsetX;
+    const relativeY = y - gridArea.y - gridOffsetY;
+
+    // Check if point is within grid bounds
+    if (relativeX < 0 || relativeY < 0 || relativeX > totalGridWidth || relativeY > totalGridHeight) {
+      return null;
+    }
+
+    // Calculate which cell
+    const col = Math.floor(relativeX / (cellSize + cellGap));
+    const row = Math.floor(relativeY / (cellSize + cellGap));
+
+    // Check if within cell bounds (accounting for gaps)
+    const cellX = col * (cellSize + cellGap);
+    const cellY = row * (cellSize + cellGap);
+    if (relativeX < cellX || relativeX > cellX + cellSize || relativeY < cellY || relativeY > cellY + cellSize) {
+      return null;
+    }
+
+    // Clamp to valid grid bounds
+    if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
+      return null;
+    }
+
+    return { row, col };
   }
 }

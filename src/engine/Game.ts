@@ -31,6 +31,42 @@ export class Game {
       e.preventDefault();
     });
 
+    // Forward mouse down events
+    this.canvas.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return; // Only handle left mouse button
+      e.preventDefault(); // Prevent text selection during drag
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      const ev = new CustomEvent("scene-mousedown", { detail: { x, y } });
+      this.currentScene.onEvent(ev);
+    });
+
+    // Forward mouse move events
+    this.canvas.addEventListener("mousemove", (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      const ev = new CustomEvent("scene-mousemove", { detail: { x, y } });
+      this.currentScene.onEvent(ev);
+    });
+
+    // Forward mouse up events (on window to catch even if mouse leaves canvas)
+    window.addEventListener("mouseup", (e) => {
+      if (e.button !== 0) return; // Only handle left mouse button
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      const ev = new CustomEvent("scene-mouseup", { detail: { x, y } });
+      this.currentScene.onEvent(ev);
+    });
+
     // // Throttled mouse move logging for hit region tuning
     // let lastLog = 0;
     // this.canvas.addEventListener("mousemove", (e) => {
