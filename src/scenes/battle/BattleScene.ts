@@ -148,8 +148,8 @@ export class BattleScene extends Scene {
     // Draw enemies (1-4, left to right)
     const enemyArea = BattleLayout.enemies;
     const enemySlotWidth = enemyArea.w / 4; // 4 slots max
-    const enemySize = 64;
-    const enemyGap = 8;
+    const enemySize = 96; // Increased from 64 to 96 for larger enemies
+    const enemyGap = 12; // Increased gap for better spacing
 
     this.enemies.forEach((enemy) => {
       const slotX = enemyArea.x + enemy.position * enemySlotWidth;
@@ -169,9 +169,9 @@ export class BattleScene extends Scene {
 
       // Draw element icon overlay (small, top-right)
       if (enemy.unit.elements && enemy.unit.elements.length > 0) {
-        const elementIconSize = 16;
-        const elementIconX = enemyX + enemySize - elementIconSize - 4;
-        const elementIconY = enemyY + 4;
+        const elementIconSize = 24; // Increased from 16 to 24 for larger enemies
+        const elementIconX = enemyX + enemySize - elementIconSize - 6;
+        const elementIconY = enemyY + 6;
         const iconPath = elementIconPath(enemy.unit.elements[0]);
         this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
       }
@@ -179,15 +179,15 @@ export class BattleScene extends Scene {
       // Boss indicator
       if (enemy.unit.tags.includes("Boss")) {
         ctx.fillStyle = "#ef4444";
-        ctx.font = "10px system-ui";
-        ctx.fillText("BOSS", enemyX, enemyY - 2);
+        ctx.font = "14px system-ui"; // Increased from 10px to 14px
+        ctx.fillText("BOSS", enemyX, enemyY - 4);
       }
     });
 
     // Draw enemy HP bars
     const enemyHpArea = BattleLayout.enemyHp;
     const enemyHpSlotWidth = enemyHpArea.w / 4;
-    const enemyHpBarHeight = 16;
+    const enemyHpBarHeight = 20; // Increased from 16 to 20 for better visibility
     const enemyHpBarWidth = enemyHpSlotWidth - enemyGap * 2;
 
     this.enemies.forEach((enemy) => {
@@ -199,7 +199,7 @@ export class BattleScene extends Scene {
       drawProgressBar(ctx, hpBarX, hpBarY, enemyHpBarWidth, enemyHpBarHeight, hpRatio, "#ef4444", "#23262d");
 
       // Draw HP text
-      ctx.font = "10px system-ui";
+      ctx.font = "12px system-ui"; // Increased from 10px to 12px
       ctx.fillStyle = "#e5e7eb";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -213,10 +213,10 @@ export class BattleScene extends Scene {
     drawProgressBar(ctx, timerArea.x, timerArea.y, timerArea.w, timerArea.h, this.timer, "#3b82f6", "#23262d");
 
     const timerText = "⧗";
-    ctx.font = "12px system-ui";
+    ctx.font = "16px system-ui"; // Increased from 12px to 16px
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(timerText, timerArea.x + timerArea.w + 10, timerArea.y + timerArea.h / 2);
+    ctx.fillText(timerText, timerArea.x + timerArea.w + 12, timerArea.y + timerArea.h / 2);
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
@@ -236,7 +236,7 @@ export class BattleScene extends Scene {
 
     // Draw HP text
     const hpText = `${this.playerHp}/${this.playerMaxHp}`;
-    ctx.font = "12px system-ui";
+    ctx.font = "14px system-ui"; // Increased from 12px to 14px
     ctx.fillStyle = "#e5e7eb";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -246,13 +246,14 @@ export class BattleScene extends Scene {
       playerHpArea.y + playerHpArea.h / 2
     );
     ctx.fillStyle = "#10b981";
-    ctx.fillText("♥", playerHpArea.x + playerHpArea.w + 10, playerHpArea.y + playerHpArea.h / 2);
+    ctx.font = "16px system-ui"; // Increased heart icon size
+    ctx.fillText("♥", playerHpArea.x + playerHpArea.w + 12, playerHpArea.y + playerHpArea.h / 2);
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
     // Draw 5x5 match3 grid
     const gridArea = BattleLayout.grid;
-    const cellGap = 4;
+    const cellGap = 6; // Increased from 4 to 6 for better spacing with larger grid
     const cellSize = Math.min(
       (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
       (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
@@ -298,21 +299,21 @@ export class BattleScene extends Scene {
 
     // Draw turn indicator
     const turnText = this.isPlayerTurn ? "Your Turn" : "Enemy Turn";
-    ctx.font = "14px system-ui";
+    ctx.font = "18px system-ui"; // Increased from 14px to 18px
     ctx.fillStyle = this.isPlayerTurn ? "#3b82f6" : "#ef4444";
-    ctx.fillText(turnText, 20, topBarHeight + 20);
+    ctx.fillText(turnText, 24, topBarHeight + 24); // Adjusted position
 
     // Draw retreat button
-    const retreatButtonX = CanvasSize.width - 100;
-    const retreatButtonY = topBarHeight + 10;
-    const retreatButtonW = 80;
-    const retreatButtonH = 30;
+    const retreatButtonX = CanvasSize.width - 120; // Adjusted for larger button
+    const retreatButtonY = topBarHeight + 12;
+    const retreatButtonW = 100; // Increased from 80 to 100
+    const retreatButtonH = 36; // Increased from 30 to 36
     ctx.fillStyle = "#dc2626";
     ctx.fillRect(retreatButtonX, retreatButtonY, retreatButtonW, retreatButtonH);
     ctx.strokeStyle = "#991b1b";
     ctx.strokeRect(retreatButtonX + 0.5, retreatButtonY + 0.5, retreatButtonW - 1, retreatButtonH - 1);
     ctx.fillStyle = "#ffffff";
-    ctx.font = "14px system-ui";
+    ctx.font = "16px system-ui"; // Increased from 14px to 16px
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("Retreat", retreatButtonX + retreatButtonW / 2, retreatButtonY + retreatButtonH / 2);

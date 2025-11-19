@@ -19,9 +19,10 @@ import { Game } from "./engine/Game";
 import { BaseScene } from "./scenes/base/BaseScene";
 import { WorldScene } from "./scenes/world/WorldScene";
 import { BattleScene } from "./scenes/battle/BattleScene";
+import { CanvasSize } from "./ui/Layouts";
 
 const app = document.getElementById("app")!;
-const canvas = createCanvas(800, 600);
+const canvas = createCanvas(CanvasSize.width, CanvasSize.height);
 app.appendChild(canvas);
 fitCanvasToContainer(canvas, app);
 

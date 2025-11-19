@@ -50,22 +50,22 @@ export class BaseScene extends Scene {
   private worldsRegions: WorldsPanelRegions | null = null;
 
   private shopPoly = [
-    { x: 15, y: 85 },
-    { x: 120, y: 85 },
-    { x: 120, y: 255 },
-    { x: 15, y: 255 },
+    { x: 24, y: 102 },
+    { x: 192, y: 102 },
+    { x: 192, y: 306 },
+    { x: 24, y: 306 },
   ];
   private armoryPoly = [
-    { x: 555, y: 85 },
-    { x: 755, y: 85 },
-    { x: 755, y: 255 },
-    { x: 555, y: 255 },
+    { x: 888, y: 102 },
+    { x: 1208, y: 102 },
+    { x: 1208, y: 306 },
+    { x: 888, y: 306 },
   ];
   private worldsPoly = [
-    { x: 310, y: 520 },
-    { x: 500, y: 520 },
-    { x: 500, y: 585 },
-    { x: 310, y: 585 },
+    { x: 496, y: 624 },
+    { x: 800, y: 624 },
+    { x: 800, y: 702 },
+    { x: 496, y: 702 },
   ];
 
   async init() {
@@ -164,12 +164,15 @@ export class BaseScene extends Scene {
 
       // Handle wheel events for gallery scrolling
       if (this.activePopup === "armory") {
-        const px = 140,
-          py = 100,
-          pw = 520,
-          ph = 380;
-        const galleryY = py + 44 + 150; // Gallery starts at ty + 150
-        const galleryHeight = ph - 150 - 44; // Available height for gallery
+        const px = 224,
+          py = 120,
+          pw = 832,
+          ph = 456;
+        const ty = py + 44; // Text area Y
+        const loadoutHeight = 140; // Loadout section height
+        const galleryStartY = ty + loadoutHeight + 50; // Gallery starts after loadout + spacing
+        const galleryY = galleryStartY + 5; // Gallery content Y (after "Gallery" text)
+        const galleryHeight = ph - (galleryY - py) - 8; // Available height for gallery (minus bottom margin)
 
         // Check if mouse is over gallery area
         if (x >= px && x <= px + pw && y >= galleryY && y <= galleryY + galleryHeight) {
@@ -189,10 +192,10 @@ export class BaseScene extends Scene {
 
       // Handle clicks inside popup
       if (this.activePopup) {
-        const px = 140,
-          py = 100,
-          pw = 520,
-          ph = 380;
+        const px = 224,
+          py = 120,
+          pw = 832,
+          ph = 456;
 
         // Handle shop panel clicks
         if (this.activePopup === "shop" && this.shopRegions) {
@@ -311,10 +314,10 @@ export class BaseScene extends Scene {
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
     // Modal panel
-    const px = 140,
-      py = 100,
-      pw = 520,
-      ph = 380;
+    const px = 224,
+      py = 120,
+      pw = 832,
+      ph = 456;
     drawPanel(ctx, px, py, pw, ph, kind.charAt(0).toUpperCase() + kind.slice(1));
     const tx = px + 16,
       ty = py + 44;

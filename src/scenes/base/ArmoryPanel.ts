@@ -34,9 +34,10 @@ export function renderArmoryPanel(
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
   drawText(ctx, "Loadout", x, y + 5);
-  const loadoutRegions = renderLoadout(ctx, x, y + 10, width, 100, cards, loadout, drawIcon);
+  const loadoutHeight = 140; // Increased from 100 to use more vertical space
+  const loadoutRegions = renderLoadout(ctx, x, y + 10, width, loadoutHeight, cards, loadout, drawIcon);
 
-  const galleryStartY = y + 185;
+  const galleryStartY = y + loadoutHeight + 120; // Better spacing between loadout and gallery
   drawText(ctx, "Gallery", x, galleryStartY);
   const galleryY = galleryStartY + 5;
 
@@ -160,7 +161,7 @@ function renderLoadout(
     // Draw leader ability description if leader is set and has ability
     if (hasLeaderAbility && leaderCard && Array.isArray(leaderCard.leaderPassive)) {
       const leaderPassive = leaderCard.leaderPassive;
-      const abilityY = y + 10 + 100 + 8; // Below loadout + gap
+      const abilityY = y + 10 + height + 8; // Below loadout + gap (use height parameter)
       ctx.font = "12px system-ui";
       ctx.fillStyle = "#9aa3b2";
       ctx.textAlign = "left";
@@ -204,7 +205,8 @@ function renderGallery(
     enabled: boolean;
   }>;
 } {
-  const cols = 5;
+  // Increased columns from 5 to 8 to better use the wider canvas (832px panel width)
+  const cols = 8;
   const cellGap = 8;
   const gridMarginX = 16; // Horizontal margins on left and right
   const gridMarginY = 8; // Bottom margin
