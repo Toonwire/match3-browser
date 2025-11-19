@@ -315,6 +315,9 @@ export class BattleScene extends Scene {
 
     // Draw dragged element icon above the grid with transparency
     if (this.dragState?.isDragging && this.dragState.draggedElement) {
+      const { clampedX, clampedY } = this.clampToGridBounds(this.dragState.mouseX, this.dragState.mouseY);
+
+      // Calculate cell size for icon
       const gridArea = BattleLayout.grid;
       const cellGap = 6;
       const cellSize = Math.min(
@@ -322,13 +325,13 @@ export class BattleScene extends Scene {
         (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
       );
 
-      // Draw only the icon at mouse position with transparency
+      // Draw only the icon at clamped position with transparency
       ctx.save();
       ctx.globalAlpha = 0.7; // 70% opacity
       const iconPath = elementIconPath(this.dragState.draggedElement);
       const iconSize = cellSize * 1.0;
-      const iconX = this.dragState.mouseX - iconSize / 2;
-      const iconY = this.dragState.mouseY - iconSize / 2;
+      const iconX = clampedX - iconSize / 2;
+      const iconY = clampedY - iconSize / 2;
       this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
       ctx.restore();
     }
@@ -472,7 +475,10 @@ export class BattleScene extends Scene {
         this.dragState.mouseX = x;
         this.dragState.mouseY = y;
 
-        const gridCell = this.getGridCellAt(x, y);
+        // Clamp mouse position to grid boundaries
+        const { clampedX, clampedY } = this.clampToGridBounds(x, y);
+
+        const gridCell = this.getGridCellAt(clampedX, clampedY);
 
         if (gridCell) {
           // Check if we've moved to a different cell
@@ -502,6 +508,32 @@ export class BattleScene extends Scene {
 
   private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
     return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  }
+
+  private clampToGridBounds(x: number, y: number): { clampedX: number; clampedY: number } {
+    const gridArea = BattleLayout.grid;
+    const cellGap = 6;
+    const cellSize = Math.min(
+      (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+    );
+
+    // Calculate grid boundaries
+    const totalGridWidth = this.gridCols * cellSize + (this.gridCols - 1) * cellGap;
+    const totalGridHeight = this.gridRows * cellSize + (this.gridRows - 1) * cellGap;
+    const gridOffsetX = (gridArea.w - totalGridWidth) / 2;
+    const gridOffsetY = (gridArea.h - totalGridHeight) / 2;
+
+    const gridLeft = gridArea.x + gridOffsetX;
+    const gridRight = gridLeft + totalGridWidth;
+    const gridTop = gridArea.y + gridOffsetY;
+    const gridBottom = gridTop + totalGridHeight;
+
+    // Clamp coordinates to grid boundaries
+    const clampedX = Math.max(gridLeft, Math.min(gridRight, x));
+    const clampedY = Math.max(gridTop, Math.min(gridBottom, y));
+
+    return { clampedX, clampedY };
   }
 
   private getGridCellAt(x: number, y: number): { row: number; col: number } | null {
