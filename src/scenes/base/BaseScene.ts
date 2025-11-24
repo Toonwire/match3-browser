@@ -77,7 +77,7 @@ export class BaseScene extends Scene {
       this.shop = shops.find((shop) => shop.id === "shop_01_base");
       this.npcs = await loadYaml<NPC[]>("/config/npcs.yaml");
       const bg = new Image();
-      bg.src = "/assets/backgrounds/base_background.png";
+      bg.src = "/assets/backgrounds/base_background_v4.png";
       await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 
