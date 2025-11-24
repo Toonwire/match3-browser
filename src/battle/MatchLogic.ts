@@ -10,16 +10,10 @@ export interface Match {
   shape: "line" | "L" | "T";
 }
 
-export function cloneGrid(grid: Cell[][]): Cell[][] {
-  return grid.map((row) => row.slice());
-}
-
 export function findMatches(grid: Cell[][]): Match[] {
   const width = grid[0]?.length ?? 0;
   const height = grid.length;
-  const visited = Array.from({ length: height }, () =>
-    Array(width).fill(false),
-  );
+  const visited = Array.from({ length: height }, () => Array(width).fill(false));
   const matches: Match[] = [];
 
   // horizontal
@@ -85,10 +79,7 @@ export function findMatches(grid: Cell[][]): Match[] {
   return [];
 }
 
-function overlaps(
-  a: MatchCell[] | undefined,
-  b: MatchCell[] | undefined,
-): boolean {
+function overlaps(a: MatchCell[] | undefined, b: MatchCell[] | undefined): boolean {
   if (!a || !b) return false;
   const set = new Set(a.map((c) => `${c.x},${c.y}`));
   return b.some((c) => set.has(`${c.x},${c.y}`));

@@ -1,3 +1,4 @@
+import { findMatches } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
 import type { Card, Element, StageDef, Unit, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
@@ -501,7 +502,16 @@ export class BattleScene extends Scene {
       if (this.dragState?.isDragging) {
         // Move complete
         this.dragState = null;
-        // TODO: Check for matches and process the move
+
+        const convertedGrid: string[][] = this.grid.map((row) => row.map((cell) => cell || ""));
+        const matches = findMatches(convertedGrid);
+        if (matches.length > 0) {
+          console.log(`Found ${matches.length} match(es)`, matches);
+          // TODO: Process matches (clear tiles, calculate damage, cascade, etc.)
+        } else {
+          console.log("No matches found - move invalid");
+          // TODO: Revert the move if no matches found
+        }
       }
     }
   }
