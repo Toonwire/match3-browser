@@ -1,3 +1,4 @@
+import { applyDamageToEnemies, computeDamageFromMatches } from "../../battle/Damage";
 import { findMatches } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
 import type { Card, Element, StageDef, Unit, WorldDef } from "../../data/types";
@@ -7,7 +8,7 @@ import { elementIconPath } from "../../ui/ElementIcons";
 import { BattleLayout, CanvasSize } from "../../ui/Layouts";
 import { drawPanel, drawProgressBar, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
 
-interface BattleEnemy {
+interface BattleUnit {
   unit: Unit;
   currentHp: number;
   maxHp: number;
@@ -22,7 +23,7 @@ export class BattleScene extends Scene {
   private unitsMap = new Map<string, Unit>();
   private iconCache = new Map<string, HTMLImageElement>();
   private state: GameState = GameState.load();
-  private enemies: BattleEnemy[] = [];
+  private enemies: BattleUnit[] = [];
   private playerHp: number = 100;
   private playerMaxHp: number = 100;
   private timer: number = 1.0; // 0.0 to 1.0
@@ -86,7 +87,7 @@ export class BattleScene extends Scene {
             position: stageUnit.position,
           };
         })
-        .filter((e): e is BattleEnemy => e !== null)
+        .filter((e): e is BattleUnit => e !== null)
         .sort((a, b) => a.position - b.position); // Sort by position
 
       // Initialize player HP based on loadout (simplified for now)
@@ -507,10 +508,17 @@ export class BattleScene extends Scene {
         const matches = findMatches(convertedGrid);
         if (matches.length > 0) {
           console.log(`Found ${matches.length} match(es)`, matches);
-          // TODO: Process matches (clear tiles, calculate damage, cascade, etc.)
-        } else {
-          console.log("No matches found - move invalid");
-          // TODO: Revert the move if no matches found
+
+          // Calculate damage from matches
+          const damageInstances = computeDamageFromMatches(matches, this.state.loadout, this.cards);
+
+          // Apply damage to enemies
+          if (damageInstances.length > 0) {
+            this.enemies = applyDamageToEnemies(damageInstances, this.enemies);
+            console.log("Applied damage to enemies", damageInstances);
+          }
+
+          // TODO: Clear matched tiles, cascade, etc.
         }
       }
     }
