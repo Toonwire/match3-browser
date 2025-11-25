@@ -308,37 +308,6 @@ export class BattleScene extends Scene {
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
-    // Draw player HP bar
-    const playerHpArea = BattleLayout.playerHp;
-    const playerHpRatio = this.playerHp / this.playerMaxHp;
-    drawProgressBar(
-      ctx,
-      playerHpArea.x,
-      playerHpArea.y,
-      playerHpArea.w,
-      playerHpArea.h,
-      playerHpRatio,
-      "#10b981",
-      "#23262d"
-    );
-
-    // Draw HP text
-    const hpText = `${this.playerHp}/${this.playerMaxHp}`;
-    ctx.font = "14px system-ui"; // Increased from 12px to 14px
-    ctx.fillStyle = "#e5e7eb";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(
-      hpText,
-      playerHpArea.x + playerHpArea.w - ctx.measureText(hpText).width,
-      playerHpArea.y + playerHpArea.h / 2
-    );
-    ctx.fillStyle = "#10b981";
-    ctx.font = "16px system-ui"; // Increased heart icon size
-    ctx.fillText("♥", playerHpArea.x + playerHpArea.w + 12, playerHpArea.y + playerHpArea.h / 2);
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-
     // Draw 5x5 match3 grid
     const gridArea = BattleLayout.grid;
     const cellGap = 6; // Increased from 4 to 6 for better spacing with larger grid
