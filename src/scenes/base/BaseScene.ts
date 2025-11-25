@@ -3,7 +3,7 @@ import type { Card, Item, NPC, Shop, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
-import { CanvasSize } from "../../ui/Layouts";
+import { BaseLayout, CanvasSize } from "../../ui/Layouts";
 import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
 import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
@@ -50,22 +50,22 @@ export class BaseScene extends Scene {
   private worldsRegions: WorldsPanelRegions | null = null;
 
   private shopPoly = [
-    { x: 24, y: 102 },
-    { x: 192, y: 102 },
-    { x: 192, y: 306 },
-    { x: 24, y: 306 },
+    { x: BaseLayout.shop.x, y: BaseLayout.shop.y },
+    { x: BaseLayout.shop.x + BaseLayout.shop.w, y: BaseLayout.shop.y },
+    { x: BaseLayout.shop.x + BaseLayout.shop.w, y: BaseLayout.shop.y + BaseLayout.shop.h },
+    { x: BaseLayout.shop.x, y: BaseLayout.shop.y + BaseLayout.shop.h },
   ];
   private armoryPoly = [
-    { x: 888, y: 102 },
-    { x: 1208, y: 102 },
-    { x: 1208, y: 306 },
-    { x: 888, y: 306 },
+    { x: BaseLayout.armory.x, y: BaseLayout.armory.y },
+    { x: BaseLayout.armory.x + BaseLayout.armory.w, y: BaseLayout.armory.y },
+    { x: BaseLayout.armory.x + BaseLayout.armory.w, y: BaseLayout.armory.y + BaseLayout.armory.h },
+    { x: BaseLayout.armory.x, y: BaseLayout.armory.y + BaseLayout.armory.h },
   ];
   private worldsPoly = [
-    { x: 496, y: 624 },
-    { x: 800, y: 624 },
-    { x: 800, y: 702 },
-    { x: 496, y: 702 },
+    { x: BaseLayout.worlds.x, y: BaseLayout.worlds.y },
+    { x: BaseLayout.worlds.x + BaseLayout.worlds.w, y: BaseLayout.worlds.y },
+    { x: BaseLayout.worlds.x + BaseLayout.worlds.w, y: BaseLayout.worlds.y + BaseLayout.worlds.h },
+    { x: BaseLayout.worlds.x, y: BaseLayout.worlds.y + BaseLayout.worlds.h },
   ];
 
   async init() {
@@ -77,7 +77,7 @@ export class BaseScene extends Scene {
       this.shop = shops.find((shop) => shop.id === "shop_01_base");
       this.npcs = await loadYaml<NPC[]>("/config/npcs.yaml");
       const bg = new Image();
-      bg.src = "/assets/backgrounds/base_background.png";
+      bg.src = "/assets/backgrounds/base_background_v5.png";
       await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 

@@ -9,7 +9,7 @@ export const BattleLayout = {
 };
 
 export const BaseLayout = {
-  shop: { x: 64, y: 48, w: 512, h: 264 },
-  armory: { x: 704, y: 48, w: 512, h: 264 },
-  worlds: { x: 192, y: 360, w: 896, h: 288 },
+  shop: { x: 315, y: 120, w: 295, h: 264 },
+  armory: { x: 645, y: 120, w: 255, h: 250 },
+  worlds: { x: 500, y: 440, w: 215, h: 240 },
 };
