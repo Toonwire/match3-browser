@@ -157,6 +157,82 @@ export class BattleScene extends Scene {
 
     const topBarHeight = 36;
 
+    // Draw player loadout units (leader + members, left to right)
+    const playerUnitArea = BattleLayout.playerUnits;
+    const playerUnitSlotWidth = playerUnitArea.w / 4; // 4 slots: leader + 3 members
+    const playerUnitSize = 96;
+    const playerUnitGap = 12;
+
+    const loadout = this.state.loadout;
+    const loadoutCardIds = [loadout.leader, ...loadout.members].filter(Boolean);
+    const loadoutCards = loadoutCardIds
+      .map((id) => this.cards.find((c) => c.id === id))
+      .filter((card): card is Card => card !== undefined);
+
+    loadoutCards.forEach((card, index) => {
+      const slotX = playerUnitArea.x + index * playerUnitSlotWidth;
+      const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
+      const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
+
+      // Draw card background
+      ctx.fillStyle = index === 0 ? "#3b82f6" : "#23262d"; // Leader has blue background
+      ctx.fillRect(unitX, unitY, playerUnitSize, playerUnitSize);
+      ctx.strokeStyle = index === 0 ? "#60a5fa" : "#2b2f3a";
+      ctx.strokeRect(unitX + 0.5, unitY + 0.5, playerUnitSize - 1, playerUnitSize - 1);
+
+      // Draw card image
+      if (card.imagePath) {
+        this.drawIcon(ctx, card.imagePath, unitX, unitY, playerUnitSize, playerUnitSize);
+      }
+
+      // Draw element icon overlay (small, top-right)
+      if (card.elements && card.elements.length > 0) {
+        const elementIconSize = 24;
+        const elementIconX = unitX + playerUnitSize - elementIconSize - 6;
+        const elementIconY = unitY + 6;
+        const iconPath = elementIconPath(card.elements[0]);
+        this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
+      }
+
+      // Draw "Leader" text above leader slot
+      if (index === 0) {
+        ctx.fillStyle = "#9aa3b2";
+        ctx.font = "12px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText("Leader", unitX + playerUnitSize / 2, unitY - 12);
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+      }
+    });
+
+    // Draw player unit HP bars
+    const playerUnitHpArea = BattleLayout.playerUnitHp;
+    const playerUnitHpSlotWidth = playerUnitHpArea.w / 4;
+    const playerUnitHpBarHeight = 20;
+    const playerUnitHpBarWidth = playerUnitHpSlotWidth - playerUnitGap * 2;
+
+    loadoutCards.forEach((card, index) => {
+      const slotX = playerUnitHpArea.x + index * playerUnitHpSlotWidth;
+      const hpBarX = slotX + playerUnitGap;
+      const hpBarY = playerUnitHpArea.y + (playerUnitHpArea.h - playerUnitHpBarHeight) / 2;
+
+      // For now, use full HP (could track individual unit HP later)
+      const hpRatio = 1.0; // card.hp / card.hp
+
+      drawProgressBar(ctx, hpBarX, hpBarY, playerUnitHpBarWidth, playerUnitHpBarHeight, hpRatio, "#10b981", "#23262d");
+
+      // Draw HP text
+      const hpText = `${card.hp}/${card.hp}`;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#e5e7eb";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(hpText, hpBarX + playerUnitHpBarWidth / 2, hpBarY + playerUnitHpBarHeight / 2);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    });
+
     // Draw enemies (1-4, left to right)
     const enemyArea = BattleLayout.enemies;
     const enemySlotWidth = enemyArea.w / 4; // 4 slots max
