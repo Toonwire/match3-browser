@@ -1,5 +1,5 @@
 import { applyDamageToEnemies, computeDamageFromMatches } from "../../battle/Damage";
-import { findMatches } from "../../battle/MatchLogic";
+import { findMatches, type Match } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
 import type { Card, Element, StageDef, Unit, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
@@ -48,6 +48,10 @@ export class BattleScene extends Scene {
     mouseX: number;
     mouseY: number;
   } | null = null;
+  private popAnimations: Map<string, number> = new Map(); // Key: "row,col", Value: progress (0.0 to 1.0)
+  private readonly popAnimationDuration = 0.3; // seconds
+  private isResolvingMatches = false;
+  private pendingMatches: Match[] = [];
 
   constructor(private worldId: string, private stageId: string, onBackToWorld?: () => void) {
     super();
@@ -111,6 +115,31 @@ export class BattleScene extends Scene {
       this.populateGrid();
     } catch (error) {
       console.error("Failed to initialize BattleScene:", error);
+    }
+  }
+
+  update(dt: number): void {
+    // Update pop animations
+    const keysToRemove: string[] = [];
+    for (const [key, progress] of this.popAnimations.entries()) {
+      const newProgress = progress + dt / this.popAnimationDuration;
+      if (newProgress >= 1.0) {
+        keysToRemove.push(key);
+      } else {
+        this.popAnimations.set(key, newProgress);
+      }
+    }
+
+    // Remove completed animations and continue resolving if needed
+    if (keysToRemove.length > 0) {
+      for (const key of keysToRemove) {
+        this.popAnimations.delete(key);
+      }
+
+      // If all animations are done and we're resolving, continue
+      if (this.popAnimations.size === 0 && this.isResolvingMatches && this.pendingMatches.length > 0) {
+        this.continueResolvingMatches();
+      }
     }
   }
 
@@ -350,11 +379,46 @@ export class BattleScene extends Scene {
         if (!isEmptySpace) {
           const element = this.grid[row]?.[col];
           if (element) {
-            const iconPath = elementIconPath(element);
-            const iconSize = cellSize * 1.0; // Icon takes up 100% of cell
-            const iconX = cellX + (cellSize - iconSize) / 2;
-            const iconY = cellY + (cellSize - iconSize) / 2;
-            this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+            const animationKey = `${row},${col}`;
+            const animationProgress = this.popAnimations.get(animationKey);
+
+            if (animationProgress !== undefined) {
+              // Apply pop animation: scale up then fade out
+              ctx.save();
+
+              // Calculate animation values
+              // Scale: goes from 1.0 to 1.3 then back to 1.0
+              const scalePhase =
+                animationProgress < 0.5
+                  ? animationProgress * 2 // 0 to 1
+                  : 1 - (animationProgress - 0.5) * 2; // 1 to 0
+              const scale = 1.0 + scalePhase * 0.3;
+
+              // Opacity: fades out in the second half
+              const opacity = animationProgress < 0.5 ? 1.0 : 1.0 - (animationProgress - 0.5) * 2;
+
+              // Apply transformations
+              const centerX = cellX + cellSize / 2;
+              const centerY = cellY + cellSize / 2;
+              ctx.translate(centerX, centerY);
+              ctx.scale(scale, scale);
+              ctx.globalAlpha = opacity;
+
+              const iconPath = elementIconPath(element);
+              const iconSize = cellSize * 1.0;
+              const iconX = -iconSize / 2;
+              const iconY = -iconSize / 2;
+              this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+
+              ctx.restore();
+            } else {
+              // Normal rendering without animation
+              const iconPath = elementIconPath(element);
+              const iconSize = cellSize * 1.0;
+              const iconX = cellX + (cellSize - iconSize) / 2;
+              const iconY = cellY + (cellSize - iconSize) / 2;
+              this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+            }
           }
         }
       }
@@ -554,19 +618,112 @@ export class BattleScene extends Scene {
         if (matches.length > 0) {
           console.log(`Found ${matches.length} match(es)`, matches);
 
-          // Calculate damage from matches
-          const damageInstances = computeDamageFromMatches(matches, this.state.loadout, this.cards);
-
-          // Apply damage to enemies
-          if (damageInstances.length > 0) {
-            this.enemies = applyDamageToEnemies(damageInstances, this.enemies);
-            console.log("Applied damage to enemies", damageInstances);
-          }
-
-          // TODO: Clear matched tiles, cascade, etc.
+          // Clear matched tiles, cascade, and resolve all matches
+          // This will also calculate and apply damage for all matches including cascades
+          this.resolveAllMatches();
         }
       }
     }
+  }
+
+  private clearMatches(matches: Match[]): number {
+    const toClear = new Set<string>();
+    for (const m of matches) {
+      for (const c of m.cells) {
+        // Match uses x,y but grid uses row,col (y,x)
+        toClear.add(`${c.y},${c.x}`);
+      }
+    }
+    for (const key of toClear) {
+      const [row, col] = key.split(",").map(Number);
+      this.grid[row][col] = null;
+    }
+    return toClear.size;
+  }
+
+  private compactAndRefill() {
+    const elements: Element[] = ["Fire", "Water", "Grass", "Dark", "Light", "Healing"];
+
+    // Drop cells down (cascade)
+    for (let col = 0; col < this.gridCols; col++) {
+      let writeRow = this.gridRows - 1;
+      for (let row = this.gridRows - 1; row >= 0; row--) {
+        const cell = this.grid[row][col];
+        if (cell !== null) {
+          this.grid[writeRow][col] = cell;
+          if (writeRow !== row) {
+            this.grid[row][col] = null;
+          }
+          writeRow--;
+        }
+      }
+      // Refill remaining empty spaces at the top
+      for (let row = writeRow; row >= 0; row--) {
+        const randomIndex = Math.floor(Math.random() * elements.length);
+        this.grid[row][col] = elements[randomIndex];
+      }
+    }
+  }
+
+  private resolveAllMatches() {
+    // Start the resolution process
+    this.isResolvingMatches = true;
+    this.pendingMatches = [];
+    this.startMatchAnimation();
+  }
+
+  private startMatchAnimation() {
+    const convertedGrid: string[][] = this.grid.map((row) => row.map((cell) => cell || ""));
+    const matches = findMatches(convertedGrid);
+
+    if (matches.length === 0) {
+      // No more matches, we're done
+      this.isResolvingMatches = false;
+      this.pendingMatches = [];
+      return;
+    }
+
+    console.log(`Found ${matches.length} match(es)`, matches);
+    this.pendingMatches = matches;
+
+    // Start pop animations for all matched tiles
+    for (const match of matches) {
+      for (const cell of match.cells) {
+        // Match uses x,y but grid uses row,col (y,x)
+        const animationKey = `${cell.y},${cell.x}`;
+        this.popAnimations.set(animationKey, 0.0);
+      }
+    }
+
+    // If there are no animations to wait for (shouldn't happen), continue immediately
+    if (this.popAnimations.size === 0) {
+      this.continueResolvingMatches();
+    }
+  }
+
+  private continueResolvingMatches() {
+    if (this.pendingMatches.length === 0) {
+      this.isResolvingMatches = false;
+      return;
+    }
+
+    const matches = this.pendingMatches;
+
+    // Clear matched tiles
+    this.clearMatches(matches);
+
+    // Cascade and refill
+    this.compactAndRefill();
+
+    // Calculate and apply damage for this cascade
+    const damageInstances = computeDamageFromMatches(matches, this.state.loadout, this.cards);
+    if (damageInstances.length > 0) {
+      this.enemies = applyDamageToEnemies(damageInstances, this.enemies);
+      console.log("Applied damage from cascade", damageInstances);
+    }
+
+    // Check for new matches and start next animation cycle
+    this.startMatchAnimation();
   }
 
   private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
