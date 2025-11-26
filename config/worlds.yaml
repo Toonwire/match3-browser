@@ -83,9 +83,9 @@
   imagePath: /assets/worlds/world_02_red.png
   stages:
     - id: world_02_stage_01
-      name: Ash Plains
-      description: The scorched surface
-      imagePath: /assets/worlds/world_02_red.png
+      name: Ashfall Peaks
+      description: A scorched surface covered in ash and rocks
+      imagePath: /assets/stages/ashfall_peaks.png
       units:
         - unitId: unit_whelp
           position: 0
@@ -93,9 +93,9 @@
           position: 1
       loot: loot_table_common_coins
     - id: world_02_stage_02
-      name: Lava Flows
-      description: Rivers of molten rock
-      imagePath: /assets/worlds/world_02_red.png
+      name: Magma Flow Canyons
+      description: Rivers of molten rock cutting through the landscape
+      imagePath: /assets/stages/magma_flow_canyons.png
       units:
         - unitId: unit_whelp
           position: 0
@@ -105,9 +105,9 @@
           position: 2
       loot: loot_table_common_coins
     - id: world_02_stage_03
-      name: Magma Chambers
-      description: Deep underground
-      imagePath: /assets/worlds/world_02_red.png
+      name: Inferno Basin
+      description: A deep underground basin filled with molten rock
+      imagePath: /assets/stages/inferno_basin.png
       units:
         - unitId: unit_whelp
           position: 0
@@ -123,9 +123,9 @@
           - item: card:card_01_whelp
             chance: 0.1
     - id: world_02_stage_04
-      name: Core
-      description: The heart of fire
-      imagePath: /assets/worlds/world_02_red.png
+      name: Sacred Furnace
+      description: A sacred furnace burning ever bright
+      imagePath: /assets/stages/sacred_furnace.png
       units:
         - unitId: unit_whelp_boss
           position: 1
@@ -145,9 +145,9 @@
   imagePath: /assets/worlds/world_03_blue.png
   stages:
     - id: world_03_stage_01
-      name: Ice Fields
-      description: Frozen wasteland
-      imagePath: /assets/worlds/world_03_blue.png
+      name: Frozen Wastes
+      description: A frozen wasteland covered in snow and ice
+      imagePath: /assets/stages/frozen_wastes.png
       units:
         - unitId: unit_slime
           position: 0
@@ -156,9 +156,9 @@
       loot: loot_table_common_coins
 
     - id: world_03_stage_02
-      name: Glacier
-      description: Massive ice formations
-      imagePath: /assets/worlds/world_03_blue.png
+      name: Ice fields
+      description: Massive ice formations pertruding from the ground
+      imagePath: /assets/stages/ice_fields.png
       units:
         - unitId: unit_slime
           position: 0
@@ -169,9 +169,9 @@
       loot: loot_table_common_coins
 
     - id: world_03_stage_03
-      name: Deep Freeze
-      description: The coldest depths
-      imagePath: /assets/worlds/world_03_blue.png
+      name: Crystal Caves
+      description: Icy hollows filled with crystals
+      imagePath: /assets/stages/crystal_caves.png
       units:
         - unitId: unit_slime
           position: 0
@@ -192,9 +192,9 @@
             chance: 0.05
 
     - id: world_03_stage_04
-      name: Frozen Core
-      description: The absolute zero center
-      imagePath: /assets/worlds/world_03_blue.png
+      name: The Eternal Council
+      description: Where ancients sit forever frozen
+      imagePath: /assets/stages/eternal_council.png
       units:
         - unitId: unit_slime_boss
           position: 1
