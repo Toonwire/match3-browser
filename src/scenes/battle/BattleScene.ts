@@ -7,7 +7,14 @@ import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
 import { BattleLayout, CanvasSize } from "../../ui/Layouts";
-import { drawPanel, drawProgressBar, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
+import {
+  drawPanel,
+  drawProgressBar,
+  drawText,
+  drawTextWithShadow,
+  drawTopBar,
+  getTopBarButtonRegions,
+} from "../../ui/UiPrimitives";
 
 interface BattleUnit {
   unit: Unit;
@@ -351,6 +358,9 @@ export class BattleScene extends Scene {
     // Draw stage background image if available
     if (this.background) {
       ctx.drawImage(this.background, 0, 0, CanvasSize.width, CanvasSize.height);
+      // Add a semi-transparent dark overlay to improve text readability
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
     }
 
     // Top bar
@@ -407,11 +417,9 @@ export class BattleScene extends Scene {
 
       // Draw "Leader" text above leader slot
       if (slotIndex === 0) {
-        ctx.fillStyle = "#9aa3b2";
-        ctx.font = "12px system-ui";
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillText("Leader", unitX + playerUnitSize / 2, unitY - 12);
+        drawTextWithShadow(ctx, "Leader", unitX + playerUnitSize / 2, unitY - 12, 12, "#9aa3b2");
         ctx.textAlign = "left";
         ctx.textBaseline = "alphabetic";
       }
@@ -449,11 +457,16 @@ export class BattleScene extends Scene {
 
       // Draw HP text
       const hpText = `${currentHp}/${maxHp}`;
-      ctx.font = "12px system-ui";
-      ctx.fillStyle = "#e5e7eb";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(hpText, hpBarX + playerUnitHpBarWidth / 2, hpBarY + playerUnitHpBarHeight / 2);
+      drawTextWithShadow(
+        ctx,
+        hpText,
+        hpBarX + playerUnitHpBarWidth / 2,
+        hpBarY + playerUnitHpBarHeight / 2,
+        12,
+        "#e5e7eb"
+      );
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
     }
@@ -491,9 +504,7 @@ export class BattleScene extends Scene {
 
       // Boss indicator
       if (enemy.unit.tags.includes("Boss")) {
-        ctx.fillStyle = "#ef4444";
-        ctx.font = "14px system-ui"; // Increased from 10px to 14px
-        ctx.fillText("BOSS", enemyX, enemyY - 4);
+        drawTextWithShadow(ctx, "BOSS", enemyX, enemyY - 4, 14, "#ef4444");
       }
     });
 
@@ -512,11 +523,16 @@ export class BattleScene extends Scene {
       drawProgressBar(ctx, hpBarX, hpBarY, enemyHpBarWidth, enemyHpBarHeight, hpRatio, "#ef4444", "#23262d");
 
       // Draw HP text
-      ctx.font = "12px system-ui"; // Increased from 10px to 12px
-      ctx.fillStyle = "#e5e7eb";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(`${enemy.currentHp}/${enemy.maxHp}`, hpBarX + enemyHpBarWidth / 2, hpBarY + enemyHpBarHeight / 2);
+      drawTextWithShadow(
+        ctx,
+        `${enemy.currentHp}/${enemy.maxHp}`,
+        hpBarX + enemyHpBarWidth / 2,
+        hpBarY + enemyHpBarHeight / 2,
+        12,
+        "#e5e7eb"
+      );
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
     });
@@ -526,10 +542,9 @@ export class BattleScene extends Scene {
     drawProgressBar(ctx, timerArea.x, timerArea.y, timerArea.w, timerArea.h, this.timer, "#3b82f6", "#23262d");
 
     const timerText = "⧗";
-    ctx.font = "16px system-ui"; // Increased from 12px to 16px
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(timerText, timerArea.x + timerArea.w + 12, timerArea.y + timerArea.h / 2);
+    drawTextWithShadow(ctx, timerText, timerArea.x + timerArea.w + 12, timerArea.y + timerArea.h / 2, 16, "#e5e7eb");
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
@@ -666,9 +681,8 @@ export class BattleScene extends Scene {
 
     // Draw turn indicator
     const turnText = this.isPlayerTurn ? "Your Turn" : "Enemy Turn";
-    ctx.font = "18px system-ui"; // Increased from 14px to 18px
-    ctx.fillStyle = this.isPlayerTurn ? "#3b82f6" : "#ef4444";
-    ctx.fillText(turnText, 24, topBarHeight + 24); // Adjusted position
+    const turnColor = this.isPlayerTurn ? "#3b82f6" : "#ef4444";
+    drawTextWithShadow(ctx, turnText, 24, topBarHeight + 24, 18, turnColor);
 
     // Draw combat log
     this.renderCombatLog(ctx);
@@ -682,11 +696,16 @@ export class BattleScene extends Scene {
     ctx.fillRect(retreatButtonX, retreatButtonY, retreatButtonW, retreatButtonH);
     ctx.strokeStyle = "#991b1b";
     ctx.strokeRect(retreatButtonX + 0.5, retreatButtonY + 0.5, retreatButtonW - 1, retreatButtonH - 1);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "16px system-ui"; // Increased from 14px to 16px
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Retreat", retreatButtonX + retreatButtonW / 2, retreatButtonY + retreatButtonH / 2);
+    drawTextWithShadow(
+      ctx,
+      "Retreat",
+      retreatButtonX + retreatButtonW / 2,
+      retreatButtonY + retreatButtonH / 2,
+      16,
+      "#ffffff"
+    );
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     this.retreatButtonRegion = {

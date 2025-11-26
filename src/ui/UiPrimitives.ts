@@ -26,6 +26,35 @@ export function drawText(
   ctx.fillText(text, x, y);
 }
 
+/**
+ * Draws text with a shadow/outline for better readability over backgrounds
+ */
+export function drawTextWithShadow(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  size = 16,
+  color = "#e5e7eb",
+  shadowColor = "rgba(0, 0, 0, 0.8)"
+) {
+  ctx.font = `${size}px system-ui`;
+  
+  // Draw shadow/outline by drawing the text multiple times with offset
+  ctx.fillStyle = shadowColor;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx !== 0 || dy !== 0) {
+        ctx.fillText(text, x + dx, y + dy);
+      }
+    }
+  }
+  
+  // Draw the actual text on top
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
 export function drawProgressBar(
   ctx: CanvasRenderingContext2D,
   x: number,
