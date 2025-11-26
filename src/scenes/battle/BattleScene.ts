@@ -27,6 +27,8 @@ export class BattleScene extends Scene {
   private playerHp: number = 100;
   private playerMaxHp: number = 100;
   private timer: number = 1.0; // 0.0 to 1.0
+  private readonly dragTimerDuration = 5.0; // seconds
+  private dragTimerRemaining: number = 0.0; // seconds remaining
   private isPlayerTurn: boolean = true;
   private onBackToWorld?: () => void;
   private retreatButtonRegion: {
@@ -124,6 +126,22 @@ export class BattleScene extends Scene {
   }
 
   update(dt: number): void {
+    // Update drag timer
+    if (this.dragState?.isDragging && this.dragTimerRemaining > 0) {
+      this.dragTimerRemaining -= dt;
+      if (this.dragTimerRemaining <= 0) {
+        this.dragTimerRemaining = 0;
+        // Timer expired, complete the move
+        this.completeMove();
+      } else {
+        // Update timer display (0.0 to 1.0)
+        this.timer = this.dragTimerRemaining / this.dragTimerDuration;
+      }
+    } else if (!this.dragState?.isDragging) {
+      // Reset timer to full when not dragging
+      this.timer = 1.0;
+    }
+
     // Update cascade delay timer
     if (this.cascadeDelayTimer > 0) {
       this.cascadeDelayTimer -= dt;
@@ -648,6 +666,9 @@ export class BattleScene extends Scene {
           mouseX: x,
           mouseY: y,
         };
+        // Start the timer when drag begins
+        this.dragTimerRemaining = this.dragTimerDuration;
+        this.timer = 1.0;
       }
     }
 
@@ -684,18 +705,28 @@ export class BattleScene extends Scene {
     if (e.type === "scene-mouseup") {
       if (this.dragState?.isDragging) {
         // Move complete
-        this.dragState = null;
-
-        const convertedGrid: string[][] = this.grid.map((row) => row.map((cell) => cell || ""));
-        const matches = findMatches(convertedGrid);
-        if (matches.length > 0) {
-          console.log(`Found ${matches.length} match(es)`, matches);
-
-          // Clear matched tiles, cascade, and resolve all matches
-          // This will also calculate and apply damage for all matches including cascades
-          this.resolveAllMatches();
-        }
+        this.completeMove();
       }
+    }
+  }
+
+  private completeMove(): void {
+    if (!this.dragState?.isDragging) {
+      return;
+    }
+
+    // Stop dragging
+    this.dragState = null;
+    this.dragTimerRemaining = 0.0;
+
+    const convertedGrid: string[][] = this.grid.map((row) => row.map((cell) => cell || ""));
+    const matches = findMatches(convertedGrid);
+    if (matches.length > 0) {
+      console.log(`Found ${matches.length} match(es)`, matches);
+
+      // Clear matched tiles, cascade, and resolve all matches
+      // This will also calculate and apply damage for all matches including cascades
+      this.resolveAllMatches();
     }
   }
 
