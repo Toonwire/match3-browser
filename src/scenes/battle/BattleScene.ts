@@ -1,7 +1,8 @@
 import { applyDamageToEnemies, computeDamageFromMatches, elementalMultiplier } from "../../battle/Damage";
 import { findMatches, type Match } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
-import type { Card, Element, StageDef, Unit, WorldDef } from "../../data/types";
+import { resolveLootConfig } from "../../data/loot";
+import type { Card, Element, LootEntry, LootTable, StageDef, Unit, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -36,6 +37,7 @@ export class BattleScene extends Scene {
   private stage?: StageDef;
   private world?: WorldDef;
   private cards: Card[] = [];
+  private items: Array<{ id: string; name: string; imagePath?: string }> = [];
   private units: Unit[] = [];
   private unitsMap = new Map<string, Unit>();
   private iconCache = new Map<string, HTMLImageElement>();
@@ -49,7 +51,21 @@ export class BattleScene extends Scene {
   private onBackToWorld?: () => void;
   private onBackToBase?: () => void;
   private isDefeated: boolean = false;
+  private isVictorious: boolean = false;
+  private victoryLoot: Array<{
+    type: "gold" | "card" | "item";
+    id: string;
+    name: string;
+    amount: number;
+    imagePath?: string;
+  }> = [];
   private defeatPanelRegion: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null = null;
+  private victoryPanelRegion: {
     x: number;
     y: number;
     w: number;
@@ -114,8 +130,9 @@ export class BattleScene extends Scene {
         return;
       }
 
-      // Load cards and units
+      // Load cards, items, and units
       this.cards = await loadYaml<Card[]>("/config/cards.yaml");
+      this.items = await loadYaml<Array<{ id: string; name: string; imagePath?: string }>>("/config/items.yaml");
       this.units = await loadYaml<Unit[]>("/config/units.yaml");
       this.unitsMap = new Map(this.units.map((u) => [u.id, u]));
 
@@ -669,6 +686,11 @@ export class BattleScene extends Scene {
     if (this.isDefeated) {
       this.renderDefeatPanel(ctx);
     }
+
+    // Draw victory panel if victorious
+    if (this.isVictorious) {
+      this.renderVictoryPanel(ctx);
+    }
   }
 
   private renderDefeatPanel(ctx: CanvasRenderingContext2D): void {
@@ -700,6 +722,88 @@ export class BattleScene extends Scene {
 
     // Store panel region for click detection
     this.defeatPanelRegion = {
+      x: panelX,
+      y: panelY,
+      w: panelWidth,
+      h: panelHeight,
+    };
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  }
+
+  private renderVictoryPanel(ctx: CanvasRenderingContext2D): void {
+    // Dim background
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
+
+    // Panel dimensions (larger to fit loot)
+    const panelWidth = 500;
+    const panelHeight = Math.max(300, 200 + this.victoryLoot.length * 40);
+    const panelX = (CanvasSize.width - panelWidth) / 2;
+    const panelY = (CanvasSize.height - panelHeight) / 2;
+
+    // Draw panel
+    drawPanel(ctx, panelX, panelY, panelWidth, panelHeight, "Victory");
+
+    // Draw victory message
+    ctx.fillStyle = "#10b981";
+    ctx.font = "24px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Victory!", panelX + panelWidth / 2, panelY + 50);
+
+    // Draw loot section
+    if (this.victoryLoot.length > 0) {
+      ctx.fillStyle = "#9aa3b2";
+      ctx.font = "16px system-ui";
+      ctx.fillText("Loot:", panelX + panelWidth / 2, panelY + 90);
+
+      // Draw each loot item
+      let lootY = panelY + 120;
+      const lootItemHeight = 35;
+      const iconSize = 24;
+      const iconGap = 8;
+
+      for (const loot of this.victoryLoot) {
+        // Draw icon if available
+        if (loot.imagePath) {
+          this.drawIcon(ctx, loot.imagePath, panelX + 30, lootY - iconSize + 2, iconSize, iconSize);
+        }
+
+        // Draw loot text
+        ctx.fillStyle = "#e5e7eb";
+        ctx.font = "14px system-ui";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        const lootText = loot.amount > 0 ? `${loot.name} x${loot.amount}` : loot.name;
+        const textX = panelX + (loot.imagePath ? 30 + iconSize + iconGap : 30);
+        ctx.fillText(lootText, textX, lootY);
+
+        // Draw type indicator
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "12px system-ui";
+        const typeText = loot.type === "gold" ? "Gold" : loot.type === "card" ? "Card" : "Item";
+        ctx.fillText(`(${typeText})`, textX + ctx.measureText(lootText).width + 10, lootY);
+
+        lootY += lootItemHeight;
+      }
+    } else {
+      // No loot message
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "14px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText("No loot received", panelX + panelWidth / 2, panelY + 120);
+    }
+
+    // Draw instruction text at bottom
+    ctx.fillStyle = "#9aa3b2";
+    ctx.font = "14px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("Click to continue", panelX + panelWidth / 2, panelY + panelHeight - 30);
+
+    // Store panel region for click detection
+    this.victoryPanelRegion = {
       x: panelX,
       y: panelY,
       w: panelWidth,
@@ -789,13 +893,21 @@ export class BattleScene extends Scene {
         }
         return;
       }
+
+      // Victory panel (click anywhere on panel to return to world)
+      if (this.isVictorious && this.victoryPanelRegion && this.pointInRect(x, y, this.victoryPanelRegion)) {
+        if (this.onBackToWorld) {
+          this.onBackToWorld();
+        }
+        return;
+      }
     }
 
     if (e.type === "scene-mousedown") {
       const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
 
-      // Don't allow interactions if defeated
-      if (this.isDefeated) {
+      // Don't allow interactions if defeated or victorious
+      if (this.isDefeated || this.isVictorious) {
         return;
       }
 
@@ -1044,6 +1156,8 @@ export class BattleScene extends Scene {
     const damageInstances = computeDamageFromMatches(matches, filteredLoadout, this.cards);
     if (damageInstances.length > 0) {
       this.applyDamageToEnemiesWithLogging(damageInstances);
+      // Check for victory after damage
+      this.checkForVictory();
     }
 
     // Start refill animations (will call findAndStartNextMatch when complete)
@@ -1197,6 +1311,104 @@ export class BattleScene extends Scene {
     this.addCombatLogEntry({ type: "separator", round: this.currentRound });
 
     console.log("Enemy turn complete, switching back to player turn");
+  }
+
+  private checkForVictory(): void {
+    // Check if all enemies are dead
+    const aliveEnemies = this.enemies.filter((e) => e.currentHp > 0);
+    if (aliveEnemies.length === 0 && !this.isVictorious && !this.isDefeated) {
+      this.isVictorious = true;
+      this.rollAndApplyLoot();
+      console.log("Victory! All enemies defeated");
+    }
+  }
+
+  private async rollAndApplyLoot(): Promise<void> {
+    if (!this.stage || !this.stage.loot) {
+      return;
+    }
+
+    // Resolve loot config to loot table
+    const lootTable = await resolveLootConfig(this.stage.loot);
+    if (!lootTable) {
+      return;
+    }
+    console.log(lootTable);
+
+    // Roll loot for each entry
+    const rolledLoot: Array<{
+      type: "gold" | "card" | "item";
+      id: string;
+      name: string;
+      amount: number;
+      imagePath?: string;
+    }> = [];
+
+    for (const entry of lootTable.entries) {
+      if (Math.random() < entry.chance) {
+        // Determine amount
+        let amount = 1;
+        if (entry.amount) {
+          const [min, max] = entry.amount;
+          amount = Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Parse item string (format: "coin", "card:card_id", "item:item_id")
+        if (entry.item === "coin") {
+          rolledLoot.push({
+            type: "gold",
+            id: "coin",
+            name: "Gold",
+            amount,
+            imagePath: "/assets/currencies/coin.png",
+          });
+          // Apply gold to state
+          this.state.currencies.gold += amount;
+        } else if (entry.item.startsWith("card:")) {
+          const cardId = entry.item.substring(5);
+          const card = this.cards.find((c) => c.id === cardId);
+          if (card) {
+            rolledLoot.push({
+              type: "card",
+              id: cardId,
+              name: card.name,
+              amount,
+              imagePath: card.imagePath,
+            });
+            // Apply card to collection
+            this.state.inventory.cardCollection[cardId] = (this.state.inventory.cardCollection[cardId] || 0) + amount;
+          }
+        } else if (entry.item.startsWith("item:")) {
+          const itemId = entry.item.substring(5);
+          const item = this.items.find((i) => i.id === itemId);
+          if (item) {
+            rolledLoot.push({
+              type: "item",
+              id: itemId,
+              name: item.name,
+              amount,
+              imagePath: item.imagePath,
+            });
+            // Apply item to inventory
+            this.state.inventory.items[itemId] = (this.state.inventory.items[itemId] || 0) + amount;
+          }
+        }
+      }
+    }
+
+    // Complete the stage in progression
+    if (this.world && this.stage) {
+      const stageIndex = this.world.stages.findIndex((s) => s.id === this.stage!.id);
+      if (stageIndex >= 0) {
+        this.state.completeStage(this.worldId, stageIndex);
+      }
+    }
+
+    // Save state
+    this.state.save();
+
+    // Store rolled loot for display
+    this.victoryLoot = rolledLoot;
   }
 
   private renderCombatLog(ctx: CanvasRenderingContext2D): void {
