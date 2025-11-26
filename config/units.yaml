@@ -77,7 +77,7 @@
   name: Abyssal Slime
   attack: 6
   hp: 18
-  elements: [Water]
+  elements: [Water, Grass]
   tags: [Enemy, Boss]
   imagePath: /assets/cards/card_06_slimest.png
 
