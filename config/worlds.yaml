@@ -198,6 +198,8 @@
       units:
         - unitId: unit_slime_boss
           position: 1
+        - unitId: unit_rimescale
+          position: 2
       loot:
         entries:
           - item: coin

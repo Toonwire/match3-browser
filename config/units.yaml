@@ -80,3 +80,11 @@
   elements: [Water]
   tags: [Enemy, Boss]
   imagePath: /assets/cards/card_06_slimest.png
+
+- id: unit_rimescale
+  name: Rimescale
+  attack: 30
+  hp: 200
+  elements: [Water, Dark, Fire]
+  tags: [Enemy, Boss]
+  imagePath: /assets/cards/card_17_rimescale.png
