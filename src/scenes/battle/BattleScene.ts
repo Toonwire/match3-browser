@@ -568,7 +568,20 @@ export class BattleScene extends Scene {
     const attackerIconY = centerY - attackerIconSize / 2;
 
     // Draw icon with arrow pointing based on whose turn it is
-    this.drawAttackerIcon(ctx, attackerIconX, attackerIconY, attackerIconSize, this.isPlayerTurn);
+    ctx.fillStyle = "#e5e7eb";
+    ctx.font = `${attackerIconSize}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const text = "⚔";
+    // ctx.fillText(text, attackerIconX + attackerIconSize / 2, attackerIconY + attackerIconSize / 2);
+    drawTextWithShadow(
+      ctx,
+      text,
+      attackerIconX + attackerIconSize / 2,
+      attackerIconY + attackerIconSize / 2,
+      attackerIconSize,
+      "#9aa3b2"
+    );
 
     // Draw timer bar
     const timerArea = BattleLayout.timer;
@@ -925,32 +938,6 @@ export class BattleScene extends Scene {
       const img = this.iconCache.get(path)!;
       this.drawIconWithAspectRatio(ctx, img, x, y, w, h);
     });
-  }
-
-  private drawAttackerIcon(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    size: number,
-    pointingRight: boolean
-  ): void {
-    // Draw sword emoji and arrow
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `${size * 0.6}px system-ui`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    const text = "⚔";
-    ctx.fillText(text, x, y);
-
-    if (pointingRight) {
-      ctx.fillText(">>", x + size / 2, y);
-    } else {
-      ctx.fillText("<<", x - size / 2, y);
-    }
-
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
   }
 
   onEvent(e: Event): void {
