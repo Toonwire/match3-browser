@@ -366,6 +366,29 @@ export class BattleScene extends Scene {
     }
   }
 
+  private drawUnitElementIcons(
+    ctx: CanvasRenderingContext2D,
+    elements: Element[],
+    unitX: number,
+    unitY: number,
+    unitSize: number
+  ) {
+    // Draw element icons
+    if (elements.length > 0) {
+      const elementIconSize = 16;
+      const elementIconGap = 2;
+      const elementIconStartX = unitX + unitSize - elementIconSize - 4;
+      const elementIconStartY = unitY + 4;
+      for (let idx = 0; idx < elements.length; idx++) {
+        const element = elements[idx];
+        const iconPath = elementIconPath(element);
+        const elementIconX = elementIconStartX;
+        const elementIconY = elementIconStartY + idx * (elementIconSize + elementIconGap);
+        this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
+      }
+    }
+  }
+
   render(ctx: CanvasRenderingContext2D): void {
     // Background
     ctx.fillStyle = "#0f1014";
@@ -411,25 +434,13 @@ export class BattleScene extends Scene {
       const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
       const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
 
-      // Draw card background
-      ctx.fillStyle = slotIndex === 0 ? "#3b82f6" : "#23262d"; // Leader has blue background
-      ctx.fillRect(unitX, unitY, playerUnitSize, playerUnitSize);
-      ctx.strokeStyle = slotIndex === 0 ? "#60a5fa" : "#2b2f3a";
-      ctx.strokeRect(unitX + 0.5, unitY + 0.5, playerUnitSize - 1, playerUnitSize - 1);
-
       // Draw card image
       if (card.imagePath) {
         this.drawIcon(ctx, card.imagePath, unitX, unitY, playerUnitSize, playerUnitSize);
       }
 
       // Draw element icon overlay (small, top-right)
-      if (card.elements && card.elements.length > 0) {
-        const elementIconSize = 24;
-        const elementIconX = unitX + playerUnitSize - elementIconSize - 6;
-        const elementIconY = unitY + 6;
-        const iconPath = elementIconPath(card.elements[0]);
-        this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
-      }
+      this.drawUnitElementIcons(ctx, card.elements, unitX, unitY, playerUnitSize);
 
       // Draw "Leader" text above leader slot
       if (slotIndex === 0) {
@@ -510,13 +521,7 @@ export class BattleScene extends Scene {
       }
 
       // Draw element icon overlay (small, top-right)
-      if (enemy.unit.elements && enemy.unit.elements.length > 0) {
-        const elementIconSize = 24; // Increased from 16 to 24 for larger enemies
-        const elementIconX = enemyX + enemySize - elementIconSize - 6;
-        const elementIconY = enemyY + 6;
-        const iconPath = elementIconPath(enemy.unit.elements[0]);
-        this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
-      }
+      this.drawUnitElementIcons(ctx, enemy.unit.elements || [], enemyX, enemyY, enemySize);
 
       // Boss indicator
       if (enemy.unit.tags.includes("Boss")) {
@@ -552,6 +557,18 @@ export class BattleScene extends Scene {
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
     });
+
+    // Draw attacker icon indicator - positioned between player units and enemy units
+    const attackerIconSize = 64;
+    // Calculate center position between player units (ends at x: 576) and enemy area (starts at x: 704)
+    const centerX = (playerUnitArea.x + playerUnitArea.w + enemyArea.x) / 2;
+    const centerY = playerUnitArea.y + playerUnitArea.h / 2;
+    // Position icon so it's centered (drawAttackerIcon centers at x + size/2, y + size/2)
+    const attackerIconX = centerX - attackerIconSize / 2;
+    const attackerIconY = centerY - attackerIconSize / 2;
+
+    // Draw icon with arrow pointing based on whose turn it is
+    this.drawAttackerIcon(ctx, attackerIconX, attackerIconY, attackerIconSize, this.isPlayerTurn);
 
     // Draw timer bar
     const timerArea = BattleLayout.timer;
@@ -908,6 +925,32 @@ export class BattleScene extends Scene {
       const img = this.iconCache.get(path)!;
       this.drawIconWithAspectRatio(ctx, img, x, y, w, h);
     });
+  }
+
+  private drawAttackerIcon(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    size: number,
+    pointingRight: boolean
+  ): void {
+    // Draw sword emoji and arrow
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `${size * 0.6}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const text = "⚔";
+    ctx.fillText(text, x, y);
+
+    if (pointingRight) {
+      ctx.fillText(">>", x + size / 2, y);
+    } else {
+      ctx.fillText("<<", x - size / 2, y);
+    }
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
   }
 
   onEvent(e: Event): void {
