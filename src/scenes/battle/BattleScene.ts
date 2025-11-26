@@ -811,6 +811,11 @@ export class BattleScene extends Scene {
       // Clear matched tiles, cascade, and resolve all matches
       // This will also calculate and apply damage for all matches including cascades
       this.resolveAllMatches();
+    } else {
+      // No matches found, player turn is complete - trigger enemy turn
+      if (this.isPlayerTurn) {
+        this.startEnemyTurn();
+      }
     }
   }
 
