@@ -39,10 +39,12 @@ export interface DamageInstance {
  * @returns Array of damage instances ready to be applied
  */
 export function computeDamageFromMatches(matches: Match[], loadout: Loadout, cards: Card[]): DamageInstance[] {
-  // Tally matches by element
+  // Tally matches by element (skip Healing elements)
   const tally = new Map<Element, { count: number; isAoE: boolean }>();
   for (const m of matches) {
     const el = m.element as Element;
+    // Skip Healing elements - they are handled separately
+    if (el === "Healing") continue;
     const rec = tally.get(el) ?? { count: 0, isAoE: false };
     rec.count += m.cells.length; // Total matched tiles
     rec.isAoE = rec.isAoE || m.shape === "L" || m.shape === "T";
@@ -177,4 +179,84 @@ export function applyDamageToEnemies<T extends { unit: Unit; currentHp: number }
   }
 
   return updatedEnemies;
+}
+
+/**
+ * Represents a healing instance that can be applied to player units.
+ */
+export interface HealingInstance {
+  amount: number; // Healing amount
+  isAoE: boolean; // True if L/T shape match (heals all player units)
+}
+
+/**
+ * Computes healing instances from Healing element matches.
+ * Healing amount = n/3 for line shapes (single target), or n/5 for 'T' and 'L' shapes (aoe)
+ * where n is the number of matched tiles.
+ *
+ * @param matches - Array of matches found in the grid
+ * @returns Array of healing instances ready to be applied
+ */
+export function computeHealingFromMatches(matches: Match[]): HealingInstance[] {
+  const healingInstances: HealingInstance[] = [];
+
+  for (const m of matches) {
+    const el = m.element as Element;
+    if (el !== "Healing") continue;
+
+    const numMatchedTiles = m.cells.length;
+    const isAoE = m.shape === "L" || m.shape === "T";
+
+    const healingAmount = isAoE ? (numMatchedTiles * 2) / 3 : numMatchedTiles;
+
+    if (healingAmount > 0) {
+      healingInstances.push({
+        amount: healingAmount,
+        isAoE,
+      });
+    }
+  }
+
+  return healingInstances;
+}
+
+/**
+ * Applies healing instances to player units.
+ * Single target healing is applied to the rightmost alive player unit.
+ * AoE healing is applied to all alive player units.
+ *
+ * @param healingInstances - Healing instances to apply
+ * @param playerUnits - Array of player units to heal (should be sorted by position, left to right)
+ * @returns Updated player unit HP values (preserves all unit properties)
+ */
+export function applyHealingToPlayerUnits<
+  T extends { unit: Unit; currentHp: number; maxHp: number; position: number }
+>(healingInstances: HealingInstance[], playerUnits: T[]): T[] {
+  const updatedUnits = playerUnits.map((u) => ({ ...u }));
+
+  for (const healing of healingInstances) {
+    if (healing.isAoE) {
+      // AoE: Apply to all alive player units
+      for (const unit of updatedUnits) {
+        if (unit.currentHp > 0) {
+          const hpBefore = unit.currentHp;
+          unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healing.amount);
+        }
+      }
+    } else {
+      // Single target: Apply to rightmost alive player unit
+      const aliveUnits = updatedUnits.filter((u) => u.currentHp > 0);
+      const rightmostAlive =
+        aliveUnits.length > 0
+          ? aliveUnits.reduce((rightmost, current) => (current.position > rightmost.position ? current : rightmost))
+          : null;
+
+      if (rightmostAlive) {
+        const hpBefore = rightmostAlive.currentHp;
+        rightmostAlive.currentHp = Math.min(rightmostAlive.maxHp, rightmostAlive.currentHp + healing.amount);
+      }
+    }
+  }
+
+  return updatedUnits;
 }

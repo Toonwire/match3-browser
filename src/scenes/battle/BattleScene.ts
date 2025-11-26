@@ -1,4 +1,10 @@
-import { applyDamageToEnemies, computeDamageFromMatches, elementalMultiplier } from "../../battle/Damage";
+import {
+  applyDamageToEnemies,
+  computeDamageFromMatches,
+  computeHealingFromMatches,
+  applyHealingToPlayerUnits,
+  elementalMultiplier,
+} from "../../battle/Damage";
 import { findMatches, type Match } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
 import { resolveLootConfig } from "../../data/loot";
@@ -31,6 +37,15 @@ type CombatLogEntry =
       baseDamage: number;
       multiplier: number;
       finalDamage: number;
+      isAoE: boolean;
+      targetHpAfter: number;
+      targetMaxHp: number;
+    }
+  | {
+      type: "healing";
+      source: { name: string; isPlayer: boolean; element?: Element };
+      target: { name: string; isPlayer: boolean; element?: Element };
+      amount: number;
       isAoE: boolean;
       targetHpAfter: number;
       targetMaxHp: number;
@@ -1100,7 +1115,7 @@ export class BattleScene extends Scene {
       this.currentMatchIndex = 0;
       this.cascadeDelayTimer = 0;
 
-      // Apply damage from all accumulated matches
+      // Apply damage and healing from all accumulated matches
       if (this.accumulatedMatches.length > 0) {
         // Only include cards from alive player units
         const alivePlayerUnits = this.playerUnits.filter((unit) => unit.currentHp > 0);
@@ -1117,11 +1132,18 @@ export class BattleScene extends Scene {
           ],
         };
 
+        // Compute and apply damage
         const damageInstances = computeDamageFromMatches(this.accumulatedMatches, filteredLoadout, this.cards);
         if (damageInstances.length > 0) {
           this.applyDamageToEnemiesWithLogging(damageInstances);
           // Check for victory after damage
           this.checkForVictory();
+        }
+
+        // Compute and apply healing
+        const healingInstances = computeHealingFromMatches(this.accumulatedMatches);
+        if (healingInstances.length > 0) {
+          this.applyHealingToPlayerUnitsWithLogging(healingInstances);
         }
       }
 
@@ -1304,6 +1326,77 @@ export class BattleScene extends Scene {
             targetHpAfter: leftmostAlive.currentHp,
             targetMaxHp: leftmostAlive.maxHp,
           });
+        }
+      }
+    }
+  }
+
+  private applyHealingToPlayerUnitsWithLogging(healingInstances: ReturnType<typeof computeHealingFromMatches>): void {
+    // Apply healing similar to applyHealingToPlayerUnits but with logging
+    for (const healing of healingInstances) {
+      if (healing.isAoE) {
+        // AoE: Apply to all alive player units
+        for (const unit of this.playerUnits) {
+          if (unit.currentHp > 0) {
+            const hpBefore = unit.currentHp;
+            unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healing.amount);
+            const actualHealing = unit.currentHp - hpBefore;
+
+            if (actualHealing > 0) {
+              // Log healing event
+              this.addCombatLogEntry({
+                type: "healing",
+                source: {
+                  name: "Healing",
+                  isPlayer: true,
+                  element: "Healing",
+                },
+                target: {
+                  name: unit.unit.name,
+                  isPlayer: true,
+                  element: unit.unit.elements?.[0],
+                },
+                amount: actualHealing,
+                isAoE: true,
+                targetHpAfter: unit.currentHp,
+                targetMaxHp: unit.maxHp,
+              });
+            }
+          }
+        }
+      } else {
+        // Single target: Apply to rightmost alive player unit
+        const aliveUnits = this.playerUnits.filter((u) => u.currentHp > 0);
+        const rightmostAlive =
+          aliveUnits.length > 0
+            ? aliveUnits.reduce((rightmost, current) => (current.position > rightmost.position ? current : rightmost))
+            : null;
+
+        if (rightmostAlive) {
+          const hpBefore = rightmostAlive.currentHp;
+          rightmostAlive.currentHp = Math.min(rightmostAlive.maxHp, rightmostAlive.currentHp + healing.amount);
+          const actualHealing = rightmostAlive.currentHp - hpBefore;
+
+          if (actualHealing > 0) {
+            // Log healing event
+            this.addCombatLogEntry({
+              type: "healing",
+              source: {
+                name: "Healing",
+                isPlayer: true,
+                element: "Healing",
+              },
+              target: {
+                name: rightmostAlive.unit.name,
+                isPlayer: true,
+                element: rightmostAlive.unit.elements?.[0],
+              },
+              amount: actualHealing,
+              isAoE: false,
+              targetHpAfter: rightmostAlive.currentHp,
+              targetMaxHp: rightmostAlive.maxHp,
+            });
+          }
         }
       }
     }
@@ -1493,12 +1586,15 @@ export class BattleScene extends Scene {
     const padding = 8;
     const lineHeight = 14;
     const damageEntryHeight = lineHeight * 2 + 1; // Two lines per damage entry + spacing
+    const healingEntryHeight = lineHeight * 2 + 1; // Two lines per healing entry + spacing
     const separatorEntryHeight = lineHeight + 2; // One line for separator + spacing
 
     // Calculate how many entries can fit
     const calculateHeight = (entries: CombatLogEntry[]) => {
       return entries.reduce((sum, entry) => {
-        return sum + (entry.type === "separator" ? separatorEntryHeight : damageEntryHeight);
+        if (entry.type === "separator") return sum + separatorEntryHeight;
+        if (entry.type === "healing") return sum + healingEntryHeight;
+        return sum + damageEntryHeight;
       }, 0);
     };
 
@@ -1533,6 +1629,76 @@ export class BattleScene extends Scene {
         ctx.textAlign = "left";
 
         y += separatorEntryHeight;
+        continue;
+      }
+
+      if (entry.type === "healing") {
+        // Render healing entry
+        if (y + healingEntryHeight > logArea.y + logArea.h) break;
+
+        // First line: Source → Target with element icons
+        const iconSize = 10;
+        let x = logArea.x + padding;
+
+        // Source element icon
+        if (entry.source.element) {
+          const iconPath = elementIconPath(entry.source.element);
+          this.drawIcon(ctx, iconPath, x, y, iconSize, iconSize);
+          x += iconSize + 4;
+        }
+
+        // Source name
+        ctx.fillStyle = entry.source.isPlayer ? "#3b82f6" : "#ef4444";
+        ctx.font = "10px system-ui";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        const sourceName =
+          entry.source.name.length > 12 ? entry.source.name.substring(0, 12) + "..." : entry.source.name;
+        ctx.fillText(sourceName, x, y);
+        x += ctx.measureText(sourceName).width + 6;
+
+        // Arrow
+        ctx.fillStyle = "#9aa3b2";
+        ctx.fillText("→", x, y);
+        x += 12;
+
+        // Target element icon
+        if (entry.target.element) {
+          const iconPath = elementIconPath(entry.target.element);
+          this.drawIcon(ctx, iconPath, x, y, iconSize, iconSize);
+          x += iconSize + 4;
+        }
+
+        // Target name
+        ctx.fillStyle = entry.target.isPlayer ? "#3b82f6" : "#ef4444";
+        const targetName =
+          entry.target.name.length > 12 ? entry.target.name.substring(0, 12) + "..." : entry.target.name;
+        ctx.fillText(targetName, x, y);
+
+        // Second line: Healing details
+        y += lineHeight;
+        if (y + lineHeight > logArea.y + logArea.h) break;
+
+        x = logArea.x + padding;
+        ctx.fillStyle = "#10b981"; // Green color for healing
+        ctx.font = "9px system-ui";
+
+        // Healing amount
+        ctx.fillText(`+${entry.amount} HP`, x, y);
+        x += ctx.measureText(`+${entry.amount} HP`).width + 6;
+
+        // AoE indicator
+        if (entry.isAoE) {
+          ctx.fillStyle = "#f59e0b";
+          ctx.fillText("[AoE]", x, y);
+          x += ctx.measureText("[AoE]").width + 6;
+        }
+
+        // HP remaining
+        ctx.fillStyle = "#9aa3b2";
+        ctx.fillText(`(${entry.targetHpAfter}/${entry.targetMaxHp} HP)`, x, y);
+
+        y += lineHeight + 1;
         continue;
       }
 
