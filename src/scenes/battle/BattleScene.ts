@@ -106,6 +106,7 @@ export class BattleScene extends Scene {
   private readonly refillAnimationDuration = 0.15; // seconds
   private isResolvingMatches = false;
   private pendingMatches: Match[] = [];
+  private accumulatedMatches: Match[] = []; // All matches across all cascades in current resolution
   private currentMatchIndex = 0; // Index of the current match being animated
   private combatLog: CombatLogEntry[] = [];
   private readonly maxCombatLogEntries = 20; // Maximum number of log entries to keep
@@ -1082,6 +1083,7 @@ export class BattleScene extends Scene {
     // Start the resolution process
     this.isResolvingMatches = true;
     this.pendingMatches = [];
+    this.accumulatedMatches = []; // Reset accumulated matches for new resolution
     this.currentMatchIndex = 0;
     this.cascadeDelayTimer = 0;
     this.findAndStartNextMatch();
@@ -1092,11 +1094,39 @@ export class BattleScene extends Scene {
     const matches = findMatches(convertedGrid);
 
     if (matches.length === 0) {
-      // No more matches, we're done
+      // No more matches, we're done - apply all accumulated damage
       this.isResolvingMatches = false;
       this.pendingMatches = [];
       this.currentMatchIndex = 0;
       this.cascadeDelayTimer = 0;
+
+      // Apply damage from all accumulated matches
+      if (this.accumulatedMatches.length > 0) {
+        // Only include cards from alive player units
+        const alivePlayerUnits = this.playerUnits.filter((unit) => unit.currentHp > 0);
+        const alivePositions = new Set(alivePlayerUnits.map((unit) => unit.position));
+
+        // Filter loadout to only include alive units based on their position
+        const loadout = this.state.loadout;
+        const filteredLoadout = {
+          leader: loadout.leader && alivePositions.has(0) ? loadout.leader : "",
+          members: loadout.members.map((id, index) => (id && alivePositions.has(index + 1) ? id : "")) as [
+            string,
+            string,
+            string
+          ],
+        };
+
+        const damageInstances = computeDamageFromMatches(this.accumulatedMatches, filteredLoadout, this.cards);
+        if (damageInstances.length > 0) {
+          this.applyDamageToEnemiesWithLogging(damageInstances);
+          // Check for victory after damage
+          this.checkForVictory();
+        }
+      }
+
+      // Clear accumulated matches
+      this.accumulatedMatches = [];
 
       // If it was player turn, switch to enemy turn
       if (this.isPlayerTurn) {
@@ -1105,6 +1135,9 @@ export class BattleScene extends Scene {
 
       return;
     }
+
+    // Add matches to accumulated list for damage calculation
+    this.accumulatedMatches.push(...matches);
 
     // Store all matches for this round
     this.pendingMatches = matches;
@@ -1167,32 +1200,8 @@ export class BattleScene extends Scene {
       return;
     }
 
-    const matches = this.pendingMatches;
-
     // Tiles are already cleared when animations started, so we just cascade and refill
-    // Calculate and apply damage for this cascade
-    // Only include cards from alive player units
-    const alivePlayerUnits = this.playerUnits.filter((unit) => unit.currentHp > 0);
-    const alivePositions = new Set(alivePlayerUnits.map((unit) => unit.position));
-
-    // Filter loadout to only include alive units based on their position
-    const loadout = this.state.loadout;
-    const filteredLoadout = {
-      leader: loadout.leader && alivePositions.has(0) ? loadout.leader : "",
-      members: loadout.members.map((id, index) => (id && alivePositions.has(index + 1) ? id : "")) as [
-        string,
-        string,
-        string
-      ],
-    };
-
-    const damageInstances = computeDamageFromMatches(matches, filteredLoadout, this.cards);
-    if (damageInstances.length > 0) {
-      this.applyDamageToEnemiesWithLogging(damageInstances);
-      // Check for victory after damage
-      this.checkForVictory();
-    }
-
+    // Damage will be applied later when all matches (including after refill) are resolved
     // Start refill animations (will call findAndStartNextMatch when complete)
     this.compactAndRefill();
   }
