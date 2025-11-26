@@ -41,6 +41,7 @@ export class BattleScene extends Scene {
   private units: Unit[] = [];
   private unitsMap = new Map<string, Unit>();
   private iconCache = new Map<string, HTMLImageElement>();
+  private background?: HTMLImageElement;
   private state: GameState = GameState.load();
   private enemies: BattleUnit[] = [];
   private playerUnits: BattleUnit[] = []; // Player loadout units (leader + members)
@@ -128,6 +129,14 @@ export class BattleScene extends Scene {
       if (!this.stage) {
         console.error(`Stage not found: ${this.stageId}`);
         return;
+      }
+
+      // Load background image from stage
+      if (this.stage.imagePath) {
+        const bg = new Image();
+        bg.src = this.stage.imagePath;
+        await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
+        this.background = bg;
       }
 
       // Load cards, items, and units
@@ -338,6 +347,11 @@ export class BattleScene extends Scene {
     // Background
     ctx.fillStyle = "#0f1014";
     ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
+
+    // Draw stage background image if available
+    if (this.background) {
+      ctx.drawImage(this.background, 0, 0, CanvasSize.width, CanvasSize.height);
+    }
 
     // Top bar
     drawTopBar(ctx, CanvasSize.width, this.state, this.cards, (iconPath, x, y, w, h) =>

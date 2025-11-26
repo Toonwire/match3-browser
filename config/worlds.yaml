@@ -8,7 +8,7 @@
     - id: world_01_stage_01
       name: Tree Tops
       description: The outer defenses
-      imagePath: /assets/worlds/world_01_green.png
+      imagePath: /assets/stages/tree_tops.png
       units:
         - unitId: unit_wisp
           position: 0
@@ -19,7 +19,7 @@
     - id: world_01_stage_02
       name: Canopy Layer
       description: Deeper into the forest
-      imagePath: /assets/worlds/world_01_green.png
+      imagePath: /assets/stages/canopy_layer.png
       units:
         - unitId: unit_wisp
           position: 0
@@ -32,7 +32,7 @@
     - id: world_01_stage_03
       name: Forest Floor
       description: The heart of the forest
-      imagePath: /assets/worlds/world_01_green.png
+      imagePath: /assets/stages/forest_floor.png
       units:
         - unitId: unit_wisp
           position: 0
@@ -53,7 +53,7 @@
     - id: world_01_stage_04
       name: Root System
       description: Ancient roots guard the core
-      imagePath: /assets/worlds/world_01_green.png
+      imagePath: /assets/stages/root_system.png
       units:
         - unitId: unit_wisp
           position: 0
