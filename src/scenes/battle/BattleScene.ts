@@ -1629,11 +1629,9 @@ export class BattleScene extends Scene {
     ctx.restore();
 
     // Draw title
-    ctx.fillStyle = "#e5e7eb";
-    ctx.font = "14px system-ui";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("Combat Log", logArea.x + 8, logArea.y + 8);
+    drawTextWithShadow(ctx, "Combat Log", logArea.x + 8, logArea.y + 8, 14, "#9aa3b2");
 
     // Draw log entries (most recent at bottom)
     const padding = 8;
@@ -1673,12 +1671,10 @@ export class BattleScene extends Scene {
         // Render separator entry
         if (y + separatorEntryHeight > logArea.y + logArea.h) break;
 
-        ctx.fillStyle = "#6b7280";
-        ctx.font = "10px system-ui";
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         const separatorText = `---- ROUND ${entry.round} ----`;
-        ctx.fillText(separatorText, logArea.x + logArea.w / 2, y);
+        drawTextWithShadow(ctx, separatorText, logArea.x + logArea.w / 2, y, 10, "#6b7280");
         ctx.textAlign = "left";
 
         y += separatorEntryHeight;
@@ -1701,19 +1697,19 @@ export class BattleScene extends Scene {
         }
 
         // Source name
-        ctx.fillStyle = entry.source.isPlayer ? "#3b82f6" : "#ef4444";
-        ctx.font = "10px system-ui";
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
         const sourceName =
           entry.source.name.length > 12 ? entry.source.name.substring(0, 12) + "..." : entry.source.name;
-        ctx.fillText(sourceName, x, y);
+        const sourceColor = entry.source.isPlayer ? "#3b82f6" : "#ef4444";
+        drawTextWithShadow(ctx, sourceName, x, y, 10, sourceColor);
+        ctx.font = "10px system-ui";
         x += ctx.measureText(sourceName).width + 6;
 
         // Arrow
-        ctx.fillStyle = "#9aa3b2";
-        ctx.fillText("→", x, y);
-        x += 12;
+        ctx.font = "10px system-ui";
+        drawTextWithShadow(ctx, "→", x, y, 10, "#9aa3b2");
+        x += ctx.measureText("→").width + 6;
 
         // Target element icon
         if (entry.target.element) {
@@ -1723,33 +1719,31 @@ export class BattleScene extends Scene {
         }
 
         // Target name
-        ctx.fillStyle = entry.target.isPlayer ? "#3b82f6" : "#ef4444";
+        const targetColor = entry.target.isPlayer ? "#3b82f6" : "#ef4444";
         const targetName =
           entry.target.name.length > 12 ? entry.target.name.substring(0, 12) + "..." : entry.target.name;
-        ctx.fillText(targetName, x, y);
+        drawTextWithShadow(ctx, targetName, x, y, 10, targetColor);
+        ctx.font = "10px system-ui";
 
         // Second line: Healing details
         y += lineHeight;
         if (y + lineHeight > logArea.y + logArea.h) break;
 
         x = logArea.x + padding;
-        ctx.fillStyle = "#10b981"; // Green color for healing
         ctx.font = "9px system-ui";
 
         // Healing amount
-        ctx.fillText(`+${entry.amount} HP`, x, y);
+        drawTextWithShadow(ctx, `+${entry.amount} HP`, x, y, 9, "#10b981");
         x += ctx.measureText(`+${entry.amount} HP`).width + 6;
 
         // AoE indicator
         if (entry.isAoE) {
-          ctx.fillStyle = "#f59e0b";
-          ctx.fillText("[AoE]", x, y);
+          drawTextWithShadow(ctx, "[AoE]", x, y, 9, "#f59e0b");
           x += ctx.measureText("[AoE]").width + 6;
         }
 
         // HP remaining
-        ctx.fillStyle = "#9aa3b2";
-        ctx.fillText(`(${entry.targetHpAfter}/${entry.targetMaxHp} HP)`, x, y);
+        drawTextWithShadow(ctx, `(${entry.targetHpAfter}/${entry.targetMaxHp} HP)`, x, y, 9, "#9aa3b2");
 
         y += lineHeight + 1;
         continue;
@@ -1770,19 +1764,19 @@ export class BattleScene extends Scene {
       }
 
       // Source name
-      ctx.fillStyle = entry.source.isPlayer ? "#3b82f6" : "#ef4444";
-      ctx.font = "10px system-ui";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       const sourceName =
         entry.source.name.length > 12 ? entry.source.name.substring(0, 12) + "..." : entry.source.name;
-      ctx.fillText(sourceName, x, y);
+      const sourceColor = entry.source.isPlayer ? "#3b82f6" : "#ef4444";
+      drawTextWithShadow(ctx, sourceName, x, y, 10, sourceColor);
+      ctx.font = "10px system-ui";
       x += ctx.measureText(sourceName).width + 6;
 
       // Arrow
-      ctx.fillStyle = "#9aa3b2";
-      ctx.fillText("→", x, y);
-      x += 12;
+      ctx.font = "10px system-ui";
+      drawTextWithShadow(ctx, "→", x, y, 10, "#9aa3b2");
+      x += ctx.measureText("→").width + 6;
 
       // Target element icon
       if (entry.target.element) {
@@ -1792,50 +1786,46 @@ export class BattleScene extends Scene {
       }
 
       // Target name
-      ctx.fillStyle = entry.target.isPlayer ? "#3b82f6" : "#ef4444";
+      const targetColor = entry.target.isPlayer ? "#3b82f6" : "#ef4444";
       const targetName =
         entry.target.name.length > 12 ? entry.target.name.substring(0, 12) + "..." : entry.target.name;
-      ctx.fillText(targetName, x, y);
+      drawTextWithShadow(ctx, targetName, x, y, 10, targetColor);
+      ctx.font = "10px system-ui";
 
       // Second line: Damage details
       y += lineHeight;
       if (y + lineHeight > logArea.y + logArea.h) break;
 
       x = logArea.x + padding;
-      ctx.fillStyle = "#9aa3b2";
       ctx.font = "9px system-ui";
 
       // Base damage (if different from final)
       if (entry.baseDamage !== entry.finalDamage) {
-        ctx.fillText(`${entry.baseDamage}`, x, y);
+        drawTextWithShadow(ctx, `${entry.baseDamage}`, x, y, 9, "#9aa3b2");
         x += ctx.measureText(`${entry.baseDamage}`).width + 2;
-        ctx.fillText("×", x, y);
+        drawTextWithShadow(ctx, "×", x, y, 9, "#9aa3b2");
         x += ctx.measureText("×").width + 2;
       }
 
       // Multiplier
       if (entry.multiplier !== 1) {
         const multColor = entry.multiplier > 1 ? "#10b981" : "#ef4444";
-        ctx.fillStyle = multColor;
-        ctx.fillText(`${entry.multiplier.toFixed(2)}x`, x, y);
+        drawTextWithShadow(ctx, `${entry.multiplier.toFixed(2)}x`, x, y, 9, multColor);
         x += ctx.measureText(`${entry.multiplier.toFixed(2)}x`).width + 4;
       }
 
       // Final damage
-      ctx.fillStyle = "#e5e7eb";
-      ctx.fillText(`= ${entry.finalDamage}`, x, y);
+      drawTextWithShadow(ctx, `= ${entry.finalDamage}`, x, y, 9, "#e5e7eb");
       x += ctx.measureText(`= ${entry.finalDamage}`).width + 6;
 
       // AoE indicator
       if (entry.isAoE) {
-        ctx.fillStyle = "#f59e0b";
-        ctx.fillText("[AoE]", x, y);
+        drawTextWithShadow(ctx, "[AoE]", x, y, 9, "#f59e0b");
         x += ctx.measureText("[AoE]").width + 6;
       }
 
       // HP remaining
-      ctx.fillStyle = "#9aa3b2";
-      ctx.fillText(`${entry.targetHpAfter}/${entry.targetMaxHp} HP`, x, y);
+      drawTextWithShadow(ctx, `${entry.targetHpAfter}/${entry.targetMaxHp} HP`, x, y, 9, "#9aa3b2");
 
       y += lineHeight + 1; // Small spacing between entries
     }
