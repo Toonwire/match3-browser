@@ -48,10 +48,13 @@ export class BattleScene extends Scene {
     mouseX: number;
     mouseY: number;
   } | null = null;
-  private popAnimations: Map<string, number> = new Map(); // Key: "row,col", Value: progress (0.0 to 1.0)
+  private popAnimations: Map<string, { progress: number; element: Element }> = new Map(); // Key: "row,col", Value: { progress, element }
   private readonly popAnimationDuration = 0.3; // seconds
+  private readonly cascadeDelay = 0.5; // seconds delay before cascade starts
+  private cascadeDelayTimer = 0.0; // Current delay timer
   private isResolvingMatches = false;
   private pendingMatches: Match[] = [];
+  private currentMatchIndex = 0; // Index of the current match being animated
 
   constructor(private worldId: string, private stageId: string, onBackToWorld?: () => void) {
     super();
@@ -119,14 +122,24 @@ export class BattleScene extends Scene {
   }
 
   update(dt: number): void {
+    // Update cascade delay timer
+    if (this.cascadeDelayTimer > 0) {
+      this.cascadeDelayTimer -= dt;
+      if (this.cascadeDelayTimer <= 0) {
+        this.cascadeDelayTimer = 0;
+        // Delay complete, proceed with cascade
+        this.continueResolvingMatches();
+      }
+    }
+
     // Update pop animations
     const keysToRemove: string[] = [];
-    for (const [key, progress] of this.popAnimations.entries()) {
-      const newProgress = progress + dt / this.popAnimationDuration;
+    for (const [key, animData] of this.popAnimations.entries()) {
+      const newProgress = animData.progress + dt / this.popAnimationDuration;
       if (newProgress >= 1.0) {
         keysToRemove.push(key);
       } else {
-        this.popAnimations.set(key, newProgress);
+        this.popAnimations.set(key, { progress: newProgress, element: animData.element });
       }
     }
 
@@ -136,9 +149,9 @@ export class BattleScene extends Scene {
         this.popAnimations.delete(key);
       }
 
-      // If all animations are done and we're resolving, continue
-      if (this.popAnimations.size === 0 && this.isResolvingMatches && this.pendingMatches.length > 0) {
-        this.continueResolvingMatches();
+      // If all animations are done and we're resolving, continue to next match
+      if (this.popAnimations.size === 0 && this.isResolvingMatches && this.cascadeDelayTimer === 0) {
+        this.onCurrentMatchAnimationComplete();
       }
     }
   }
@@ -377,42 +390,42 @@ export class BattleScene extends Scene {
 
         // Draw element icon if tile has an element and it's not the empty space
         if (!isEmptySpace) {
-          const element = this.grid[row]?.[col];
-          if (element) {
-            const animationKey = `${row},${col}`;
-            const animationProgress = this.popAnimations.get(animationKey);
+          const animationKey = `${row},${col}`;
+          const animData = this.popAnimations.get(animationKey);
 
-            if (animationProgress !== undefined) {
-              // Apply pop animation: scale up then fade out
-              ctx.save();
+          if (animData !== undefined) {
+            // Draw pop animation (tile is already cleared from grid, but we render the animation)
+            ctx.save();
 
-              // Calculate animation values
-              // Scale: goes from 1.0 to 1.3 then back to 1.0
-              const scalePhase =
-                animationProgress < 0.5
-                  ? animationProgress * 2 // 0 to 1
-                  : 1 - (animationProgress - 0.5) * 2; // 1 to 0
-              const scale = 1.0 + scalePhase * 0.3;
+            // Calculate animation values
+            // Scale: goes from 1.0 to 1.3 then back to 1.0
+            const scalePhase =
+              animData.progress < 0.5
+                ? animData.progress * 2 // 0 to 1
+                : 1 - (animData.progress - 0.5) * 2; // 1 to 0
+            const scale = 1.0 + scalePhase * 0.3;
 
-              // Opacity: fades out in the second half
-              const opacity = animationProgress < 0.5 ? 1.0 : 1.0 - (animationProgress - 0.5) * 2;
+            // Opacity: fades out in the second half
+            const opacity = animData.progress < 0.5 ? 1.0 : 1.0 - (animData.progress - 0.5) * 2;
 
-              // Apply transformations
-              const centerX = cellX + cellSize / 2;
-              const centerY = cellY + cellSize / 2;
-              ctx.translate(centerX, centerY);
-              ctx.scale(scale, scale);
-              ctx.globalAlpha = opacity;
+            // Apply transformations
+            const centerX = cellX + cellSize / 2;
+            const centerY = cellY + cellSize / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(scale, scale);
+            ctx.globalAlpha = opacity;
 
-              const iconPath = elementIconPath(element);
-              const iconSize = cellSize * 1.0;
-              const iconX = -iconSize / 2;
-              const iconY = -iconSize / 2;
-              this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+            const iconPath = elementIconPath(animData.element);
+            const iconSize = cellSize * 1.0;
+            const iconX = -iconSize / 2;
+            const iconY = -iconSize / 2;
+            this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
 
-              ctx.restore();
-            } else {
-              // Normal rendering without animation
+            ctx.restore();
+          } else {
+            // Normal rendering without animation
+            const element = this.grid[row]?.[col];
+            if (element) {
               const iconPath = elementIconPath(element);
               const iconSize = cellSize * 1.0;
               const iconX = cellX + (cellSize - iconSize) / 2;
@@ -669,10 +682,12 @@ export class BattleScene extends Scene {
     // Start the resolution process
     this.isResolvingMatches = true;
     this.pendingMatches = [];
-    this.startMatchAnimation();
+    this.currentMatchIndex = 0;
+    this.cascadeDelayTimer = 0;
+    this.findAndStartNextMatch();
   }
 
-  private startMatchAnimation() {
+  private findAndStartNextMatch() {
     const convertedGrid: string[][] = this.grid.map((row) => row.map((cell) => cell || ""));
     const matches = findMatches(convertedGrid);
 
@@ -680,24 +695,63 @@ export class BattleScene extends Scene {
       // No more matches, we're done
       this.isResolvingMatches = false;
       this.pendingMatches = [];
+      this.currentMatchIndex = 0;
+      this.cascadeDelayTimer = 0;
       return;
     }
 
-    console.log(`Found ${matches.length} match(es)`, matches);
+    // Store all matches for this round
     this.pendingMatches = matches;
+    this.currentMatchIndex = 0;
+    this.cascadeDelayTimer = 0; // Reset delay timer for new match round
 
-    // Start pop animations for all matched tiles
-    for (const match of matches) {
-      for (const cell of match.cells) {
-        // Match uses x,y but grid uses row,col (y,x)
-        const animationKey = `${cell.y},${cell.x}`;
-        this.popAnimations.set(animationKey, 0.0);
+    // Start animating the first match
+    this.startCurrentMatchAnimation();
+  }
+
+  private startCurrentMatchAnimation() {
+    if (this.currentMatchIndex >= this.pendingMatches.length) {
+      // All matches in this round have been animated, now cascade and check for new matches
+      this.continueResolvingMatches();
+      return;
+    }
+
+    const match = this.pendingMatches[this.currentMatchIndex];
+    console.log(`Animating match ${this.currentMatchIndex + 1}/${this.pendingMatches.length}`, match);
+
+    // Start pop animations for the current match's tiles
+    for (const cell of match.cells) {
+      // Match uses x,y but grid uses row,col (y,x)
+      const row = cell.y;
+      const col = cell.x;
+      const animationKey = `${row},${col}`;
+
+      // Get the element before clearing
+      const element = this.grid[row]?.[col];
+      if (element) {
+        // Clear the tile immediately so underlying grid is empty
+        this.grid[row][col] = null;
+        // Store animation with element for rendering
+        this.popAnimations.set(animationKey, { progress: 0.0, element });
       }
     }
 
     // If there are no animations to wait for (shouldn't happen), continue immediately
     if (this.popAnimations.size === 0) {
-      this.continueResolvingMatches();
+      this.onCurrentMatchAnimationComplete();
+    }
+  }
+
+  private onCurrentMatchAnimationComplete() {
+    // Move to the next match
+    this.currentMatchIndex++;
+
+    // If there are more matches in this round, animate the next one
+    if (this.currentMatchIndex < this.pendingMatches.length) {
+      this.startCurrentMatchAnimation();
+    } else {
+      // All matches in this round have been animated, start delay before cascade
+      this.cascadeDelayTimer = this.cascadeDelay;
     }
   }
 
@@ -709,9 +763,7 @@ export class BattleScene extends Scene {
 
     const matches = this.pendingMatches;
 
-    // Clear matched tiles
-    this.clearMatches(matches);
-
+    // Tiles are already cleared when animations started, so we just cascade and refill
     // Cascade and refill
     this.compactAndRefill();
 
@@ -723,7 +775,7 @@ export class BattleScene extends Scene {
     }
 
     // Check for new matches and start next animation cycle
-    this.startMatchAnimation();
+    this.findAndStartNextMatch();
   }
 
   private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
