@@ -434,9 +434,13 @@ export class BattleScene extends Scene {
       const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
       const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
 
-      // Draw card image
+      // Find the corresponding player unit to check if it's dead
+      const playerUnit = this.playerUnits.find((unit) => unit.position === slotIndex);
+      const isDead = playerUnit ? playerUnit.currentHp <= 0 : false;
+
+      // Draw card image with desaturation if dead
       if (card.imagePath) {
-        this.drawIcon(ctx, card.imagePath, unitX, unitY, playerUnitSize, playerUnitSize);
+        this.drawIcon(ctx, card.imagePath, unitX, unitY, playerUnitSize, playerUnitSize, isDead);
       }
 
       // Draw element icon overlay (small, top-right)
@@ -515,9 +519,9 @@ export class BattleScene extends Scene {
       ctx.strokeStyle = "#2b2f3a";
       ctx.strokeRect(enemyX + 0.5, enemyY + 0.5, enemySize - 1, enemySize - 1);
 
-      // Draw enemy image
+      // Draw enemy image with desaturation if dead
       if (enemy.unit.imagePath) {
-        this.drawIcon(ctx, enemy.unit.imagePath, enemyX, enemyY, enemySize, enemySize);
+        this.drawIcon(ctx, enemy.unit.imagePath, enemyX, enemyY, enemySize, enemySize, enemy.currentHp <= 0);
       }
 
       // Draw element icon overlay (small, top-right)
@@ -564,8 +568,8 @@ export class BattleScene extends Scene {
     const centerX = (playerUnitArea.x + playerUnitArea.w + enemyArea.x) / 2;
     const centerY = playerUnitArea.y + playerUnitArea.h / 2;
     // Position icon so it's centered (drawAttackerIcon centers at x + size/2, y + size/2)
-    const attackerIconX = centerX - attackerIconSize / 2;
-    const attackerIconY = centerY - attackerIconSize / 2;
+    const attackerIconX = centerX - attackerIconSize / 2 + attackerIconSize / 2;
+    const attackerIconY = centerY - attackerIconSize / 2 + attackerIconSize / 2;
 
     // Draw icon with arrow pointing based on whose turn it is
     ctx.fillStyle = "#e5e7eb";
@@ -573,15 +577,14 @@ export class BattleScene extends Scene {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const text = "⚔";
-    // ctx.fillText(text, attackerIconX + attackerIconSize / 2, attackerIconY + attackerIconSize / 2);
-    drawTextWithShadow(
-      ctx,
-      text,
-      attackerIconX + attackerIconSize / 2,
-      attackerIconY + attackerIconSize / 2,
-      attackerIconSize,
-      "#9aa3b2"
-    );
+    drawTextWithShadow(ctx, text, attackerIconX, attackerIconY, attackerIconSize, "#9aa3b2");
+    if (this.isPlayerTurn) {
+      drawTextWithShadow(ctx, ">", attackerIconX + attackerIconSize, attackerIconY, attackerIconSize, "#9aa3b2");
+    } else {
+      drawTextWithShadow(ctx, "<", attackerIconX - attackerIconSize, attackerIconY, attackerIconSize, "#9aa3b2");
+    }
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
 
     // Draw timer bar
     const timerArea = BattleLayout.timer;
@@ -610,13 +613,16 @@ export class BattleScene extends Scene {
     const gridOffsetX = (gridArea.w - totalGridWidth) / 2;
     const gridOffsetY = (gridArea.h - totalGridHeight) / 2;
 
-    // Draw grid background
+    // Draw grid background with 50% transparency to show stage background
+    ctx.save();
+    ctx.globalAlpha = 0.5;
     ctx.fillStyle = "#1a1d24";
     ctx.fillRect(gridArea.x, gridArea.y, gridArea.w, gridArea.h);
     ctx.strokeStyle = "#2b2f3a";
     ctx.strokeRect(gridArea.x + 0.5, gridArea.y + 0.5, gridArea.w - 1, gridArea.h - 1);
+    ctx.restore();
 
-    // Draw grid cells with element icons
+    // Draw grid cells with element icons (fully opaque)
     for (let row = 0; row < this.gridRows; row++) {
       for (let col = 0; col < this.gridCols; col++) {
         const cellX = gridArea.x + gridOffsetX + col * (cellSize + cellGap);
@@ -908,8 +914,13 @@ export class BattleScene extends Scene {
     x: number,
     y: number,
     w: number,
-    h: number
+    h: number,
+    desaturate: boolean = false
   ) {
+    ctx.save();
+    if (desaturate) {
+      ctx.filter = "grayscale(100%)";
+    }
     const imgAspect = img.naturalWidth / img.naturalHeight;
     const targetAspect = w / h;
     let drawWidth = w;
@@ -926,17 +937,26 @@ export class BattleScene extends Scene {
     }
 
     ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+    ctx.restore();
   }
 
-  private drawIcon(ctx: CanvasRenderingContext2D, path: string, x: number, y: number, w: number, h: number) {
+  private drawIcon(
+    ctx: CanvasRenderingContext2D,
+    path: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    desaturate: boolean = false
+  ) {
     const cached = this.iconCache.get(path);
     if (cached) {
-      this.drawIconWithAspectRatio(ctx, cached, x, y, w, h);
+      this.drawIconWithAspectRatio(ctx, cached, x, y, w, h, desaturate);
       return;
     }
     this.getIcon(path).then(() => {
       const img = this.iconCache.get(path)!;
-      this.drawIconWithAspectRatio(ctx, img, x, y, w, h);
+      this.drawIconWithAspectRatio(ctx, img, x, y, w, h, desaturate);
     });
   }
 
