@@ -13,7 +13,6 @@ interface BattleUnit {
   currentHp: number;
   maxHp: number;
   position: number; // 0-3, left to right
-  cardId?: string;
 }
 
 interface CombatLogEntry {
@@ -138,7 +137,6 @@ export class BattleScene extends Scene {
             currentHp: leaderCard.hp,
             maxHp: leaderCard.hp,
             position: position,
-            cardId: leaderCard.id,
           });
         }
       }
@@ -164,7 +162,6 @@ export class BattleScene extends Scene {
               currentHp: memberCard.hp,
               maxHp: memberCard.hp,
               position: position,
-              cardId: memberCard.id,
             });
           }
         }
@@ -319,20 +316,23 @@ export class BattleScene extends Scene {
     const playerUnitGap = 12;
 
     const loadout = this.state.loadout;
-    const loadoutCardIds = [loadout.leader, ...loadout.members].filter(Boolean);
-    const loadoutCards = loadoutCardIds
-      .map((id) => this.cards.find((c) => c.id === id))
-      .filter((card): card is Card => card !== undefined);
+    const loadoutCardIds = [loadout.leader, ...loadout.members];
+    const loadoutCardsWithPosition = loadoutCardIds
+      .map((id, slotIndex) => {
+        const card = id ? this.cards.find((c) => c.id === id) : null;
+        return card ? { card, slotIndex } : null;
+      })
+      .filter((item): item is { card: Card; slotIndex: number } => item !== null);
 
-    loadoutCards.forEach((card, index) => {
-      const slotX = playerUnitArea.x + index * playerUnitSlotWidth;
+    loadoutCardsWithPosition.forEach(({ card, slotIndex }) => {
+      const slotX = playerUnitArea.x + slotIndex * playerUnitSlotWidth;
       const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
       const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
 
       // Draw card background
-      ctx.fillStyle = index === 0 ? "#3b82f6" : "#23262d"; // Leader has blue background
+      ctx.fillStyle = slotIndex === 0 ? "#3b82f6" : "#23262d"; // Leader has blue background
       ctx.fillRect(unitX, unitY, playerUnitSize, playerUnitSize);
-      ctx.strokeStyle = index === 0 ? "#60a5fa" : "#2b2f3a";
+      ctx.strokeStyle = slotIndex === 0 ? "#60a5fa" : "#2b2f3a";
       ctx.strokeRect(unitX + 0.5, unitY + 0.5, playerUnitSize - 1, playerUnitSize - 1);
 
       // Draw card image
@@ -350,7 +350,7 @@ export class BattleScene extends Scene {
       }
 
       // Draw "Leader" text above leader slot
-      if (index === 0) {
+      if (slotIndex === 0) {
         ctx.fillStyle = "#9aa3b2";
         ctx.font = "12px system-ui";
         ctx.textAlign = "center";
@@ -367,15 +367,26 @@ export class BattleScene extends Scene {
     const playerUnitHpBarHeight = 20;
     const playerUnitHpBarWidth = playerUnitHpSlotWidth - playerUnitGap * 2;
 
-    loadoutCards.forEach((card, index) => {
-      const slotX = playerUnitHpArea.x + index * playerUnitHpSlotWidth;
+    // Render HP bars for all 4 slots (including empty ones)
+    for (let slotIndex = 0; slotIndex < 4; slotIndex++) {
+      const slotX = playerUnitHpArea.x + slotIndex * playerUnitHpSlotWidth;
       const hpBarX = slotX + playerUnitGap;
       const hpBarY = playerUnitHpArea.y + (playerUnitHpArea.h - playerUnitHpBarHeight) / 2;
 
-      // Find corresponding player unit
-      const playerUnit = this.playerUnits.find((unit) => unit.cardId === card.id);
-      const currentHp = playerUnit?.currentHp ?? card.hp;
-      const maxHp = playerUnit?.maxHp ?? card.hp;
+      // Find player unit at this position
+      const playerUnit = this.playerUnits.find((unit) => unit.position === slotIndex);
+
+      // Get card for this slot
+      const cardId = slotIndex === 0 ? loadout.leader : loadout.members[slotIndex - 1];
+      const card = cardId ? this.cards.find((c) => c.id === cardId) : null;
+
+      if (!card || !playerUnit) {
+        // Empty slot or no unit, skip rendering
+        continue;
+      }
+
+      const currentHp = playerUnit.currentHp;
+      const maxHp = playerUnit.maxHp;
       const hpRatio = maxHp > 0 ? currentHp / maxHp : 0;
 
       drawProgressBar(ctx, hpBarX, hpBarY, playerUnitHpBarWidth, playerUnitHpBarHeight, hpRatio, "#10b981", "#23262d");
@@ -389,7 +400,7 @@ export class BattleScene extends Scene {
       ctx.fillText(hpText, hpBarX + playerUnitHpBarWidth / 2, hpBarY + playerUnitHpBarHeight / 2);
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
-    });
+    }
 
     // Draw enemies (1-4, left to right)
     const enemyArea = BattleLayout.enemies;
