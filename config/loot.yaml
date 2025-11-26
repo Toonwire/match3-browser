@@ -1,4 +1,4 @@
-- id: loot_table_coins_common
+- id: loot_table_common_coins
   entries:
     - item: coin
       chance: 0.5
