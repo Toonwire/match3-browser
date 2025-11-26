@@ -6,7 +6,8 @@ export const BattleLayout = {
   enemies: { x: 704, y: 96, w: 512, h: 192 }, // Scaled and increased height for larger enemies
   enemyHp: { x: 704, y: 245, w: 512, h: 28 }, // Scaled and increased height
   timer: { x: 64, y: 332, w: 1152, h: 20 }, // Wider and taller
-  grid: { x: 64, y: 364, w: 1152, h: 324 }, // Much larger grid area
+  grid: { x: 64, y: 364, w: 800, h: 324 }, // Grid area (reduced width to make room for combat log)
+  combatLog: { x: 880, y: 364, w: 336, h: 324 }, // Combat log to the right of grid
 };
 
 export const BaseLayout = {

@@ -16,6 +16,17 @@ interface BattleUnit {
   cardId?: string;
 }
 
+interface CombatLogEntry {
+  source: { name: string; isPlayer: boolean; element?: Element };
+  target: { name: string; isPlayer: boolean; element?: Element };
+  baseDamage: number;
+  multiplier: number;
+  finalDamage: number;
+  isAoE: boolean;
+  targetHpAfter: number;
+  targetMaxHp: number;
+}
+
 export class BattleScene extends Scene {
   private stage?: StageDef;
   private world?: WorldDef;
@@ -59,6 +70,8 @@ export class BattleScene extends Scene {
   private isResolvingMatches = false;
   private pendingMatches: Match[] = [];
   private currentMatchIndex = 0; // Index of the current match being animated
+  private combatLog: CombatLogEntry[] = [];
+  private readonly maxCombatLogEntries = 20; // Maximum number of log entries to keep
 
   constructor(private worldId: string, private stageId: string, onBackToWorld?: () => void) {
     super();
@@ -160,6 +173,9 @@ export class BattleScene extends Scene {
       // Initialize and populate the match3 grid
       this.initializeGrid();
       this.populateGrid();
+
+      // Clear combat log
+      this.combatLog = [];
     } catch (error) {
       console.error("Failed to initialize BattleScene:", error);
     }
@@ -587,6 +603,9 @@ export class BattleScene extends Scene {
     ctx.fillStyle = this.isPlayerTurn ? "#3b82f6" : "#ef4444";
     ctx.fillText(turnText, 24, topBarHeight + 24); // Adjusted position
 
+    // Draw combat log
+    this.renderCombatLog(ctx);
+
     // Draw retreat button
     const retreatButtonX = CanvasSize.width - 120; // Adjusted for larger button
     const retreatButtonY = topBarHeight + 12;
@@ -835,6 +854,12 @@ export class BattleScene extends Scene {
       this.pendingMatches = [];
       this.currentMatchIndex = 0;
       this.cascadeDelayTimer = 0;
+
+      // If it was player turn, switch to enemy turn
+      if (this.isPlayerTurn) {
+        this.startEnemyTurn();
+      }
+
       return;
     }
 
@@ -905,17 +930,92 @@ export class BattleScene extends Scene {
     // Calculate and apply damage for this cascade
     const damageInstances = computeDamageFromMatches(matches, this.state.loadout, this.cards);
     if (damageInstances.length > 0) {
-      this.enemies = applyDamageToEnemies(damageInstances, this.enemies);
-      console.log("Applied damage from cascade", damageInstances);
-    }
-
-    // If it was player turn, switch to enemy turn
-    if (this.isPlayerTurn) {
-      this.startEnemyTurn();
+      this.applyDamageToEnemiesWithLogging(damageInstances);
     }
 
     // Start refill animations (will call findAndStartNextMatch when complete)
     this.compactAndRefill();
+  }
+
+  private addCombatLogEntry(entry: CombatLogEntry): void {
+    this.combatLog.push(entry);
+    // Keep only the most recent entries
+    if (this.combatLog.length > this.maxCombatLogEntries) {
+      this.combatLog.shift();
+    }
+  }
+
+  private applyDamageToEnemiesWithLogging(damageInstances: ReturnType<typeof computeDamageFromMatches>): void {
+    // Apply damage similar to applyDamageToEnemies but with logging
+    for (const damage of damageInstances) {
+      // Get source card name(s) for logging
+      const sourceCardNames = damage.cardIds
+        .map((id) => this.cards.find((c) => c.id === id)?.name)
+        .filter(Boolean)
+        .join(", ");
+
+      if (damage.isAoE) {
+        // AoE: Apply to all enemies
+        for (const enemy of this.enemies) {
+          if (enemy.currentHp > 0 && enemy.unit.elements?.[0]) {
+            const multiplier = elementalMultiplier(damage.element, enemy.unit.elements[0]);
+            const finalDamage = Math.floor(damage.baseDamage * multiplier);
+            const hpBefore = enemy.currentHp;
+            enemy.currentHp = Math.max(0, enemy.currentHp - finalDamage);
+
+            // Log damage event
+            this.addCombatLogEntry({
+              source: {
+                name: sourceCardNames || "Player",
+                isPlayer: true,
+                element: damage.element,
+              },
+              target: {
+                name: enemy.unit.name,
+                isPlayer: false,
+                element: enemy.unit.elements[0],
+              },
+              baseDamage: damage.baseDamage,
+              multiplier,
+              finalDamage,
+              isAoE: true,
+              targetHpAfter: enemy.currentHp,
+              targetMaxHp: enemy.maxHp,
+            });
+          }
+        }
+      } else {
+        // Single target: Apply to leftmost alive enemy
+        const leftmostAlive = this.enemies.find((e) => e.currentHp > 0);
+
+        if (leftmostAlive && leftmostAlive.unit.elements?.[0]) {
+          const multiplier = elementalMultiplier(damage.element, leftmostAlive.unit.elements[0]);
+          const finalDamage = Math.floor(damage.baseDamage * multiplier);
+          const hpBefore = leftmostAlive.currentHp;
+          leftmostAlive.currentHp = Math.max(0, leftmostAlive.currentHp - finalDamage);
+
+          // Log damage event
+          this.addCombatLogEntry({
+            source: {
+              name: sourceCardNames || "Player",
+              isPlayer: true,
+              element: damage.element,
+            },
+            target: {
+              name: leftmostAlive.unit.name,
+              isPlayer: false,
+              element: leftmostAlive.unit.elements[0],
+            },
+            baseDamage: damage.baseDamage,
+            multiplier,
+            finalDamage,
+            isAoE: false,
+            targetHpAfter: leftmostAlive.currentHp,
+            targetMaxHp: leftmostAlive.maxHp,
+          });
+        }
+      }
+    }
   }
 
   private startEnemyTurn(): void {
@@ -936,20 +1036,154 @@ export class BattleScene extends Scene {
       if (rightmostAlivePlayer && enemy.unit.elements?.[0] && rightmostAlivePlayer.unit.elements?.[0]) {
         // Calculate elemental multiplier
         const multiplier = elementalMultiplier(enemy.unit.elements[0], rightmostAlivePlayer.unit.elements[0]);
-        const finalDamage = Math.floor(enemy.unit.attack * multiplier);
+        const baseDamage = enemy.unit.attack;
+        const finalDamage = Math.floor(baseDamage * multiplier);
 
         // Apply damage
+        const hpBefore = rightmostAlivePlayer.currentHp;
         rightmostAlivePlayer.currentHp = Math.max(0, rightmostAlivePlayer.currentHp - finalDamage);
 
-        console.log(
-          `Enemy ${enemy.unit.name} dealt ${finalDamage} damage to ${rightmostAlivePlayer.unit.name} (${rightmostAlivePlayer.currentHp}/${rightmostAlivePlayer.maxHp} HP remaining)`
-        );
+        // Log damage event
+        this.addCombatLogEntry({
+          source: {
+            name: enemy.unit.name,
+            isPlayer: false,
+            element: enemy.unit.elements[0],
+          },
+          target: {
+            name: rightmostAlivePlayer.unit.name,
+            isPlayer: true,
+            element: rightmostAlivePlayer.unit.elements[0],
+          },
+          baseDamage,
+          multiplier,
+          finalDamage,
+          isAoE: false,
+          targetHpAfter: rightmostAlivePlayer.currentHp,
+          targetMaxHp: rightmostAlivePlayer.maxHp,
+        });
       }
     }
 
     // Switch back to player turn
     this.isPlayerTurn = true;
     console.log("Enemy turn complete, switching back to player turn");
+  }
+
+  private renderCombatLog(ctx: CanvasRenderingContext2D): void {
+    const logArea = BattleLayout.combatLog;
+
+    // Draw background
+    ctx.fillStyle = "#1a1d24";
+    ctx.fillRect(logArea.x, logArea.y, logArea.w, logArea.h);
+    ctx.strokeStyle = "#2b2f3a";
+    ctx.strokeRect(logArea.x + 0.5, logArea.y + 0.5, logArea.w - 1, logArea.h - 1);
+
+    // Draw title
+    ctx.fillStyle = "#e5e7eb";
+    ctx.font = "14px system-ui";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Combat Log", logArea.x + 8, logArea.y + 8);
+
+    // Draw log entries (most recent at bottom)
+    const padding = 8;
+    const lineHeight = 14;
+    const entryHeight = lineHeight * 2 + 1; // Two lines per entry + spacing
+    const maxEntries = Math.floor((logArea.h - 28) / entryHeight);
+
+    // Get the most recent entries (oldest first, newest last)
+    const entriesToShow = this.combatLog.slice(-maxEntries);
+
+    // Calculate starting Y position to fill from bottom
+    const totalHeight = entriesToShow.length * entryHeight;
+    const startY = logArea.y + logArea.h - totalHeight;
+    let y = startY;
+
+    for (const entry of entriesToShow) {
+      if (y + lineHeight * 2 > logArea.y + logArea.h) break;
+
+      // First line: Source → Target with element icons
+      const iconSize = 10;
+      let x = logArea.x + padding;
+
+      // Source element icon
+      if (entry.source.element) {
+        const iconPath = elementIconPath(entry.source.element);
+        this.drawIcon(ctx, iconPath, x, y, iconSize, iconSize);
+        x += iconSize + 4;
+      }
+
+      // Source name
+      ctx.fillStyle = entry.source.isPlayer ? "#3b82f6" : "#ef4444";
+      ctx.font = "10px system-ui";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      const sourceName =
+        entry.source.name.length > 12 ? entry.source.name.substring(0, 12) + "..." : entry.source.name;
+      ctx.fillText(sourceName, x, y);
+      x += ctx.measureText(sourceName).width + 6;
+
+      // Arrow
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText("→", x, y);
+      x += 12;
+
+      // Target element icon
+      if (entry.target.element) {
+        const iconPath = elementIconPath(entry.target.element);
+        this.drawIcon(ctx, iconPath, x, y, iconSize, iconSize);
+        x += iconSize + 4;
+      }
+
+      // Target name
+      ctx.fillStyle = entry.target.isPlayer ? "#3b82f6" : "#ef4444";
+      const targetName =
+        entry.target.name.length > 12 ? entry.target.name.substring(0, 12) + "..." : entry.target.name;
+      ctx.fillText(targetName, x, y);
+
+      // Second line: Damage details
+      y += lineHeight;
+      if (y + lineHeight > logArea.y + logArea.h) break;
+
+      x = logArea.x + padding;
+      ctx.fillStyle = "#9aa3b2";
+      ctx.font = "9px system-ui";
+
+      // Base damage (if different from final)
+      if (entry.baseDamage !== entry.finalDamage) {
+        ctx.fillText(`${entry.baseDamage}`, x, y);
+        x += ctx.measureText(`${entry.baseDamage}`).width + 2;
+        ctx.fillText("×", x, y);
+        x += ctx.measureText("×").width + 2;
+      }
+
+      // Multiplier
+      if (entry.multiplier !== 1) {
+        const multColor = entry.multiplier > 1 ? "#10b981" : "#ef4444";
+        ctx.fillStyle = multColor;
+        ctx.fillText(`${entry.multiplier.toFixed(2)}x`, x, y);
+        x += ctx.measureText(`${entry.multiplier.toFixed(2)}x`).width + 4;
+      }
+
+      // Final damage
+      ctx.fillStyle = "#e5e7eb";
+      ctx.fillText(`= ${entry.finalDamage}`, x, y);
+      x += ctx.measureText(`= ${entry.finalDamage}`).width + 6;
+
+      // AoE indicator
+      if (entry.isAoE) {
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillText("[AoE]", x, y);
+        x += ctx.measureText("[AoE]").width + 6;
+      }
+
+      // HP remaining
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText(`${entry.targetHpAfter}/${entry.targetMaxHp} HP`, x, y);
+
+      y += lineHeight + 1; // Small spacing between entries
+    }
   }
 
   private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
