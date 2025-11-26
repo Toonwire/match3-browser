@@ -1,2 +1,4 @@
-- Add leader passives to damage calculations
-- Matching healing elements should heal the rightmost player unit if single target or all player units if aoe. Healing amount = n/3 for line shapes (single target), or n/5 for 'T' and 'L' shapes (aoe)
+- Add damage animations, source unit --> target unit
+- Add healing animations, just target unit
+- Add an attacker icon to the player/enemy side based on whose turn it is
+- Consider a rcv stat for cards that will be used as healing modifier?
