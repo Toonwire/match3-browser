@@ -939,7 +939,22 @@ export class BattleScene extends Scene {
 
     // Tiles are already cleared when animations started, so we just cascade and refill
     // Calculate and apply damage for this cascade
-    const damageInstances = computeDamageFromMatches(matches, this.state.loadout, this.cards);
+    // Only include cards from alive player units
+    const alivePlayerUnits = this.playerUnits.filter((unit) => unit.currentHp > 0);
+    const alivePositions = new Set(alivePlayerUnits.map((unit) => unit.position));
+
+    // Filter loadout to only include alive units based on their position
+    const loadout = this.state.loadout;
+    const filteredLoadout = {
+      leader: loadout.leader && alivePositions.has(0) ? loadout.leader : "",
+      members: loadout.members.map((id, index) => (id && alivePositions.has(index + 1) ? id : "")) as [
+        string,
+        string,
+        string
+      ],
+    };
+
+    const damageInstances = computeDamageFromMatches(matches, filteredLoadout, this.cards);
     if (damageInstances.length > 0) {
       this.applyDamageToEnemiesWithLogging(damageInstances);
     }
