@@ -15,16 +15,22 @@ interface BattleUnit {
   position: number; // 0-3, left to right
 }
 
-interface CombatLogEntry {
-  source: { name: string; isPlayer: boolean; element?: Element };
-  target: { name: string; isPlayer: boolean; element?: Element };
-  baseDamage: number;
-  multiplier: number;
-  finalDamage: number;
-  isAoE: boolean;
-  targetHpAfter: number;
-  targetMaxHp: number;
-}
+type CombatLogEntry =
+  | {
+      type: "damage";
+      source: { name: string; isPlayer: boolean; element?: Element };
+      target: { name: string; isPlayer: boolean; element?: Element };
+      baseDamage: number;
+      multiplier: number;
+      finalDamage: number;
+      isAoE: boolean;
+      targetHpAfter: number;
+      targetMaxHp: number;
+    }
+  | {
+      type: "separator";
+      round: number;
+    };
 
 export class BattleScene extends Scene {
   private stage?: StageDef;
@@ -71,6 +77,7 @@ export class BattleScene extends Scene {
   private currentMatchIndex = 0; // Index of the current match being animated
   private combatLog: CombatLogEntry[] = [];
   private readonly maxCombatLogEntries = 20; // Maximum number of log entries to keep
+  private currentRound: number = 1;
 
   constructor(private worldId: string, private stageId: string, onBackToWorld?: () => void) {
     super();
@@ -171,8 +178,12 @@ export class BattleScene extends Scene {
       this.initializeGrid();
       this.populateGrid();
 
-      // Clear combat log
+      // Clear combat log and initialize round
       this.combatLog = [];
+      this.currentRound = 1;
+
+      // Add initial round separator
+      this.addCombatLogEntry({ type: "separator", round: this.currentRound });
     } catch (error) {
       console.error("Failed to initialize BattleScene:", error);
     }
@@ -991,6 +1002,7 @@ export class BattleScene extends Scene {
 
             // Log damage event
             this.addCombatLogEntry({
+              type: "damage",
               source: {
                 name: sourceCardNames || "Player",
                 isPlayer: true,
@@ -1022,6 +1034,7 @@ export class BattleScene extends Scene {
 
           // Log damage event
           this.addCombatLogEntry({
+            type: "damage",
             source: {
               name: sourceCardNames || "Player",
               isPlayer: true,
@@ -1071,6 +1084,7 @@ export class BattleScene extends Scene {
 
         // Log damage event
         this.addCombatLogEntry({
+          type: "damage",
           source: {
             name: enemy.unit.name,
             isPlayer: false,
@@ -1093,6 +1107,11 @@ export class BattleScene extends Scene {
 
     // Switch back to player turn
     this.isPlayerTurn = true;
+
+    // Start new round
+    this.currentRound++;
+    this.addCombatLogEntry({ type: "separator", round: this.currentRound });
+
     console.log("Enemy turn complete, switching back to player turn");
   }
 
@@ -1115,19 +1134,52 @@ export class BattleScene extends Scene {
     // Draw log entries (most recent at bottom)
     const padding = 8;
     const lineHeight = 14;
-    const entryHeight = lineHeight * 2 + 1; // Two lines per entry + spacing
-    const maxEntries = Math.floor((logArea.h - 28) / entryHeight);
+    const damageEntryHeight = lineHeight * 2 + 1; // Two lines per damage entry + spacing
+    const separatorEntryHeight = lineHeight + 2; // One line for separator + spacing
+
+    // Calculate how many entries can fit
+    const calculateHeight = (entries: CombatLogEntry[]) => {
+      return entries.reduce((sum, entry) => {
+        return sum + (entry.type === "separator" ? separatorEntryHeight : damageEntryHeight);
+      }, 0);
+    };
 
     // Get the most recent entries (oldest first, newest last)
-    const entriesToShow = this.combatLog.slice(-maxEntries);
+    // Start from the end and work backwards until we fill the available space
+    let entriesToShow: CombatLogEntry[] = [];
+    for (let i = this.combatLog.length - 1; i >= 0; i--) {
+      const testEntries = [this.combatLog[i], ...entriesToShow];
+      if (calculateHeight(testEntries) <= logArea.h - 28) {
+        entriesToShow = testEntries;
+      } else {
+        break;
+      }
+    }
 
     // Calculate starting Y position to fill from bottom
-    const totalHeight = entriesToShow.length * entryHeight;
+    const totalHeight = calculateHeight(entriesToShow);
     const startY = logArea.y + logArea.h - totalHeight;
     let y = startY;
 
     for (const entry of entriesToShow) {
-      if (y + lineHeight * 2 > logArea.y + logArea.h) break;
+      if (entry.type === "separator") {
+        // Render separator entry
+        if (y + separatorEntryHeight > logArea.y + logArea.h) break;
+
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "10px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        const separatorText = `---- ROUND ${entry.round} ----`;
+        ctx.fillText(separatorText, logArea.x + logArea.w / 2, y);
+        ctx.textAlign = "left";
+
+        y += separatorEntryHeight;
+        continue;
+      }
+
+      // Render damage entry
+      if (y + damageEntryHeight > logArea.y + logArea.h) break;
 
       // First line: Source → Target with element icons
       const iconSize = 10;
