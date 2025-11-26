@@ -1619,11 +1619,14 @@ export class BattleScene extends Scene {
   private renderCombatLog(ctx: CanvasRenderingContext2D): void {
     const logArea = BattleLayout.combatLog;
 
-    // Draw background
+    // Draw background with 50% transparency to show stage background
+    ctx.save();
+    ctx.globalAlpha = 0.5;
     ctx.fillStyle = "#1a1d24";
     ctx.fillRect(logArea.x, logArea.y, logArea.w, logArea.h);
     ctx.strokeStyle = "#2b2f3a";
     ctx.strokeRect(logArea.x + 0.5, logArea.y + 0.5, logArea.w - 1, logArea.h - 1);
+    ctx.restore();
 
     // Draw title
     ctx.fillStyle = "#e5e7eb";
