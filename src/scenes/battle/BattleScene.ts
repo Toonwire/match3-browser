@@ -47,6 +47,14 @@ export class BattleScene extends Scene {
   private dragTimerRemaining: number = 0.0; // seconds remaining
   private isPlayerTurn: boolean = true;
   private onBackToWorld?: () => void;
+  private onBackToBase?: () => void;
+  private isDefeated: boolean = false;
+  private defeatPanelRegion: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null = null;
   private retreatButtonRegion: {
     x: number;
     y: number;
@@ -79,9 +87,15 @@ export class BattleScene extends Scene {
   private readonly maxCombatLogEntries = 20; // Maximum number of log entries to keep
   private currentRound: number = 1;
 
-  constructor(private worldId: string, private stageId: string, onBackToWorld?: () => void) {
+  constructor(
+    private worldId: string,
+    private stageId: string,
+    onBackToWorld?: () => void,
+    onBackToBase?: () => void
+  ) {
     super();
     this.onBackToWorld = onBackToWorld;
+    this.onBackToBase = onBackToBase;
   }
 
   async init() {
@@ -650,6 +664,50 @@ export class BattleScene extends Scene {
       w: retreatButtonW,
       h: retreatButtonH,
     };
+
+    // Draw defeat panel if defeated
+    if (this.isDefeated) {
+      this.renderDefeatPanel(ctx);
+    }
+  }
+
+  private renderDefeatPanel(ctx: CanvasRenderingContext2D): void {
+    // Dim background
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
+
+    // Panel dimensions
+    const panelWidth = 400;
+    const panelHeight = 200;
+    const panelX = (CanvasSize.width - panelWidth) / 2;
+    const panelY = (CanvasSize.height - panelHeight) / 2;
+
+    // Draw panel
+    drawPanel(ctx, panelX, panelY, panelWidth, panelHeight, "Defeat");
+
+    // Draw defeat message
+    ctx.fillStyle = "#ef4444";
+    ctx.font = "24px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Defeat", panelX + panelWidth / 2, panelY + 60);
+
+    // Draw instruction text
+    ctx.fillStyle = "#9aa3b2";
+    ctx.font = "16px system-ui";
+    ctx.fillText("All your units have been defeated.", panelX + panelWidth / 2, panelY + 100);
+    ctx.fillText("Click to return to base.", panelX + panelWidth / 2, panelY + 130);
+
+    // Store panel region for click detection
+    this.defeatPanelRegion = {
+      x: panelX,
+      y: panelY,
+      w: panelWidth,
+      h: panelHeight,
+    };
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
   }
 
   private async getIcon(path: string): Promise<HTMLImageElement> {
@@ -723,10 +781,23 @@ export class BattleScene extends Scene {
         }
         return;
       }
+
+      // Defeat panel (click anywhere on panel to return to base)
+      if (this.isDefeated && this.defeatPanelRegion && this.pointInRect(x, y, this.defeatPanelRegion)) {
+        if (this.onBackToBase) {
+          this.onBackToBase();
+        }
+        return;
+      }
     }
 
     if (e.type === "scene-mousedown") {
       const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
+
+      // Don't allow interactions if defeated
+      if (this.isDefeated) {
+        return;
+      }
 
       // Don't start dragging if clicking on UI elements
       const buttonRegions = getTopBarButtonRegions(CanvasSize.width);
@@ -1108,6 +1179,14 @@ export class BattleScene extends Scene {
           targetMaxHp: rightmostAlivePlayer.maxHp,
         });
       }
+    }
+
+    // Check if all player units are dead
+    const alivePlayerUnits = this.playerUnits.filter((unit) => unit.currentHp > 0);
+    if (alivePlayerUnits.length === 0) {
+      this.isDefeated = true;
+      console.log("All player units defeated");
+      return;
     }
 
     // Switch back to player turn

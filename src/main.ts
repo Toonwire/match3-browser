@@ -30,18 +30,26 @@ let baseScene: BaseScene;
 let game: Game;
 
 const navigateToBattle = (worldId: string, stageId: string) => {
-  const battleScene = new BattleScene(worldId, stageId, () => {
-    // Return to world scene
-    const worldScene = new WorldScene(
-      worldId,
-      () => {
-        game.setScene(baseScene);
-      },
-      navigateToBattle
-    );
-    game.setScene(worldScene);
-    worldScene.init();
-  });
+  const battleScene = new BattleScene(
+    worldId,
+    stageId,
+    () => {
+      // Return to world scene
+      const worldScene = new WorldScene(
+        worldId,
+        () => {
+          game.setScene(baseScene);
+        },
+        navigateToBattle
+      );
+      game.setScene(worldScene);
+      worldScene.init();
+    },
+    () => {
+      // Return to base scene (on defeat)
+      game.setScene(baseScene);
+    }
+  );
   game.setScene(battleScene);
   battleScene.init();
 };
