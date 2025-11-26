@@ -1,4 +1,4 @@
-import { applyDamageToEnemies, computeDamageFromMatches } from "../../battle/Damage";
+import { applyDamageToEnemies, computeDamageFromMatches, elementalMultiplier } from "../../battle/Damage";
 import { findMatches, type Match } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
 import type { Card, Element, StageDef, Unit, WorldDef } from "../../data/types";
@@ -13,6 +13,7 @@ interface BattleUnit {
   currentHp: number;
   maxHp: number;
   position: number; // 0-3, left to right
+  cardId?: string;
 }
 
 export class BattleScene extends Scene {
@@ -24,8 +25,7 @@ export class BattleScene extends Scene {
   private iconCache = new Map<string, HTMLImageElement>();
   private state: GameState = GameState.load();
   private enemies: BattleUnit[] = [];
-  private playerHp: number = 100;
-  private playerMaxHp: number = 100;
+  private playerUnits: BattleUnit[] = []; // Player loadout units (leader + members)
   private timer: number = 1.0; // 0.0 to 1.0
   private readonly dragTimerDuration = 5.0; // seconds
   private dragTimerRemaining: number = 0.0; // seconds remaining
@@ -101,21 +101,61 @@ export class BattleScene extends Scene {
         .filter((e): e is BattleUnit => e !== null)
         .sort((a, b) => a.position - b.position); // Sort by position
 
-      // Initialize player HP based on loadout (simplified for now)
+      // Initialize player units from loadout
       const loadout = this.state.loadout;
-      let totalHp = 0;
+      this.playerUnits = [];
+
+      // Add leader (position 0)
       if (loadout.leader) {
         const leaderCard = this.cards.find((c) => c.id === loadout.leader);
-        if (leaderCard) totalHp += leaderCard.hp;
+        if (leaderCard) {
+          const position = 0;
+          // Convert Card to Unit format for BattleUnit
+          const unit: Unit = {
+            id: `${position}_${leaderCard.id}`, // ensure unique id by appending position
+            name: leaderCard.name,
+            attack: leaderCard.attack,
+            hp: leaderCard.hp,
+            elements: leaderCard.elements,
+            tags: ["Player"],
+            imagePath: leaderCard.imagePath,
+          };
+          this.playerUnits.push({
+            unit,
+            currentHp: leaderCard.hp,
+            maxHp: leaderCard.hp,
+            position: position,
+            cardId: leaderCard.id,
+          });
+        }
       }
-      loadout.members.forEach((memberId) => {
+
+      // Add members (positions 1-3)
+      loadout.members.forEach((memberId, index) => {
         if (memberId) {
           const memberCard = this.cards.find((c) => c.id === memberId);
-          if (memberCard) totalHp += memberCard.hp;
+          if (memberCard) {
+            const position = index + 1;
+            // Convert Card to Unit format for BattleUnit
+            const unit: Unit = {
+              id: `${position}_${memberCard.id}`, // ensure unique id by appending position
+              name: memberCard.name,
+              attack: memberCard.attack,
+              hp: memberCard.hp,
+              elements: memberCard.elements,
+              tags: ["Player"],
+              imagePath: memberCard.imagePath,
+            };
+            this.playerUnits.push({
+              unit,
+              currentHp: memberCard.hp,
+              maxHp: memberCard.hp,
+              position: position,
+              cardId: memberCard.id,
+            });
+          }
         }
       });
-      this.playerMaxHp = totalHp || 100;
-      this.playerHp = this.playerMaxHp;
 
       // Initialize and populate the match3 grid
       this.initializeGrid();
@@ -316,13 +356,16 @@ export class BattleScene extends Scene {
       const hpBarX = slotX + playerUnitGap;
       const hpBarY = playerUnitHpArea.y + (playerUnitHpArea.h - playerUnitHpBarHeight) / 2;
 
-      // For now, use full HP (could track individual unit HP later)
-      const hpRatio = 1.0; // card.hp / card.hp
+      // Find corresponding player unit
+      const playerUnit = this.playerUnits.find((unit) => unit.cardId === card.id);
+      const currentHp = playerUnit?.currentHp ?? card.hp;
+      const maxHp = playerUnit?.maxHp ?? card.hp;
+      const hpRatio = maxHp > 0 ? currentHp / maxHp : 0;
 
       drawProgressBar(ctx, hpBarX, hpBarY, playerUnitHpBarWidth, playerUnitHpBarHeight, hpRatio, "#10b981", "#23262d");
 
       // Draw HP text
-      const hpText = `${card.hp}/${card.hp}`;
+      const hpText = `${currentHp}/${maxHp}`;
       ctx.font = "12px system-ui";
       ctx.fillStyle = "#e5e7eb";
       ctx.textAlign = "center";
@@ -866,8 +909,47 @@ export class BattleScene extends Scene {
       console.log("Applied damage from cascade", damageInstances);
     }
 
+    // If it was player turn, switch to enemy turn
+    if (this.isPlayerTurn) {
+      this.startEnemyTurn();
+    }
+
     // Start refill animations (will call findAndStartNextMatch when complete)
     this.compactAndRefill();
+  }
+
+  private startEnemyTurn(): void {
+    // Switch to enemy turn
+    this.isPlayerTurn = false;
+
+    // Apply damage from all alive enemies to player units
+    const aliveEnemies = this.enemies.filter((e) => e.currentHp > 0);
+
+    for (const enemy of aliveEnemies) {
+      // Each enemy deals damage equal to their attack to the rightmost alive player unit
+      const alivePlayers = this.playerUnits.filter((unit) => unit.currentHp > 0);
+      const rightmostAlivePlayer =
+        alivePlayers.length > 0
+          ? alivePlayers.reduce((rightmost, current) => (current.position > rightmost.position ? current : rightmost))
+          : null;
+
+      if (rightmostAlivePlayer && enemy.unit.elements?.[0] && rightmostAlivePlayer.unit.elements?.[0]) {
+        // Calculate elemental multiplier
+        const multiplier = elementalMultiplier(enemy.unit.elements[0], rightmostAlivePlayer.unit.elements[0]);
+        const finalDamage = Math.floor(enemy.unit.attack * multiplier);
+
+        // Apply damage
+        rightmostAlivePlayer.currentHp = Math.max(0, rightmostAlivePlayer.currentHp - finalDamage);
+
+        console.log(
+          `Enemy ${enemy.unit.name} dealt ${finalDamage} damage to ${rightmostAlivePlayer.unit.name} (${rightmostAlivePlayer.currentHp}/${rightmostAlivePlayer.maxHp} HP remaining)`
+        );
+      }
+    }
+
+    // Switch back to player turn
+    this.isPlayerTurn = true;
+    console.log("Enemy turn complete, switching back to player turn");
   }
 
   private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {

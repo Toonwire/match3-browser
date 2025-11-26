@@ -32,6 +32,14 @@
   elements: [Grass]
   tags: [Enemy]
   imagePath: /assets/cards/card_08_wispier.png
+  effect:
+    - type: damage
+      description: Deal 1x grass dmg to all enemies
+      elements: [Grass]
+      multipliers: [1]
+      targets: [Player]
+      aoe: true
+      cooldown: 2
 
 - id: unit_wisp_boss
   name: Ancient Wisp
