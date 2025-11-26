@@ -1,4 +1,4 @@
-import type { Loadout, Element, Unit } from "../data/types";
+import type { Card, Loadout, Element, Unit } from "../data/types";
 import type { Match } from "./MatchLogic";
 
 const triangle: Record<Element, Element[]> = {
@@ -25,6 +25,8 @@ export interface DamageInstance {
   baseDamage: number; // Base damage amount before multipliers
   isAoE: boolean; // True if L/T shape match
   cardIds: string[]; // Cards that contributed to this damage
+  leaderPassiveMultiplier?: number; // Multiplier from leader passive (applied for Enemy targets)
+  leaderPassiveBossMultiplier?: number; // Multiplier from leader passive (applied for Boss targets)
 }
 
 /**
@@ -33,14 +35,10 @@ export interface DamageInstance {
  *
  * @param matches - Array of matches found in the grid
  * @param loadout - Player's loadout (leader + members)
- * @param cards - All available cards (needed to check card elements)
+ * @param cards - All available cards (needed to check card elements and leader passives)
  * @returns Array of damage instances ready to be applied
  */
-export function computeDamageFromMatches(
-  matches: Match[],
-  loadout: Loadout,
-  cards: Array<{ id: string; elements: Element[]; attack: number }>
-): DamageInstance[] {
+export function computeDamageFromMatches(matches: Match[], loadout: Loadout, cards: Card[]): DamageInstance[] {
   // Tally matches by element
   const tally = new Map<Element, { count: number; isAoE: boolean }>();
   for (const m of matches) {
@@ -53,17 +51,49 @@ export function computeDamageFromMatches(
 
   const damageInstances: DamageInstance[] = [];
 
+  // Get leader card for leader passive calculations
+  const leaderCard = loadout.leader ? cards.find((c) => c.id === loadout.leader) : null;
+
   // Get all cards in loadout
   const loadoutCardIds = [loadout.leader, ...loadout.members].filter(Boolean);
   const loadoutCards = loadoutCardIds
     .map((id) => cards.find((c) => c.id === id))
-    .filter((card): card is { id: string; elements: Element[]; attack: number } => card !== undefined);
+    .filter((card): card is Card => card !== undefined);
+
+  // Calculate leader passive multipliers for each element
+  const leaderMultipliers = new Map<Element, { enemy: number; boss: number }>();
+  if (leaderCard && leaderCard.leaderPassive && Array.isArray(leaderCard.leaderPassive)) {
+    for (const ability of leaderCard.leaderPassive) {
+      for (const effect of ability.effect) {
+        if (effect.type === "damage") {
+          // Match each element with its corresponding multiplier
+          effect.elements.forEach((el, index) => {
+            const multiplier = effect.multipliers[index] ?? 1;
+            const current = leaderMultipliers.get(el) ?? { enemy: 1, boss: 1 };
+
+            // Apply multiplier based on target type
+            if (effect.targets.includes("Enemy")) {
+              current.enemy = Math.max(current.enemy, multiplier); // Use max if multiple passives
+            }
+            if (effect.targets.includes("Boss")) {
+              current.boss = Math.max(current.boss, multiplier); // Use max if multiple passives
+            }
+
+            leaderMultipliers.set(el, current);
+          });
+        }
+      }
+    }
+  }
 
   // For each matched element, calculate damage from each card
   for (const [element, matchData] of tally.entries()) {
     const numMatchedTiles = matchData.count;
     const isAoE = matchData.isAoE;
     const minShapeSize = isAoE ? 5 : 3;
+
+    // Get leader passive multipliers for this element
+    const leaderMultiplier = leaderMultipliers.get(element) ?? { enemy: 1, boss: 1 };
 
     // Find cards that can deal this element's damage
     for (const card of loadoutCards) {
@@ -80,6 +110,8 @@ export function computeDamageFromMatches(
             baseDamage,
             isAoE,
             cardIds: [card.id],
+            leaderPassiveMultiplier: leaderMultiplier.enemy > 1 ? leaderMultiplier.enemy : undefined,
+            leaderPassiveBossMultiplier: leaderMultiplier.boss > 1 ? leaderMultiplier.boss : undefined,
           });
         }
       }
@@ -108,8 +140,17 @@ export function applyDamageToEnemies<T extends { unit: Unit; currentHp: number }
       // AoE: Apply to all enemies
       for (const enemy of updatedEnemies) {
         if (enemy.currentHp > 0 && enemy.unit.elements?.[0]) {
-          const multiplier = elementalMultiplier(damage.element, enemy.unit.elements[0]);
-          const finalDamage = Math.floor(damage.baseDamage * multiplier);
+          // Apply leader passive multiplier based on enemy type
+          let leaderMultiplier = 1;
+          const isBoss = enemy.unit.tags?.includes("Boss") ?? false;
+          if (isBoss && damage.leaderPassiveBossMultiplier) {
+            leaderMultiplier = damage.leaderPassiveBossMultiplier;
+          } else if (damage.leaderPassiveMultiplier) {
+            leaderMultiplier = damage.leaderPassiveMultiplier;
+          }
+
+          const elementalMult = elementalMultiplier(damage.element, enemy.unit.elements[0]);
+          const finalDamage = Math.floor(damage.baseDamage * leaderMultiplier * elementalMult);
           enemy.currentHp = Math.max(0, enemy.currentHp - finalDamage);
         }
       }
@@ -119,8 +160,17 @@ export function applyDamageToEnemies<T extends { unit: Unit; currentHp: number }
       const leftmostAlive = updatedEnemies.find((e) => e.currentHp > 0);
 
       if (leftmostAlive && leftmostAlive.unit.elements?.[0]) {
-        const multiplier = elementalMultiplier(damage.element, leftmostAlive.unit.elements[0]);
-        const finalDamage = Math.floor(damage.baseDamage * multiplier);
+        // Apply leader passive multiplier based on enemy type
+        let leaderMultiplier = 1;
+        const isBoss = leftmostAlive.unit.tags?.includes("Boss") ?? false;
+        if (isBoss && damage.leaderPassiveBossMultiplier) {
+          leaderMultiplier = damage.leaderPassiveBossMultiplier;
+        } else if (!isBoss && damage.leaderPassiveMultiplier) {
+          leaderMultiplier = damage.leaderPassiveMultiplier;
+        }
+
+        const elementalMult = elementalMultiplier(damage.element, leftmostAlive.unit.elements[0]);
+        const finalDamage = Math.floor(damage.baseDamage * leaderMultiplier * elementalMult);
         leftmostAlive.currentHp = Math.max(0, leftmostAlive.currentHp - finalDamage);
       }
     }

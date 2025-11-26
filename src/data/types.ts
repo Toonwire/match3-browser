@@ -1,5 +1,17 @@
 export type Element = "Fire" | "Water" | "Grass" | "Dark" | "Light" | "Healing";
 
+export interface LeaderPassiveEffect {
+  type: "damage";
+  elements: Element[];
+  multipliers: number[]; // One multiplier per element in the elements array
+  targets: string[]; // e.g., ["Enemy"] or ["Boss"]
+}
+
+export interface LeaderPassiveAbility {
+  description: string;
+  effect: LeaderPassiveEffect[];
+}
+
 export interface Card {
   id: string;
   name: string;
@@ -8,7 +20,7 @@ export interface Card {
   hp: number;
   elements: Element[];
   imagePath: string;
-  leaderPassive?: unknown;
+  leaderPassive?: LeaderPassiveAbility[] | null;
 }
 
 export interface Unit {

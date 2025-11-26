@@ -1227,8 +1227,18 @@ export class BattleScene extends Scene {
         // AoE: Apply to all enemies
         for (const enemy of this.enemies) {
           if (enemy.currentHp > 0 && enemy.unit.elements?.[0]) {
-            const multiplier = elementalMultiplier(damage.element, enemy.unit.elements[0]);
-            const finalDamage = Math.floor(damage.baseDamage * multiplier);
+            // Apply leader passive multiplier based on enemy type
+            let leaderMultiplier = 1;
+            const isBoss = enemy.unit.tags?.includes("Boss") ?? false;
+            if (isBoss && damage.leaderPassiveBossMultiplier) {
+              leaderMultiplier = damage.leaderPassiveBossMultiplier;
+            } else if (!isBoss && damage.leaderPassiveMultiplier) {
+              leaderMultiplier = damage.leaderPassiveMultiplier;
+            }
+
+            const elementalMult = elementalMultiplier(damage.element, enemy.unit.elements[0]);
+            const totalMultiplier = leaderMultiplier * elementalMult;
+            const finalDamage = Math.floor(damage.baseDamage * totalMultiplier);
             const hpBefore = enemy.currentHp;
             enemy.currentHp = Math.max(0, enemy.currentHp - finalDamage);
 
@@ -1246,7 +1256,7 @@ export class BattleScene extends Scene {
                 element: enemy.unit.elements[0],
               },
               baseDamage: damage.baseDamage,
-              multiplier,
+              multiplier: totalMultiplier,
               finalDamage,
               isAoE: true,
               targetHpAfter: enemy.currentHp,
@@ -1259,8 +1269,18 @@ export class BattleScene extends Scene {
         const leftmostAlive = this.enemies.find((e) => e.currentHp > 0);
 
         if (leftmostAlive && leftmostAlive.unit.elements?.[0]) {
-          const multiplier = elementalMultiplier(damage.element, leftmostAlive.unit.elements[0]);
-          const finalDamage = Math.floor(damage.baseDamage * multiplier);
+          // Apply leader passive multiplier based on enemy type
+          let leaderMultiplier = 1;
+          const isBoss = leftmostAlive.unit.tags?.includes("Boss") ?? false;
+          if (isBoss && damage.leaderPassiveBossMultiplier) {
+            leaderMultiplier = damage.leaderPassiveBossMultiplier;
+          } else if (!isBoss && damage.leaderPassiveMultiplier) {
+            leaderMultiplier = damage.leaderPassiveMultiplier;
+          }
+
+          const elementalMult = elementalMultiplier(damage.element, leftmostAlive.unit.elements[0]);
+          const totalMultiplier = leaderMultiplier * elementalMult;
+          const finalDamage = Math.floor(damage.baseDamage * totalMultiplier);
           const hpBefore = leftmostAlive.currentHp;
           leftmostAlive.currentHp = Math.max(0, leftmostAlive.currentHp - finalDamage);
 
@@ -1278,7 +1298,7 @@ export class BattleScene extends Scene {
               element: leftmostAlive.unit.elements[0],
             },
             baseDamage: damage.baseDamage,
-            multiplier,
+            multiplier: totalMultiplier,
             finalDamage,
             isAoE: false,
             targetHpAfter: leftmostAlive.currentHp,
