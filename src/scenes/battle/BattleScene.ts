@@ -52,6 +52,8 @@ export class BattleScene extends Scene {
   private readonly popAnimationDuration = 0.3; // seconds
   private readonly cascadeDelay = 0.5; // seconds delay before cascade starts
   private cascadeDelayTimer = 0.0; // Current delay timer
+  private refillAnimations: Map<string, { progress: number; element: Element }> = new Map(); // Key: "row,col", Value: { progress, element }
+  private readonly refillAnimationDuration = 0.15; // seconds
   private isResolvingMatches = false;
   private pendingMatches: Match[] = [];
   private currentMatchIndex = 0; // Index of the current match being animated
@@ -150,8 +152,45 @@ export class BattleScene extends Scene {
       }
 
       // If all animations are done and we're resolving, continue to next match
-      if (this.popAnimations.size === 0 && this.isResolvingMatches && this.cascadeDelayTimer === 0) {
+      if (
+        this.popAnimations.size === 0 &&
+        this.isResolvingMatches &&
+        this.cascadeDelayTimer === 0 &&
+        this.refillAnimations.size === 0
+      ) {
         this.onCurrentMatchAnimationComplete();
+      }
+    }
+
+    // Update refill animations
+    const refillKeysToRemove: string[] = [];
+    for (const [key, animData] of this.refillAnimations.entries()) {
+      const newProgress = animData.progress + dt / this.refillAnimationDuration;
+      if (newProgress >= 1.0) {
+        refillKeysToRemove.push(key);
+        // Update grid with final element when animation completes
+        const [row, col] = key.split(",").map(Number);
+        this.grid[row][col] = animData.element;
+      } else {
+        this.refillAnimations.set(key, { progress: newProgress, element: animData.element });
+      }
+    }
+
+    // Remove completed refill animations
+    if (refillKeysToRemove.length > 0) {
+      for (const key of refillKeysToRemove) {
+        this.refillAnimations.delete(key);
+      }
+
+      // If all refill animations are done and we're resolving, check for new matches
+      // (refill happens after all matches in a round are done, so we should find new matches)
+      if (
+        this.refillAnimations.size === 0 &&
+        this.isResolvingMatches &&
+        this.popAnimations.size === 0 &&
+        this.cascadeDelayTimer === 0
+      ) {
+        this.findAndStartNextMatch();
       }
     }
   }
@@ -391,22 +430,23 @@ export class BattleScene extends Scene {
         // Draw element icon if tile has an element and it's not the empty space
         if (!isEmptySpace) {
           const animationKey = `${row},${col}`;
-          const animData = this.popAnimations.get(animationKey);
+          const popAnimData = this.popAnimations.get(animationKey);
+          const refillAnimData = this.refillAnimations.get(animationKey);
 
-          if (animData !== undefined) {
+          if (popAnimData !== undefined) {
             // Draw pop animation (tile is already cleared from grid, but we render the animation)
             ctx.save();
 
             // Calculate animation values
             // Scale: goes from 1.0 to 1.3 then back to 1.0
             const scalePhase =
-              animData.progress < 0.5
-                ? animData.progress * 2 // 0 to 1
-                : 1 - (animData.progress - 0.5) * 2; // 1 to 0
+              popAnimData.progress < 0.5
+                ? popAnimData.progress * 2 // 0 to 1
+                : 1 - (popAnimData.progress - 0.5) * 2; // 1 to 0
             const scale = 1.0 + scalePhase * 0.3;
 
             // Opacity: fades out in the second half
-            const opacity = animData.progress < 0.5 ? 1.0 : 1.0 - (animData.progress - 0.5) * 2;
+            const opacity = popAnimData.progress < 0.5 ? 1.0 : 1.0 - (popAnimData.progress - 0.5) * 2;
 
             // Apply transformations
             const centerX = cellX + cellSize / 2;
@@ -415,7 +455,27 @@ export class BattleScene extends Scene {
             ctx.scale(scale, scale);
             ctx.globalAlpha = opacity;
 
-            const iconPath = elementIconPath(animData.element);
+            const iconPath = elementIconPath(popAnimData.element);
+            const iconSize = cellSize * 1.0;
+            const iconX = -iconSize / 2;
+            const iconY = -iconSize / 2;
+            this.drawIcon(ctx, iconPath, iconX, iconY, iconSize, iconSize);
+
+            ctx.restore();
+          } else if (refillAnimData !== undefined) {
+            // Draw refill animation - tile grows from 0 to full size
+            ctx.save();
+
+            // Scale grows from 0 to 1
+            const scale = refillAnimData.progress;
+
+            // Apply transformations
+            const centerX = cellX + cellSize / 2;
+            const centerY = cellY + cellSize / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(scale, scale);
+
+            const iconPath = elementIconPath(refillAnimData.element);
             const iconSize = cellSize * 1.0;
             const iconX = -iconSize / 2;
             const iconY = -iconSize / 2;
@@ -657,24 +717,28 @@ export class BattleScene extends Scene {
   private compactAndRefill() {
     const elements: Element[] = ["Fire", "Water", "Grass", "Dark", "Light", "Healing"];
 
-    // Drop cells down (cascade)
-    for (let col = 0; col < this.gridCols; col++) {
-      let writeRow = this.gridRows - 1;
-      for (let row = this.gridRows - 1; row >= 0; row--) {
-        const cell = this.grid[row][col];
-        if (cell !== null) {
-          this.grid[writeRow][col] = cell;
-          if (writeRow !== row) {
-            this.grid[row][col] = null;
-          }
-          writeRow--;
+    // Create refill animations for empty tiles instead of immediately setting them
+    for (let row = 0; row < this.gridRows; row++) {
+      for (let col = 0; col < this.gridCols; col++) {
+        if (this.grid[row][col] === null) {
+          const randomIndex = Math.floor(Math.random() * elements.length);
+          const animationKey = `${row},${col}`;
+          this.refillAnimations.set(animationKey, {
+            progress: 0.0,
+            element: elements[randomIndex],
+          });
         }
       }
-      // Refill remaining empty spaces at the top
-      for (let row = writeRow; row >= 0; row--) {
-        const randomIndex = Math.floor(Math.random() * elements.length);
-        this.grid[row][col] = elements[randomIndex];
-      }
+    }
+
+    // If no refill animations were created, check for new matches immediately
+    if (
+      this.refillAnimations.size === 0 &&
+      this.isResolvingMatches &&
+      this.popAnimations.size === 0 &&
+      this.cascadeDelayTimer === 0
+    ) {
+      this.findAndStartNextMatch();
     }
   }
 
@@ -764,9 +828,6 @@ export class BattleScene extends Scene {
     const matches = this.pendingMatches;
 
     // Tiles are already cleared when animations started, so we just cascade and refill
-    // Cascade and refill
-    this.compactAndRefill();
-
     // Calculate and apply damage for this cascade
     const damageInstances = computeDamageFromMatches(matches, this.state.loadout, this.cards);
     if (damageInstances.length > 0) {
@@ -774,8 +835,8 @@ export class BattleScene extends Scene {
       console.log("Applied damage from cascade", damageInstances);
     }
 
-    // Check for new matches and start next animation cycle
-    this.findAndStartNextMatch();
+    // Start refill animations (will call findAndStartNextMatch when complete)
+    this.compactAndRefill();
   }
 
   private pointInRect(x: number, y: number, r: { x: number; y: number; w: number; h: number }): boolean {
