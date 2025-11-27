@@ -120,6 +120,9 @@ export class BattleScene extends Scene {
   private refillAnimations: Map<string, { progress: number; element: Element }> = new Map(); // Key: "row,col", Value: { progress, element }
   private readonly refillAnimationDuration = 0.15; // seconds
   private isResolvingMatches = false;
+  private readonly turnSwitchDelay = 1.0; // seconds delay between turns
+  private turnSwitchDelayTimer = 0.0; // Current turn switch delay timer
+  private pendingTurnSwitch: "enemy" | "player" | null = null; // Which turn to switch to after delay
   private pendingMatches: Match[] = [];
   private accumulatedMatches: Match[] = []; // All matches across all cascades in current resolution
   private currentMatchIndex = 0; // Index of the current match being animated
@@ -276,6 +279,23 @@ export class BattleScene extends Scene {
         this.cascadeDelayTimer = 0;
         // Delay complete, proceed with cascade
         this.continueResolvingMatches();
+      }
+    }
+
+    // Update turn switch delay timer
+    if (this.turnSwitchDelayTimer > 0) {
+      this.turnSwitchDelayTimer -= dt;
+      if (this.turnSwitchDelayTimer <= 0) {
+        this.turnSwitchDelayTimer = 0;
+        // Delay complete, switch turns
+        const pending = this.pendingTurnSwitch;
+        this.pendingTurnSwitch = null; // Clear before executing to prevent re-entry
+        console.log(`Turn switch delay complete, pending: ${pending}`);
+        if (pending === "enemy") {
+          this.executeEnemyTurn();
+        } else if (pending === "player") {
+          this.executePlayerTurnSwitch();
+        }
       }
     }
 
@@ -578,11 +598,6 @@ export class BattleScene extends Scene {
     ctx.textBaseline = "middle";
     const text = "⚔";
     drawTextWithShadow(ctx, text, attackerIconX, attackerIconY, attackerIconSize, "#9aa3b2");
-    if (this.isPlayerTurn) {
-      drawTextWithShadow(ctx, ">", attackerIconX + attackerIconSize, attackerIconY, attackerIconSize, "#9aa3b2");
-    } else {
-      drawTextWithShadow(ctx, "<", attackerIconX - attackerIconSize, attackerIconY, attackerIconSize, "#9aa3b2");
-    }
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
@@ -1094,9 +1109,9 @@ export class BattleScene extends Scene {
       // This will also calculate and apply damage for all matches including cascades
       this.resolveAllMatches();
     } else {
-      // No matches found, player turn is complete - trigger enemy turn
+      // No matches found, player turn is complete - trigger enemy turn with delay
       if (this.isPlayerTurn) {
-        this.startEnemyTurn();
+        this.queueEnemyTurn();
       }
     }
   }
@@ -1200,9 +1215,9 @@ export class BattleScene extends Scene {
       // Clear accumulated matches
       this.accumulatedMatches = [];
 
-      // If it was player turn, switch to enemy turn
+      // If it was player turn, switch to enemy turn with delay
       if (this.isPlayerTurn) {
-        this.startEnemyTurn();
+        this.queueEnemyTurn();
       }
 
       return;
@@ -1452,12 +1467,20 @@ export class BattleScene extends Scene {
     }
   }
 
-  private startEnemyTurn(): void {
+  private queueEnemyTurn(): void {
+    // Queue enemy turn with delay
+    this.pendingTurnSwitch = "enemy";
+    this.turnSwitchDelayTimer = this.turnSwitchDelay;
+  }
+
+  private executeEnemyTurn(): void {
+    console.log("executeEnemyTurn called");
     // Switch to enemy turn
     this.isPlayerTurn = false;
 
     // Apply damage from all alive enemies to player units
     const aliveEnemies = this.enemies.filter((e) => e.currentHp > 0);
+    console.log(`Alive enemies: ${aliveEnemies.length}`);
 
     for (const enemy of aliveEnemies) {
       // Each enemy deals damage equal to their attack to the rightmost alive player unit
@@ -1508,6 +1531,21 @@ export class BattleScene extends Scene {
       return;
     }
 
+    // Queue switch back to player turn with delay
+    console.log("Queueing player turn switch");
+    this.queuePlayerTurnSwitch();
+  }
+
+  private queuePlayerTurnSwitch(): void {
+    // Queue player turn switch with delay
+    console.log("queuePlayerTurnSwitch called, setting timer");
+    this.pendingTurnSwitch = "player";
+    this.turnSwitchDelayTimer = this.turnSwitchDelay;
+    console.log(`Timer set to ${this.turnSwitchDelayTimer}, pendingTurnSwitch: ${this.pendingTurnSwitch}`);
+  }
+
+  private executePlayerTurnSwitch(): void {
+    console.log("executePlayerTurnSwitch called");
     // Switch back to player turn
     this.isPlayerTurn = true;
 
