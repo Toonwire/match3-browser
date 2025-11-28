@@ -24,6 +24,13 @@ export interface ArmoryPanelRegions {
     w: number;
     h: number;
   } | null;
+  mutateSlots: Array<{
+    slotIndex: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }>;
 }
 
 export function renderArmoryPanel(
@@ -38,6 +45,7 @@ export function renderArmoryPanel(
   loadout: Loadout,
   scrollOffset: number = 0,
   showMutateView: boolean = false,
+  mutateSlots: [string | null, string | null] = [null, null],
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
   const loadoutHeight = 140; // Increased from 100 to use more vertical space
@@ -53,10 +61,28 @@ export function renderArmoryPanel(
     }>;
   } = { loadoutSlots: [] };
 
+  let mutateSlotRegions: Array<{
+    slotIndex: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }> = [];
+
   if (showMutateView) {
     // Render mutate view instead of loadout
     drawText(ctx, "Mutate", x, y + 5);
-    renderMutate(ctx, x, loadoutY, width, loadoutHeight, cards, cardCollection, drawIcon);
+    mutateSlotRegions = renderMutate(
+      ctx,
+      x,
+      loadoutY,
+      width,
+      loadoutHeight,
+      cards,
+      cardCollection,
+      mutateSlots,
+      drawIcon
+    );
   } else {
     // Render loadout view
     drawText(ctx, "Loadout", x, y + 5);
@@ -87,6 +113,7 @@ export function renderArmoryPanel(
     galleryCards: galleryRegions.galleryCards,
     loadoutSlots: loadoutRegions.loadoutSlots,
     mutateButton: mutateButtonRegion,
+    mutateSlots: mutateSlotRegions,
   };
 }
 
@@ -222,16 +249,125 @@ function renderMutate(
   height: number,
   cards: Card[],
   cardCollection: Record<string, number>,
+  mutateSlots: [string | null, string | null],
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
-): void {
-  // Placeholder for mutate view - render centered text for now
-  ctx.font = "24px system-ui";
+): Array<{
+  slotIndex: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}> {
+  const gridMarginY = 4;
+  const availableWidth = width;
+  const availableHeight = height - gridMarginY * 2;
+
+  // Calculate card slot size - make them square and fit two slots with gap and arrow
+  const gap = 40; // Space for arrow between slots
+  const slotSize = Math.min((availableWidth - gap) / 2, availableHeight);
+
+  // Center the slots vertically
+  const slotY = y + gridMarginY + (availableHeight - slotSize) / 2;
+
+  // Calculate total width of both slots + gap
+  const totalWidth = slotSize * 2 + gap;
+
+  // Center horizontally
+  const startX = x + (availableWidth - totalWidth) / 2;
+
+  // Calculate positions for two slots (centered)
+  const leftSlotX = startX;
+  const rightSlotX = startX + slotSize + gap;
+
+  const mutateSlotRegions: Array<{
+    slotIndex: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }> = [];
+
+  // Draw left slot (input card 1)
+  ctx.fillStyle = "#23262d";
+  ctx.fillRect(leftSlotX, slotY, slotSize, slotSize);
+  ctx.strokeStyle = "#2b2f3a";
+  ctx.strokeRect(leftSlotX + 0.5, slotY + 0.5, slotSize - 1, slotSize - 1);
+
+  // Store click region for left slot
+  mutateSlotRegions.push({
+    slotIndex: 0,
+    x: leftSlotX,
+    y: slotY,
+    w: slotSize,
+    h: slotSize,
+  });
+
+  // Draw card in left slot if present
+  if (mutateSlots[0] && drawIcon) {
+    const card = cards.find((c) => c.id === mutateSlots[0]);
+    if (card && card.imagePath) {
+      drawIcon(card.imagePath, leftSlotX, slotY, slotSize, slotSize);
+    }
+  }
+
+  // Draw right slot (input card 2)
+  ctx.fillStyle = "#23262d";
+  ctx.fillRect(rightSlotX, slotY, slotSize, slotSize);
+  ctx.strokeStyle = "#2b2f3a";
+  ctx.strokeRect(rightSlotX + 0.5, slotY + 0.5, slotSize - 1, slotSize - 1);
+
+  // Store click region for right slot
+  mutateSlotRegions.push({
+    slotIndex: 1,
+    x: rightSlotX,
+    y: slotY,
+    w: slotSize,
+    h: slotSize,
+  });
+
+  // Draw card in right slot if present
+  if (mutateSlots[1] && drawIcon) {
+    const card = cards.find((c) => c.id === mutateSlots[1]);
+    if (card && card.imagePath) {
+      drawIcon(card.imagePath, rightSlotX, slotY, slotSize, slotSize);
+    }
+  }
+
+  // Draw double arrow connection between slots
+  const arrowStartX = leftSlotX + slotSize;
+  const arrowEndX = rightSlotX;
+  const arrowY = slotY + slotSize / 2;
+  const arrowHeadSize = 8;
+
+  // Draw arrow line
+  ctx.strokeStyle = "#9aa3b2";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(arrowStartX, arrowY);
+  ctx.lineTo(arrowEndX, arrowY);
+  ctx.stroke();
+
+  // Draw left arrow head (pointing right →)
   ctx.fillStyle = "#9aa3b2";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Mutate View", x + width / 2, y + height / 2);
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
+  ctx.beginPath();
+  ctx.moveTo(arrowStartX + arrowHeadSize, arrowY);
+  ctx.lineTo(arrowStartX, arrowY - arrowHeadSize / 2);
+  ctx.lineTo(arrowStartX, arrowY + arrowHeadSize / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Draw right arrow head (pointing left ←)
+  ctx.beginPath();
+  ctx.moveTo(arrowEndX - arrowHeadSize, arrowY);
+  ctx.lineTo(arrowEndX, arrowY - arrowHeadSize / 2);
+  ctx.lineTo(arrowEndX, arrowY + arrowHeadSize / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Reset line width
+  ctx.lineWidth = 1;
+
+  return mutateSlotRegions;
 }
 
 function renderMutateButton(

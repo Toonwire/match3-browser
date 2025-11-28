@@ -111,3 +111,9 @@ export interface Item {
   elements?: Element[];
   effect?: unknown;
 }
+
+export interface Mutation {
+  id: string;
+  inputCards: [string, string]; // Two card IDs
+  resultCard: string; // Result card ID
+}

@@ -249,4 +249,44 @@ export class GameState {
 
     return false;
   }
+
+  /**
+   * Perform a card mutation: remove two cards from collection and add result card.
+   * Returns true if successful, false if cards are not available or mutation is invalid.
+   */
+  performMutation(cardId1: string, cardId2: string, resultCardId: string): boolean {
+    const collection = this.state.inventory.cardCollection;
+
+    // Check if both cards are available in collection
+    const count1 = collection[cardId1] || 0;
+    const count2 = collection[cardId2] || 0;
+
+    if (count1 <= 0 || count2 <= 0) {
+      return false; // Cards not available
+    }
+
+    // If same card is used twice, need at least 2 copies
+    if (cardId1 === cardId2 && count1 < 2) {
+      return false;
+    }
+
+    // Remove cards from collection
+    collection[cardId1] = count1 - 1;
+    if (collection[cardId1] === 0) {
+      delete collection[cardId1];
+    }
+
+    if (cardId1 !== cardId2) {
+      collection[cardId2] = count2 - 1;
+      if (collection[cardId2] === 0) {
+        delete collection[cardId2];
+      }
+    }
+
+    // Add result card to collection
+    collection[resultCardId] = (collection[resultCardId] || 0) + 1;
+
+    this.save();
+    return true;
+  }
 }

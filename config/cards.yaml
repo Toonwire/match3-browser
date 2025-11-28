@@ -184,14 +184,14 @@
   imagePath: /assets/cards/card_15_firebro.png
   leaderPassive: null
 
-- id: card_16_coreguard
-  name: Coreguard
+- id: card_16_coregolem
+  name: Coregolem
   description: A guardian of the core
   rank: 3
   attack: 26
   hp: 22
   elements: [Fire, Dark]
-  imagePath: /assets/cards/card_16_coreguard.png
+  imagePath: /assets/cards/card_16_coregolem.png
   leaderPassive: null
 
 - id: card_17_rimescale

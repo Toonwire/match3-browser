@@ -1,0 +1,41 @@
+################ BASIC MUTATIONS #################
+- id: mutation_01_whelpier
+  inputCards: [card_10_mutagen, card_01_whelp]
+  resultCard: card_02_whelpier
+
+- id: mutation_02_whelpiest
+  inputCards: [card_10_mutagen, card_02_whelpier]
+  resultCard: card_03_whelpiest
+
+- id: mutation_03_slimer
+  inputCards: [card_10_mutagen, card_04_slime]
+  resultCard: card_05_slimer
+
+- id: mutation_04_slimest
+  inputCards: [card_10_mutagen, card_05_slimer]
+  resultCard: card_06_slimest
+
+- id: mutation_05_wispier
+  inputCards: [card_10_mutagen, card_07_wisp]
+  resultCard: card_08_wispier
+
+- id: mutation_06_wispiest
+  inputCards: [card_10_mutagen, card_08_wispier]
+  resultCard: card_09_wispiest
+
+################ ADVANCED MUTATIONS #################
+- id: mutation_07_rimescale
+  inputCards: [card_12_glacier, card_12_glacier, card_16_coregolem]
+  resultCard: card_17_rimescale
+
+- id: mutation_08_coregolem
+  inputCards: [card_10_mutagen, card_15_firebro]
+  resultCard: card_16_coregolem
+
+- id: mutation_09_rootold
+  inputCards: [card_10_mutagen, card_13_leafmane]
+  resultCard: card_14_rootold
+
+- id: mutation_10_glacier
+  inputCards: [card_10_mutagen, card_11_icy]
+  resultCard: card_12_glacier

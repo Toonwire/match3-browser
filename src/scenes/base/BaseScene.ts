@@ -1,5 +1,5 @@
 import { loadYaml } from "../../data/loadYaml";
-import type { Card, Item, NPC, Shop, WorldDef } from "../../data/types";
+import type { Card, Item, Mutation, NPC, Shop, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -17,9 +17,11 @@ export class BaseScene extends Scene {
   private worlds: WorldDef[] = [];
   private shop?: Shop;
   private npcs: NPC[] = [];
+  private mutations: Mutation[] = [];
   private iconCache = new Map<string, HTMLImageElement>();
   private activePopup: "shop" | "armory" | "worlds" | null = null;
   private showMutateView: boolean = false;
+  private mutateSlots: [string | null, string | null] = [null, null];
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
   private onNavigateToWorld?: OnNavigateToWorld;
@@ -50,6 +52,13 @@ export class BaseScene extends Scene {
       w: number;
       h: number;
     } | null;
+    mutateSlots: Array<{
+      slotIndex: number;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    }>;
   } | null = null;
   private shopRegions: ShopPanelRegions | null = null;
   private galleryScrollOffset: number = 0;
@@ -83,6 +92,7 @@ export class BaseScene extends Scene {
       const shops = await loadYaml<Shop[]>("/config/shops.yaml");
       this.shop = shops.find((shop) => shop.id === "shop_01_base");
       this.npcs = await loadYaml<NPC[]>("/config/npcs.yaml");
+      this.mutations = await loadYaml<Mutation[]>("/config/mutations.yaml");
       const bg = new Image();
       bg.src = "/assets/backgrounds/base_background_v5.png";
       await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
@@ -259,11 +269,51 @@ export class BaseScene extends Scene {
           // Check if click is on mutate button
           if (this.armoryRegions.mutateButton && this.pointInRect(x, y, this.armoryRegions.mutateButton)) {
             this.showMutateView = !this.showMutateView;
+            // Reset mutate slots when switching views
+            if (!this.showMutateView) {
+              this.mutateSlots = [null, null];
+            }
             return;
           }
 
-          // Only handle loadout-related clicks when not in mutate view
-          if (!this.showMutateView) {
+          if (this.showMutateView) {
+            // Handle mutate view clicks
+            // Check if click is on a mutate slot (remove card from slot)
+            for (const slotRegion of this.armoryRegions.mutateSlots) {
+              if (this.pointInRect(x, y, slotRegion)) {
+                // Remove card from slot (card stays in collection)
+                this.mutateSlots[slotRegion.slotIndex] = null;
+                return;
+              }
+            }
+
+            // Check if click is on a gallery card (only if enabled)
+            for (const cardRegion of this.armoryRegions.galleryCards) {
+              if (this.pointInRect(x, y, cardRegion) && cardRegion.enabled) {
+                // Check if card is available in collection
+                const count = this.state.cardCollection[cardRegion.cardId] || 0;
+                if (count <= 0) {
+                  return;
+                }
+
+                // Find first empty mutate slot
+                if (this.mutateSlots[0] === null) {
+                  this.mutateSlots[0] = cardRegion.cardId;
+                } else if (this.mutateSlots[1] === null) {
+                  // Check if we're trying to add the same card that's already in slot 0
+                  // If so, we need at least 2 copies
+                  if (this.mutateSlots[0] === cardRegion.cardId && count < 2) {
+                    return; // Not enough copies
+                  }
+                  this.mutateSlots[1] = cardRegion.cardId;
+                  // Try to perform mutation if both slots are filled
+                  this.tryPerformMutation();
+                }
+                return;
+              }
+            }
+          } else {
+            // Handle loadout view clicks
             // Check if click is on a loadout slot (prioritize removing over adding)
             for (const slotRegion of this.armoryRegions.loadoutSlots) {
               if (this.pointInRect(x, y, slotRegion)) {
@@ -293,6 +343,8 @@ export class BaseScene extends Scene {
           this.worldsRegions = null;
           this.galleryScrollOffset = 0; // Reset scroll when closing
           this.showMutateView = false; // Reset mutate view when closing
+          // Clear mutate slots when closing (cards stay in collection)
+          this.mutateSlots = [null, null];
         }
         return;
       }
@@ -318,6 +370,7 @@ export class BaseScene extends Scene {
       if (this.pointInPolygon(x, y, this.armoryPoly)) {
         this.activePopup = "armory";
         this.showMutateView = false; // Reset to loadout view when opening armory
+        this.mutateSlots = [null, null]; // Reset mutate slots when opening armory
         return;
       }
       if (this.pointInPolygon(x, y, this.worldsPoly)) {
@@ -369,6 +422,7 @@ export class BaseScene extends Scene {
         this.state.loadout,
         this.galleryScrollOffset,
         this.showMutateView,
+        this.mutateSlots,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
     } else if (kind === "worlds") {
@@ -402,5 +456,36 @@ export class BaseScene extends Scene {
       if (intersect) inside = !inside;
     }
     return inside;
+  }
+
+  private tryPerformMutation(): void {
+    // Both slots must be filled
+    if (!this.mutateSlots[0] || !this.mutateSlots[1]) {
+      return;
+    }
+
+    const cardId1 = this.mutateSlots[0];
+    const cardId2 = this.mutateSlots[1];
+
+    // Find matching mutation (order-independent)
+    const mutation = this.mutations.find((m) => {
+      const [input1, input2] = m.inputCards;
+      return (input1 === cardId1 && input2 === cardId2) || (input1 === cardId2 && input2 === cardId1);
+    });
+
+    if (!mutation) {
+      console.log("No valid mutation found for these cards");
+      return;
+    }
+
+    // Perform mutation
+    const success = this.state.performMutation(cardId1, cardId2, mutation.resultCard);
+    if (success) {
+      console.log(`Mutation successful! Created ${mutation.resultCard}`);
+      // Clear mutate slots
+      this.mutateSlots = [null, null];
+    } else {
+      console.log("Mutation failed (cards not available)");
+    }
   }
 }
