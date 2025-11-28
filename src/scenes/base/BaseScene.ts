@@ -25,6 +25,11 @@ export class BaseScene extends Scene {
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
   private onNavigateToWorld?: OnNavigateToWorld;
+  private mutateButtonAnimation: {
+    type: "success" | "failure" | null;
+    progress: number;
+  } = { type: null, progress: 0 };
+  private readonly mutateButtonAnimationDuration = 0.5; // seconds
 
   constructor(onNavigateToWorld?: OnNavigateToWorld) {
     super();
@@ -108,6 +113,17 @@ export class BaseScene extends Scene {
       // Initialize test collection with cards from cards.yaml
       // this.state.initializeTestCollection(this.cards);
     } catch {}
+  }
+
+  update(dt: number): void {
+    // Update mutate button animation
+    if (this.mutateButtonAnimation.type !== null) {
+      this.mutateButtonAnimation.progress += dt / this.mutateButtonAnimationDuration;
+      if (this.mutateButtonAnimation.progress >= 1.0) {
+        // Animation complete, reset
+        this.mutateButtonAnimation = { type: null, progress: 0 };
+      }
+    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -469,6 +485,7 @@ export class BaseScene extends Scene {
         this.showMutateView,
         this.mutateSlots,
         this.state.inventory.items,
+        this.mutateButtonAnimation,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
     } else if (kind === "worlds") {
@@ -547,6 +564,8 @@ export class BaseScene extends Scene {
 
     if (!mutation) {
       console.log("No valid mutation found for these cards");
+      // Trigger failure animation
+      this.mutateButtonAnimation = { type: "failure", progress: 0 };
       return;
     }
 
@@ -556,8 +575,12 @@ export class BaseScene extends Scene {
       console.log(`Mutation successful! Created ${mutation.resultCard}`);
       // Clear mutate slots
       this.mutateSlots = this.mutateSlots.map(() => null);
+      // Trigger success animation
+      this.mutateButtonAnimation = { type: "success", progress: 0 };
     } else {
       console.log("Mutation failed (cards not available)");
+      // Trigger failure animation
+      this.mutateButtonAnimation = { type: "failure", progress: 0 };
     }
   }
 }

@@ -54,6 +54,7 @@ export function renderArmoryPanel(
   showMutateView: boolean = false,
   mutateSlots: (string | null)[] = [null, null],
   items: Record<string, number> = {},
+  mutateButtonAnimation: { type: "success" | "failure" | null; progress: number } = { type: null, progress: 0 },
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
   const loadoutHeight = 140; // Increased from 100 to use more vertical space
@@ -99,6 +100,7 @@ export function renderArmoryPanel(
       cardCollection,
       mutateSlots,
       hasAdvancedScroll,
+      mutateButtonAnimation,
       drawIcon
     );
     mutateSlotRegions = mutateResult.slots;
@@ -272,6 +274,7 @@ function renderMutate(
   cardCollection: Record<string, number>,
   mutateSlots: (string | null)[],
   hasAdvancedScroll: boolean,
+  animation: { type: "success" | "failure" | null; progress: number } = { type: null, progress: 0 },
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): {
   slots: Array<{
@@ -390,33 +393,69 @@ function renderMutate(
   const buttonHeight = 32;
   const buttonWidth = 120;
   const buttonY = slotY + slotSize + 16; // Below slots with gap
-  const buttonX = x + (width - buttonWidth) / 2; // Center horizontally
+  const buttonXBase = x + (width - buttonWidth) / 2; // Center horizontally
 
   // Check if at least 2 slots are filled (enable button when >= 2 slots filled)
   const filledSlots = mutateSlots.filter((slot) => slot !== null).length;
   const buttonEnabled = filledSlots >= 2;
 
-  // Draw button background
-  ctx.fillStyle = buttonEnabled ? "#3a4a5c" : "#2a2f3a";
-  ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
-  ctx.strokeStyle = buttonEnabled ? "#5a6a7c" : "#3a3f4a";
+  // Calculate animation values
+  let scale = 1.0;
+  let bgColor = buttonEnabled ? "#3a4a5c" : "#2a2f3a";
+  let borderColor = buttonEnabled ? "#5a6a7c" : "#3a3f4a";
+  let textColor = buttonEnabled ? "#e5e7eb" : "#6b7280";
+  let buttonX = buttonXBase;
+  let buttonYOffset = 0;
+
+  if (animation.type !== null) {
+    const progress = animation.progress;
+    if (animation.type === "success") {
+      // Success: scale up with green tint
+      const scaleAmount = 1.0 + Math.sin(progress * Math.PI) * 0.15; // Scale up to 1.15x
+      scale = scaleAmount;
+      // Green tint for success
+      const greenIntensity = Math.sin(progress * Math.PI) * 0.5;
+      bgColor = `rgb(${58 + greenIntensity * 50}, ${74 + greenIntensity * 100}, ${92 + greenIntensity * 30})`;
+      borderColor = `rgb(${90 + greenIntensity * 50}, ${106 + greenIntensity * 100}, ${124 + greenIntensity * 30})`;
+    } else if (animation.type === "failure") {
+      // Failure: shake with red tint
+      const shakeAmount = Math.sin(progress * Math.PI * 4) * (1 - progress) * 3; // Shake that fades out
+      scale = 1.0 + Math.sin(progress * Math.PI) * 0.1; // Slight scale
+      // Red tint for failure
+      const redIntensity = Math.sin(progress * Math.PI) * 0.5;
+      bgColor = `rgb(${58 + redIntensity * 100}, ${42 - redIntensity * 20}, ${58 - redIntensity * 20})`;
+      borderColor = `rgb(${90 + redIntensity * 100}, ${74 - redIntensity * 20}, ${90 - redIntensity * 20})`;
+      // Apply shake offset
+      buttonX = buttonXBase + shakeAmount;
+    }
+  }
+
+  // Draw button background with scale transformation
+  ctx.save();
+  ctx.translate(buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + buttonYOffset);
+  ctx.scale(scale, scale);
+  ctx.translate(-buttonWidth / 2, -buttonHeight / 2);
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, buttonWidth, buttonHeight);
+  ctx.strokeStyle = borderColor;
   ctx.lineWidth = 2;
-  ctx.strokeRect(buttonX + 1, buttonY + 1, buttonWidth - 2, buttonHeight - 2);
+  ctx.strokeRect(1, 1, buttonWidth - 2, buttonHeight - 2);
+  ctx.restore();
   ctx.lineWidth = 1;
 
   // Draw button text
   ctx.font = "14px system-ui";
-  ctx.fillStyle = buttonEnabled ? "#e5e7eb" : "#6b7280";
+  ctx.fillStyle = textColor;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("Mutate", buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
+  ctx.fillText("Mutate", buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + buttonYOffset);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
 
   return {
     slots: mutateSlotRegions,
     button: {
-      x: buttonX,
+      x: buttonXBase, // Use base position for click detection
       y: buttonY,
       w: buttonWidth,
       h: buttonHeight,
