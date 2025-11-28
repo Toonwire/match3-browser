@@ -46,6 +46,7 @@ export function renderArmoryPanel(
   scrollOffset: number = 0,
   showMutateView: boolean = false,
   mutateSlots: [string | null, string | null] = [null, null],
+  items: Record<string, number> = {},
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
   const loadoutHeight = 140; // Increased from 100 to use more vertical space
@@ -90,7 +91,7 @@ export function renderArmoryPanel(
   }
 
   // Render mutate button aligned with loadout, at the right edge of the panel
-  const mutateButtonRegion = renderMutateButton(ctx, x, loadoutY, width, loadoutHeight, drawIcon);
+  const mutateButtonRegion = renderMutateButton(ctx, x, loadoutY, width, loadoutHeight, items, drawIcon);
 
   const galleryStartY = y + loadoutHeight + 120; // Better spacing between loadout and gallery
   drawText(ctx, "Gallery", x, galleryStartY);
@@ -376,6 +377,7 @@ function renderMutateButton(
   y: number,
   width: number,
   loadoutHeight: number,
+  items: Record<string, number> = {},
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): {
   x: number;
@@ -383,6 +385,13 @@ function renderMutateButton(
   w: number;
   h: number;
 } | null {
+  // Check if player has the mutation scroll item
+  const hasMutationScrollBasic = (items["item_02_mutation_scroll_basic"] || 0) > 0;
+  const hasMutationScrollAdvanced = (items["item_03_mutation_scroll_advanced"] || 0) > 0;
+  if (!hasMutationScrollBasic && !hasMutationScrollAdvanced) {
+    return null;
+  }
+
   // Calculate cell size to match loadout cells (same calculation as in renderLoadout)
   const cols = 4;
   const cellGap = 8;
@@ -410,7 +419,9 @@ function renderMutateButton(
   // Draw mutate button icon
   if (drawIcon) {
     drawIcon(
-      "assets/items/item_02_mutation_scroll_basic.png",
+      hasMutationScrollAdvanced
+        ? "assets/items/item_03_mutation_scroll_advanced.png"
+        : "assets/items/item_02_mutation_scroll_basic.png",
       mutateButtonX,
       mutateButtonY,
       mutateButtonSize,

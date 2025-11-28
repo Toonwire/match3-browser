@@ -8,12 +8,12 @@
       amount: 10
       targets: [Player]
 
-- id: item_02_mutation_scroll
+- id: item_02_mutation_scroll_basic
   name: Mutation Scroll (Basic)
   description: Learn to mutate creatures
   imagePath: /assets/items/item_02_mutation_scroll_basic.png
 
-- id: item_03_mutagen_scroll_advanced
+- id: item_03_mutation_scroll_advanced
   name: Mutagen Scroll (Adv)
   description: Teaches you how to perform advanced mutations
   imagePath: /assets/items/item_03_mutation_scroll_advanced.png

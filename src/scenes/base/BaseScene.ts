@@ -423,6 +423,7 @@ export class BaseScene extends Scene {
         this.galleryScrollOffset,
         this.showMutateView,
         this.mutateSlots,
+        this.state.inventory.items,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
     } else if (kind === "worlds") {
