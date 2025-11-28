@@ -31,6 +31,13 @@ export interface ArmoryPanelRegions {
     w: number;
     h: number;
   }>;
+  performMutateButton: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    enabled: boolean;
+  } | null;
 }
 
 export function renderArmoryPanel(
@@ -70,10 +77,18 @@ export function renderArmoryPanel(
     h: number;
   }> = [];
 
+  let performMutateButtonRegion: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    enabled: boolean;
+  } | null = null;
+
   if (showMutateView) {
     // Render mutate view instead of loadout
     drawText(ctx, "Mutate", x, y + 5);
-    mutateSlotRegions = renderMutate(
+    const mutateResult = renderMutate(
       ctx,
       x,
       loadoutY,
@@ -84,6 +99,8 @@ export function renderArmoryPanel(
       mutateSlots,
       drawIcon
     );
+    mutateSlotRegions = mutateResult.slots;
+    performMutateButtonRegion = mutateResult.button;
   } else {
     // Render loadout view
     drawText(ctx, "Loadout", x, y + 5);
@@ -115,6 +132,7 @@ export function renderArmoryPanel(
     loadoutSlots: loadoutRegions.loadoutSlots,
     mutateButton: mutateButtonRegion,
     mutateSlots: mutateSlotRegions,
+    performMutateButton: performMutateButtonRegion,
   };
 }
 
@@ -252,13 +270,22 @@ function renderMutate(
   cardCollection: Record<string, number>,
   mutateSlots: [string | null, string | null],
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
-): Array<{
-  slotIndex: number;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}> {
+): {
+  slots: Array<{
+    slotIndex: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }>;
+  button: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    enabled: boolean;
+  } | null;
+} {
   const gridMarginY = 4;
   const availableWidth = width;
   const availableHeight = height - gridMarginY * 2;
@@ -368,7 +395,43 @@ function renderMutate(
   // Reset line width
   ctx.lineWidth = 1;
 
-  return mutateSlotRegions;
+  // Render "Mutate" button below the slots
+  const buttonHeight = 32;
+  const buttonWidth = 120;
+  const buttonY = slotY + slotSize + 16; // Below slots with gap
+  const buttonX = x + (width - buttonWidth) / 2; // Center horizontally
+
+  // Check if both slots are filled
+  const bothSlotsFilled = mutateSlots[0] !== null && mutateSlots[1] !== null;
+  const buttonEnabled = bothSlotsFilled;
+
+  // Draw button background
+  ctx.fillStyle = buttonEnabled ? "#3a4a5c" : "#2a2f3a";
+  ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+  ctx.strokeStyle = buttonEnabled ? "#5a6a7c" : "#3a3f4a";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(buttonX + 1, buttonY + 1, buttonWidth - 2, buttonHeight - 2);
+  ctx.lineWidth = 1;
+
+  // Draw button text
+  ctx.font = "14px system-ui";
+  ctx.fillStyle = buttonEnabled ? "#e5e7eb" : "#6b7280";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Mutate", buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+
+  return {
+    slots: mutateSlotRegions,
+    button: {
+      x: buttonX,
+      y: buttonY,
+      w: buttonWidth,
+      h: buttonHeight,
+      enabled: buttonEnabled,
+    },
+  };
 }
 
 function renderMutateButton(

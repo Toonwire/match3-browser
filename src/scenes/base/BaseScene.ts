@@ -59,6 +59,13 @@ export class BaseScene extends Scene {
       w: number;
       h: number;
     }>;
+    performMutateButton: {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      enabled: boolean;
+    } | null;
   } | null = null;
   private shopRegions: ShopPanelRegions | null = null;
   private galleryScrollOffset: number = 0;
@@ -278,6 +285,16 @@ export class BaseScene extends Scene {
 
           if (this.showMutateView) {
             // Handle mutate view clicks
+            // Check if click is on perform mutate button
+            if (
+              this.armoryRegions.performMutateButton &&
+              this.pointInRect(x, y, this.armoryRegions.performMutateButton) &&
+              this.armoryRegions.performMutateButton.enabled
+            ) {
+              this.tryPerformMutation();
+              return;
+            }
+
             // Check if click is on a mutate slot (remove card from slot)
             for (const slotRegion of this.armoryRegions.mutateSlots) {
               if (this.pointInRect(x, y, slotRegion)) {
@@ -306,8 +323,6 @@ export class BaseScene extends Scene {
                     return; // Not enough copies
                   }
                   this.mutateSlots[1] = cardRegion.cardId;
-                  // Try to perform mutation if both slots are filled
-                  this.tryPerformMutation();
                 }
                 return;
               }
