@@ -26,3 +26,11 @@
         cost: 10
         unit: gold
         stock: 2
+      - id: item_02_mutation_scroll
+        cost: 30
+        unit: gold
+        stock: 1
+      - id: item_03_mutagen_scroll_advanced
+        cost: 3
+        unit: plovmand
+        stock: 1

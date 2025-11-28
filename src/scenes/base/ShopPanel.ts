@@ -205,7 +205,7 @@ export function renderShopPanel(
 
     const item = items.find((i) => i.id === shopItem.id);
     const name = item?.name || shopItem.id.replace("item_", "").replace(/_/g, " ");
-    const costText = shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plovmand`;
+    const costText = shopItem.unit === "gold" ? `${shopItem.cost}g` : `${shopItem.cost} plov`;
 
     // Draw item icon before name
     const iconY = cy - itemIconSize + 2;
