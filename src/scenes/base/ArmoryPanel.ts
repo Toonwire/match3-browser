@@ -409,7 +409,13 @@ function renderMutateButton(
 
   // Draw mutate button icon
   if (drawIcon) {
-    drawIcon("assets/misc/mutate_scroll.png", mutateButtonX, mutateButtonY, mutateButtonSize, mutateButtonSize);
+    drawIcon(
+      "assets/items/item_02_mutation_scroll_basic.png",
+      mutateButtonX,
+      mutateButtonY,
+      mutateButtonSize,
+      mutateButtonSize
+    );
   }
 
   return {
