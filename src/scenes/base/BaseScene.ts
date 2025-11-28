@@ -21,7 +21,7 @@ export class BaseScene extends Scene {
   private iconCache = new Map<string, HTMLImageElement>();
   private activePopup: "shop" | "armory" | "worlds" | null = null;
   private showMutateView: boolean = false;
-  private mutateSlots: [string | null, string | null] = [null, null];
+  private mutateSlots: (string | null)[] = [null, null];
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
   private onNavigateToWorld?: OnNavigateToWorld;
@@ -278,7 +278,19 @@ export class BaseScene extends Scene {
             this.showMutateView = !this.showMutateView;
             // Reset mutate slots when switching views
             if (!this.showMutateView) {
-              this.mutateSlots = [null, null];
+              const hasAdvancedScroll = (this.state.inventory.items["item_03_mutation_scroll_advanced"] || 0) > 0;
+              this.mutateSlots = hasAdvancedScroll ? [null, null, null] : [null, null];
+            } else {
+              // When entering mutate view, ensure slots array has correct length
+              const hasAdvancedScroll = (this.state.inventory.items["item_03_mutation_scroll_advanced"] || 0) > 0;
+              const requiredSlots = hasAdvancedScroll ? 3 : 2;
+              while (this.mutateSlots.length < requiredSlots) {
+                this.mutateSlots.push(null);
+              }
+              // Trim to required length if too long
+              if (this.mutateSlots.length > requiredSlots) {
+                this.mutateSlots = this.mutateSlots.slice(0, requiredSlots);
+              }
             }
             return;
           }
@@ -313,16 +325,21 @@ export class BaseScene extends Scene {
                   return;
                 }
 
+                // Count how many times this card is already in slots
+                const cardId = cardRegion.cardId;
+                const alreadyInSlots = this.mutateSlots.filter((slot) => slot === cardId).length;
+
+                // Check if we have enough copies (need at least alreadyInSlots + 1)
+                if (count <= alreadyInSlots) {
+                  return; // Not enough copies
+                }
+
                 // Find first empty mutate slot
-                if (this.mutateSlots[0] === null) {
-                  this.mutateSlots[0] = cardRegion.cardId;
-                } else if (this.mutateSlots[1] === null) {
-                  // Check if we're trying to add the same card that's already in slot 0
-                  // If so, we need at least 2 copies
-                  if (this.mutateSlots[0] === cardRegion.cardId && count < 2) {
-                    return; // Not enough copies
+                for (let i = 0; i < this.mutateSlots.length; i++) {
+                  if (this.mutateSlots[i] === null) {
+                    this.mutateSlots[i] = cardId;
+                    break;
                   }
-                  this.mutateSlots[1] = cardRegion.cardId;
                 }
                 return;
               }
@@ -359,7 +376,7 @@ export class BaseScene extends Scene {
           this.galleryScrollOffset = 0; // Reset scroll when closing
           this.showMutateView = false; // Reset mutate view when closing
           // Clear mutate slots when closing (cards stay in collection)
-          this.mutateSlots = [null, null];
+          this.mutateSlots = this.mutateSlots.map(() => null);
         }
         return;
       }
@@ -385,7 +402,9 @@ export class BaseScene extends Scene {
       if (this.pointInPolygon(x, y, this.armoryPoly)) {
         this.activePopup = "armory";
         this.showMutateView = false; // Reset to loadout view when opening armory
-        this.mutateSlots = [null, null]; // Reset mutate slots when opening armory
+        // Reset mutate slots when opening armory (ensure we have at least 2 slots)
+        const hasAdvancedScroll = (this.state.inventory.items["item_03_mutation_scroll_advanced"] || 0) > 0;
+        this.mutateSlots = hasAdvancedScroll ? [null, null, null] : [null, null];
         return;
       }
       if (this.pointInPolygon(x, y, this.worldsPoly)) {
@@ -425,6 +444,17 @@ export class BaseScene extends Scene {
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
     } else if (kind === "armory") {
+      // Ensure mutate slots array has correct length based on advanced scroll
+      const hasAdvancedScroll = (this.state.inventory.items["item_03_mutation_scroll_advanced"] || 0) > 0;
+      const requiredSlots = hasAdvancedScroll ? 3 : 2;
+      while (this.mutateSlots.length < requiredSlots) {
+        this.mutateSlots.push(null);
+      }
+      // Trim to required length if too long
+      if (this.mutateSlots.length > requiredSlots) {
+        this.mutateSlots = this.mutateSlots.slice(0, requiredSlots);
+      }
+
       this.armoryRegions = renderArmoryPanel(
         ctx,
         tx,
@@ -475,18 +505,44 @@ export class BaseScene extends Scene {
   }
 
   private tryPerformMutation(): void {
-    // Both slots must be filled
-    if (!this.mutateSlots[0] || !this.mutateSlots[1]) {
+    // Get all filled slots
+    const filledSlots = this.mutateSlots.filter((slot) => slot !== null) as string[];
+
+    // Need at least 2 cards
+    if (filledSlots.length < 2) {
       return;
     }
 
-    const cardId1 = this.mutateSlots[0];
-    const cardId2 = this.mutateSlots[1];
-
-    // Find matching mutation (order-independent)
+    // Find matching mutation (order-independent, accounting for duplicates)
     const mutation = this.mutations.find((m) => {
-      const [input1, input2] = m.inputCards;
-      return (input1 === cardId1 && input2 === cardId2) || (input1 === cardId2 && input2 === cardId1);
+      if (m.inputCards.length !== filledSlots.length) {
+        return false;
+      }
+
+      // Create frequency maps for both arrays
+      const mutationCounts = new Map<string, number>();
+      const slotCounts = new Map<string, number>();
+
+      m.inputCards.forEach((cardId) => {
+        mutationCounts.set(cardId, (mutationCounts.get(cardId) || 0) + 1);
+      });
+
+      filledSlots.forEach((cardId) => {
+        slotCounts.set(cardId, (slotCounts.get(cardId) || 0) + 1);
+      });
+
+      // Check if frequency maps match
+      if (mutationCounts.size !== slotCounts.size) {
+        return false;
+      }
+
+      for (const [cardId, count] of mutationCounts.entries()) {
+        if (slotCounts.get(cardId) !== count) {
+          return false;
+        }
+      }
+
+      return true;
     });
 
     if (!mutation) {
@@ -495,11 +551,11 @@ export class BaseScene extends Scene {
     }
 
     // Perform mutation
-    const success = this.state.performMutation(cardId1, cardId2, mutation.resultCard);
+    const success = this.state.performMutation(filledSlots, mutation.resultCard);
     if (success) {
       console.log(`Mutation successful! Created ${mutation.resultCard}`);
       // Clear mutate slots
-      this.mutateSlots = [null, null];
+      this.mutateSlots = this.mutateSlots.map(() => null);
     } else {
       console.log("Mutation failed (cards not available)");
     }

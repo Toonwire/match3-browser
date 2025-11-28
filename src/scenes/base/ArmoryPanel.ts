@@ -52,7 +52,7 @@ export function renderArmoryPanel(
   loadout: Loadout,
   scrollOffset: number = 0,
   showMutateView: boolean = false,
-  mutateSlots: [string | null, string | null] = [null, null],
+  mutateSlots: (string | null)[] = [null, null],
   items: Record<string, number> = {},
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
@@ -88,6 +88,7 @@ export function renderArmoryPanel(
   if (showMutateView) {
     // Render mutate view instead of loadout
     drawText(ctx, "Mutate", x, y + 5);
+    const hasAdvancedScroll = (items["item_03_mutation_scroll_advanced"] || 0) > 0;
     const mutateResult = renderMutate(
       ctx,
       x,
@@ -97,6 +98,7 @@ export function renderArmoryPanel(
       cards,
       cardCollection,
       mutateSlots,
+      hasAdvancedScroll,
       drawIcon
     );
     mutateSlotRegions = mutateResult.slots;
@@ -268,7 +270,8 @@ function renderMutate(
   height: number,
   cards: Card[],
   cardCollection: Record<string, number>,
-  mutateSlots: [string | null, string | null],
+  mutateSlots: (string | null)[],
+  hasAdvancedScroll: boolean,
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): {
   slots: Array<{
@@ -290,22 +293,26 @@ function renderMutate(
   const availableWidth = width;
   const availableHeight = height - gridMarginY * 2;
 
-  // Calculate card slot size - make them square and fit two slots with gap and arrow
+  // Determine number of slots (2 for basic, 3 for advanced)
+  const numSlots = hasAdvancedScroll ? 3 : 2;
+
+  // Ensure mutateSlots array has the right length
+  while (mutateSlots.length < numSlots) {
+    mutateSlots.push(null);
+  }
+
+  // Calculate card slot size - make them square and fit slots with gaps and arrows
   const gap = 40; // Space for arrow between slots
-  const slotSize = Math.min((availableWidth - gap) / 2, availableHeight);
+  const slotSize = Math.min((availableWidth - gap * (numSlots - 1)) / numSlots, availableHeight);
 
   // Center the slots vertically
   const slotY = y + gridMarginY + (availableHeight - slotSize) / 2;
 
-  // Calculate total width of both slots + gap
-  const totalWidth = slotSize * 2 + gap;
+  // Calculate total width of all slots + gaps
+  const totalWidth = slotSize * numSlots + gap * (numSlots - 1);
 
   // Center horizontally
   const startX = x + (availableWidth - totalWidth) / 2;
-
-  // Calculate positions for two slots (centered)
-  const leftSlotX = startX;
-  const rightSlotX = startX + slotSize + gap;
 
   const mutateSlotRegions: Array<{
     slotIndex: number;
@@ -315,82 +322,66 @@ function renderMutate(
     h: number;
   }> = [];
 
-  // Draw left slot (input card 1)
-  ctx.fillStyle = "#23262d";
-  ctx.fillRect(leftSlotX, slotY, slotSize, slotSize);
-  ctx.strokeStyle = "#2b2f3a";
-  ctx.strokeRect(leftSlotX + 0.5, slotY + 0.5, slotSize - 1, slotSize - 1);
+  // Draw all slots
+  for (let i = 0; i < numSlots; i++) {
+    const slotX = startX + i * (slotSize + gap);
 
-  // Store click region for left slot
-  mutateSlotRegions.push({
-    slotIndex: 0,
-    x: leftSlotX,
-    y: slotY,
-    w: slotSize,
-    h: slotSize,
-  });
+    // Draw slot background
+    ctx.fillStyle = "#23262d";
+    ctx.fillRect(slotX, slotY, slotSize, slotSize);
+    ctx.strokeStyle = "#2b2f3a";
+    ctx.strokeRect(slotX + 0.5, slotY + 0.5, slotSize - 1, slotSize - 1);
 
-  // Draw card in left slot if present
-  if (mutateSlots[0] && drawIcon) {
-    const card = cards.find((c) => c.id === mutateSlots[0]);
-    if (card && card.imagePath) {
-      drawIcon(card.imagePath, leftSlotX, slotY, slotSize, slotSize);
+    // Store click region for slot
+    mutateSlotRegions.push({
+      slotIndex: i,
+      x: slotX,
+      y: slotY,
+      w: slotSize,
+      h: slotSize,
+    });
+
+    // Draw card in slot if present
+    if (mutateSlots[i] && drawIcon) {
+      const card = cards.find((c) => c.id === mutateSlots[i]);
+      if (card && card.imagePath) {
+        drawIcon(card.imagePath, slotX, slotY, slotSize, slotSize);
+      }
+    }
+
+    // Draw arrow between slots (except after last slot)
+    if (i < numSlots - 1) {
+      const arrowStartX = slotX + slotSize;
+      const arrowEndX = slotX + slotSize + gap;
+      const arrowY = slotY + slotSize / 2;
+      const arrowHeadSize = 8;
+
+      // Draw arrow line
+      ctx.strokeStyle = "#9aa3b2";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(arrowStartX, arrowY);
+      ctx.lineTo(arrowEndX, arrowY);
+      ctx.stroke();
+
+      // Draw left arrow head (pointing right →)
+      ctx.fillStyle = "#9aa3b2";
+      ctx.beginPath();
+      ctx.moveTo(arrowStartX + arrowHeadSize, arrowY);
+      ctx.lineTo(arrowStartX, arrowY - arrowHeadSize / 2);
+      ctx.lineTo(arrowStartX, arrowY + arrowHeadSize / 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw right arrow head (pointing left ←)
+      ctx.beginPath();
+      ctx.moveTo(arrowEndX - arrowHeadSize, arrowY);
+      ctx.lineTo(arrowEndX, arrowY - arrowHeadSize / 2);
+      ctx.lineTo(arrowEndX, arrowY + arrowHeadSize / 2);
+      ctx.closePath();
+      ctx.fill();
     }
   }
-
-  // Draw right slot (input card 2)
-  ctx.fillStyle = "#23262d";
-  ctx.fillRect(rightSlotX, slotY, slotSize, slotSize);
-  ctx.strokeStyle = "#2b2f3a";
-  ctx.strokeRect(rightSlotX + 0.5, slotY + 0.5, slotSize - 1, slotSize - 1);
-
-  // Store click region for right slot
-  mutateSlotRegions.push({
-    slotIndex: 1,
-    x: rightSlotX,
-    y: slotY,
-    w: slotSize,
-    h: slotSize,
-  });
-
-  // Draw card in right slot if present
-  if (mutateSlots[1] && drawIcon) {
-    const card = cards.find((c) => c.id === mutateSlots[1]);
-    if (card && card.imagePath) {
-      drawIcon(card.imagePath, rightSlotX, slotY, slotSize, slotSize);
-    }
-  }
-
-  // Draw double arrow connection between slots
-  const arrowStartX = leftSlotX + slotSize;
-  const arrowEndX = rightSlotX;
-  const arrowY = slotY + slotSize / 2;
-  const arrowHeadSize = 8;
-
-  // Draw arrow line
-  ctx.strokeStyle = "#9aa3b2";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(arrowStartX, arrowY);
-  ctx.lineTo(arrowEndX, arrowY);
-  ctx.stroke();
-
-  // Draw left arrow head (pointing right →)
-  ctx.fillStyle = "#9aa3b2";
-  ctx.beginPath();
-  ctx.moveTo(arrowStartX + arrowHeadSize, arrowY);
-  ctx.lineTo(arrowStartX, arrowY - arrowHeadSize / 2);
-  ctx.lineTo(arrowStartX, arrowY + arrowHeadSize / 2);
-  ctx.closePath();
-  ctx.fill();
-
-  // Draw right arrow head (pointing left ←)
-  ctx.beginPath();
-  ctx.moveTo(arrowEndX - arrowHeadSize, arrowY);
-  ctx.lineTo(arrowEndX, arrowY - arrowHeadSize / 2);
-  ctx.lineTo(arrowEndX, arrowY + arrowHeadSize / 2);
-  ctx.closePath();
-  ctx.fill();
 
   // Reset line width
   ctx.lineWidth = 1;
@@ -401,9 +392,9 @@ function renderMutate(
   const buttonY = slotY + slotSize + 16; // Below slots with gap
   const buttonX = x + (width - buttonWidth) / 2; // Center horizontally
 
-  // Check if both slots are filled
-  const bothSlotsFilled = mutateSlots[0] !== null && mutateSlots[1] !== null;
-  const buttonEnabled = bothSlotsFilled;
+  // Check if at least 2 slots are filled (enable button when >= 2 slots filled)
+  const filledSlots = mutateSlots.filter((slot) => slot !== null).length;
+  const buttonEnabled = filledSlots >= 2;
 
   // Draw button background
   ctx.fillStyle = buttonEnabled ? "#3a4a5c" : "#2a2f3a";

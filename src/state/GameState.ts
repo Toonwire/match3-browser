@@ -251,35 +251,31 @@ export class GameState {
   }
 
   /**
-   * Perform a card mutation: remove two cards from collection and add result card.
+   * Perform a card mutation: remove cards from collection and add result card.
    * Returns true if successful, false if cards are not available or mutation is invalid.
    */
-  performMutation(cardId1: string, cardId2: string, resultCardId: string): boolean {
+  performMutation(cardIds: string[], resultCardId: string): boolean {
     const collection = this.state.inventory.cardCollection;
 
-    // Check if both cards are available in collection
-    const count1 = collection[cardId1] || 0;
-    const count2 = collection[cardId2] || 0;
+    // Count how many of each card we need
+    const cardCounts = new Map<string, number>();
+    cardIds.forEach((cardId) => {
+      cardCounts.set(cardId, (cardCounts.get(cardId) || 0) + 1);
+    });
 
-    if (count1 <= 0 || count2 <= 0) {
-      return false; // Cards not available
-    }
-
-    // If same card is used twice, need at least 2 copies
-    if (cardId1 === cardId2 && count1 < 2) {
-      return false;
+    // Check if all required cards are available in collection
+    for (const [cardId, needed] of cardCounts.entries()) {
+      const available = collection[cardId] || 0;
+      if (available < needed) {
+        return false; // Not enough copies of this card
+      }
     }
 
     // Remove cards from collection
-    collection[cardId1] = count1 - 1;
-    if (collection[cardId1] === 0) {
-      delete collection[cardId1];
-    }
-
-    if (cardId1 !== cardId2) {
-      collection[cardId2] = count2 - 1;
-      if (collection[cardId2] === 0) {
-        delete collection[cardId2];
+    for (const [cardId, needed] of cardCounts.entries()) {
+      collection[cardId] = (collection[cardId] || 0) - needed;
+      if (collection[cardId] === 0) {
+        delete collection[cardId];
       }
     }
 

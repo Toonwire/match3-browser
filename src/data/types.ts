@@ -114,6 +114,6 @@ export interface Item {
 
 export interface Mutation {
   id: string;
-  inputCards: [string, string]; // Two card IDs
+  inputCards: string[]; // Card IDs (2 or 3 cards)
   resultCard: string; // Result card ID
 }
