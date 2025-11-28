@@ -18,7 +18,7 @@ export interface ArmoryPanelRegions {
     w: number;
     h: number;
   }>;
-  scrollButton: {
+  mutateButton: {
     x: number;
     y: number;
     w: number;
@@ -63,8 +63,8 @@ export function renderArmoryPanel(
     loadoutRegions = renderLoadout(ctx, x, loadoutY, width, loadoutHeight, cards, loadout, drawIcon);
   }
 
-  // Render scroll button aligned with loadout, at the right edge of the panel
-  const scrollButtonRegion = renderScroll(ctx, x, loadoutY, width, loadoutHeight, drawIcon);
+  // Render mutate button aligned with loadout, at the right edge of the panel
+  const mutateButtonRegion = renderMutateButton(ctx, x, loadoutY, width, loadoutHeight, drawIcon);
 
   const galleryStartY = y + loadoutHeight + 120; // Better spacing between loadout and gallery
   drawText(ctx, "Gallery", x, galleryStartY);
@@ -86,7 +86,7 @@ export function renderArmoryPanel(
   return {
     galleryCards: galleryRegions.galleryCards,
     loadoutSlots: loadoutRegions.loadoutSlots,
-    scrollButton: scrollButtonRegion,
+    mutateButton: mutateButtonRegion,
   };
 }
 
@@ -234,7 +234,7 @@ function renderMutate(
   ctx.textBaseline = "alphabetic";
 }
 
-function renderScroll(
+function renderMutateButton(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -259,28 +259,28 @@ function renderScroll(
   const availableHeight = loadoutHeight - gridMarginY * 2;
   const cellSize = Math.min(maxCellSizeByWidth, availableHeight);
 
-  // Position scroll icon at the right edge of the panel, aligned with loadout
-  const scrollIconMargin = 16; // Margin from right edge
-  const scrollIconSize = cellSize; // Make scroll icon same size as loadout cells
-  const scrollIconX = x + width - scrollIconMargin - scrollIconSize;
-  const scrollIconY = gridStartY; // Align with loadout grid Y position
+  // Position mutate button at the right edge of the panel, aligned with loadout
+  const mutateButtonMargin = 16; // Margin from right edge
+  const mutateButtonSize = cellSize; // Make mutate button same size as loadout cells
+  const mutateButtonX = x + width - mutateButtonMargin - mutateButtonSize;
+  const mutateButtonY = gridStartY; // Align with loadout grid Y position
 
-  // Draw scroll icon background
+  // Draw mutate button background
   ctx.fillStyle = "#23262d";
-  ctx.fillRect(scrollIconX, scrollIconY, scrollIconSize, scrollIconSize);
+  ctx.fillRect(mutateButtonX, mutateButtonY, mutateButtonSize, mutateButtonSize);
   ctx.strokeStyle = "#2b2f3a";
-  ctx.strokeRect(scrollIconX + 0.5, scrollIconY + 0.5, scrollIconSize - 1, scrollIconSize - 1);
+  ctx.strokeRect(mutateButtonX + 0.5, mutateButtonY + 0.5, mutateButtonSize - 1, mutateButtonSize - 1);
 
-  // Draw scroll icon
+  // Draw mutate button icon
   if (drawIcon) {
-    drawIcon("assets/misc/scroll.png", scrollIconX, scrollIconY, scrollIconSize, scrollIconSize);
+    drawIcon("assets/misc/mutate_scroll.png", mutateButtonX, mutateButtonY, mutateButtonSize, mutateButtonSize);
   }
 
   return {
-    x: scrollIconX,
-    y: scrollIconY,
-    w: scrollIconSize,
-    h: scrollIconSize,
+    x: mutateButtonX,
+    y: mutateButtonY,
+    w: mutateButtonSize,
+    h: mutateButtonSize,
   };
 }
 

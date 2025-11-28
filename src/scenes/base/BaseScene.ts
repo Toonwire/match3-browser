@@ -44,7 +44,7 @@ export class BaseScene extends Scene {
       w: number;
       h: number;
     }>;
-    scrollButton: {
+    mutateButton: {
       x: number;
       y: number;
       w: number;
@@ -256,8 +256,8 @@ export class BaseScene extends Scene {
 
         // Handle armory panel clicks
         if (this.activePopup === "armory" && this.armoryRegions) {
-          // Check if click is on scroll button
-          if (this.armoryRegions.scrollButton && this.pointInRect(x, y, this.armoryRegions.scrollButton)) {
+          // Check if click is on mutate button
+          if (this.armoryRegions.mutateButton && this.pointInRect(x, y, this.armoryRegions.mutateButton)) {
             this.showMutateView = !this.showMutateView;
             return;
           }
