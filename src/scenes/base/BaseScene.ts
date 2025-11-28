@@ -28,8 +28,10 @@ export class BaseScene extends Scene {
   private mutateButtonAnimation: {
     type: "success" | "failure" | null;
     progress: number;
+    resultCardId?: string;
   } = { type: null, progress: 0 };
-  private readonly mutateButtonAnimationDuration = 0.5; // seconds
+  private readonly mutateButtonAnimationDurationSuccess = 2.0; // seconds
+  private readonly mutateButtonAnimationDurationFailure = 0.5; // seconds
 
   constructor(onNavigateToWorld?: OnNavigateToWorld) {
     super();
@@ -118,7 +120,11 @@ export class BaseScene extends Scene {
   update(dt: number): void {
     // Update mutate button animation
     if (this.mutateButtonAnimation.type !== null) {
-      this.mutateButtonAnimation.progress += dt / this.mutateButtonAnimationDuration;
+      const duration =
+        this.mutateButtonAnimation.type === "success"
+          ? this.mutateButtonAnimationDurationSuccess
+          : this.mutateButtonAnimationDurationFailure;
+      this.mutateButtonAnimation.progress += dt / duration;
       if (this.mutateButtonAnimation.progress >= 1.0) {
         // Animation complete, reset
         this.mutateButtonAnimation = { type: null, progress: 0 };
@@ -575,8 +581,8 @@ export class BaseScene extends Scene {
       console.log(`Mutation successful! Created ${mutation.resultCard}`);
       // Clear mutate slots
       this.mutateSlots = this.mutateSlots.map(() => null);
-      // Trigger success animation
-      this.mutateButtonAnimation = { type: "success", progress: 0 };
+      // Trigger success animation with result card
+      this.mutateButtonAnimation = { type: "success", progress: 0, resultCardId: mutation.resultCard };
     } else {
       console.log("Mutation failed (cards not available)");
       // Trigger failure animation

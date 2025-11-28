@@ -1,5 +1,5 @@
 import type { Card, Element, Loadout } from "../../data/types";
-import { drawText } from "../../ui/UiPrimitives";
+import { drawText, drawTextWithShadow } from "../../ui/UiPrimitives";
 import { elementIconPath } from "../../ui/ElementIcons";
 
 export interface ArmoryPanelRegions {
@@ -54,7 +54,10 @@ export function renderArmoryPanel(
   showMutateView: boolean = false,
   mutateSlots: (string | null)[] = [null, null],
   items: Record<string, number> = {},
-  mutateButtonAnimation: { type: "success" | "failure" | null; progress: number } = { type: null, progress: 0 },
+  mutateButtonAnimation: { type: "success" | "failure" | null; progress: number; resultCardId?: string } = {
+    type: null,
+    progress: 0,
+  },
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
   const loadoutHeight = 140; // Increased from 100 to use more vertical space
@@ -274,7 +277,10 @@ function renderMutate(
   cardCollection: Record<string, number>,
   mutateSlots: (string | null)[],
   hasAdvancedScroll: boolean,
-  animation: { type: "success" | "failure" | null; progress: number } = { type: null, progress: 0 },
+  animation: { type: "success" | "failure" | null; progress: number; resultCardId?: string } = {
+    type: null,
+    progress: 0,
+  },
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): {
   slots: Array<{
@@ -448,9 +454,86 @@ function renderMutate(
   ctx.fillStyle = textColor;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("Mutate", buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + buttonYOffset);
+  // Show "Created!" during success animation, otherwise "Mutate"
+  const buttonText = animation.type === "success" ? "Created!" : "Mutate";
+  // ctx.fillText(buttonText, buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + buttonYOffset);
+  drawTextWithShadow(
+    ctx,
+    buttonText,
+    buttonX + buttonWidth / 2,
+    buttonY + buttonHeight / 2 + buttonYOffset,
+    14,
+    "#e5e7eb"
+  );
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+
+  // Draw result card during success animation
+  if (animation.type === "success" && animation.resultCardId && drawIcon) {
+    const resultCard = cards.find((c) => c.id === animation.resultCardId);
+    if (resultCard && resultCard.imagePath) {
+      const progress = animation.progress;
+
+      // Card appears above the button, using the same size as mutation slots
+      const cardSize = slotSize; // Use slot size for consistency
+      const cardX = buttonXBase + buttonWidth / 2 - cardSize / 2;
+      const cardY = buttonY - cardSize - 20; // Above button with gap
+
+      // Animation: scale up quickly in first 0.3 seconds, then stay at max size
+      const scaleUpDuration = 0.3; // Scale up in first 30% of animation
+      const scaleProgress = Math.min(1, progress / scaleUpDuration);
+
+      // Fade in quickly
+      const fadeInDuration = 0.2; // Fade in in first 20% of animation
+      const fadeProgress = Math.min(1, progress / fadeInDuration);
+
+      // Scale with bounce effect during scale-up, then stay at 1.0 with slight pulse
+      const cardScale =
+        scaleProgress < 1
+          ? scaleProgress * 1.2 - 0.2 * Math.sin(scaleProgress * Math.PI * 2) // Bounce effect
+          : 1.0 + 0.03 * Math.sin(progress * Math.PI * 2); // Slight pulse while at max size
+
+      const cardAlpha = fadeProgress;
+      const cardOffsetY = scaleProgress < 1 ? (1 - scaleProgress) * 10 : 0; // Slide down during scale-up
+
+      // Draw glow effect on card border only
+      if (progress > 0.1) {
+        const glowIntensity = Math.min(0.5, Math.sin(progress * Math.PI) * 0.5);
+        ctx.save();
+        ctx.globalAlpha = glowIntensity * cardAlpha;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "#4ade80"; // Green glow
+        // Draw glow as a border effect
+        ctx.strokeStyle = "#4ade80";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(cardX - 2, cardY - 2, cardSize + 4, cardSize + 4);
+        ctx.restore();
+      }
+
+      // Draw card with animation
+      ctx.save();
+      ctx.globalAlpha = cardAlpha;
+      ctx.translate(cardX + cardSize / 2, cardY + cardSize / 2 + cardOffsetY);
+      ctx.scale(cardScale, cardScale);
+      ctx.translate(-cardSize / 2, -cardSize / 2);
+
+      // Draw card background/border
+      ctx.fillStyle = "#1a1d24";
+      ctx.fillRect(0, 0, cardSize, cardSize);
+      // Border with glow effect
+      const borderGlowIntensity = Math.min(1, Math.sin(progress * Math.PI) * 0.8 + 0.2);
+      ctx.strokeStyle = `rgba(74, 222, 128, ${borderGlowIntensity})`; // Green with varying opacity
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0.5, 0.5, cardSize - 1, cardSize - 1);
+
+      // Draw card image
+      if (drawIcon) {
+        drawIcon(resultCard.imagePath, 0, 0, cardSize, cardSize);
+      }
+
+      ctx.restore();
+    }
+  }
 
   return {
     slots: mutateSlotRegions,
@@ -674,7 +757,7 @@ function renderGallery(
             ctx.fillStyle = "#e5e7eb";
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
-            ctx.fillText(countText, cellX + textMargin, cellY + textMargin);
+            drawTextWithShadow(ctx, countText, cellX + textMargin, cellY + textMargin, textSize, "#e5e7eb");
 
             ctx.font = prevFont;
             ctx.fillStyle = prevFillStyle;
