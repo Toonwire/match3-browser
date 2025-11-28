@@ -140,6 +140,25 @@ export class BattleScene extends Scene {
   > = new Map();
   private readonly healingAnimationDuration = 1.0; // seconds
   private readonly healingGlowDuration = 0.5; // seconds for border glow
+  // Damage animations: Key is "sourceType:sourcePos->targetType:targetPos", value contains raining icons and glow progress
+  // sourceType/targetType: "player" or "enemy"
+  private damageAnimations: Map<
+    string,
+    {
+      element: Element;
+      sourceX: number;
+      sourceY: number;
+      targetX: number;
+      targetY: number;
+      progress: number;
+      icons: Array<{ x: number; y: number; progress: number }>;
+      targetGlowProgress: number;
+      isPlayerSource: boolean;
+      targetPosition: number;
+    }
+  > = new Map();
+  private readonly damageAnimationDuration = 0.8; // seconds
+  private readonly damageGlowDuration = 0.4; // seconds for border glow
 
   constructor(
     private worldId: string,
@@ -398,6 +417,52 @@ export class BattleScene extends Scene {
     for (const key of healingKeysToRemove) {
       this.healingAnimations.delete(key);
     }
+
+    // Update damage animations
+    const damageKeysToRemove: string[] = [];
+    for (const [key, animData] of this.damageAnimations.entries()) {
+      const newProgress = animData.progress + dt / this.damageAnimationDuration;
+      const newGlowProgress = animData.targetGlowProgress + dt / this.damageGlowDuration;
+
+      // Update icon positions and progress - icons move from source to target
+      const updatedIcons = animData.icons.map((icon) => {
+        const iconProgress = icon.progress + dt / this.damageAnimationDuration;
+        // Calculate position along the path from source to target
+        const t = Math.min(1.0, iconProgress);
+        const currentX = animData.sourceX + (animData.targetX - animData.sourceX) * t;
+        const currentY = animData.sourceY + (animData.targetY - animData.sourceY) * t;
+
+        // Add slight arc/curve to the path
+        const arcOffset = Math.sin(t * Math.PI) * 20; // 20 pixel arc height
+        const perpX = -(animData.targetY - animData.sourceY);
+        const perpY = animData.targetX - animData.sourceX;
+        const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+        const normalizedPerpX = perpLength > 0 ? perpX / perpLength : 0;
+        const normalizedPerpY = perpLength > 0 ? perpY / perpLength : 0;
+
+        return {
+          x: currentX + normalizedPerpX * arcOffset,
+          y: currentY + normalizedPerpY * arcOffset,
+          progress: iconProgress,
+        };
+      });
+
+      if (newProgress >= 1.0) {
+        damageKeysToRemove.push(key);
+      } else {
+        this.damageAnimations.set(key, {
+          ...animData,
+          progress: newProgress,
+          icons: updatedIcons,
+          targetGlowProgress: Math.min(1.0, newGlowProgress),
+        });
+      }
+    }
+
+    // Remove completed damage animations
+    for (const key of damageKeysToRemove) {
+      this.damageAnimations.delete(key);
+    }
   }
 
   private initializeGrid() {
@@ -540,6 +605,29 @@ export class BattleScene extends Scene {
         ctx.restore();
       }
 
+      // Draw damage border glow if unit is being damaged
+      for (const [key, animData] of this.damageAnimations.entries()) {
+        if (!animData.isPlayerSource && animData.targetPosition === slotIndex) {
+          const glowAlpha =
+            animData.targetGlowProgress < 0.5
+              ? animData.targetGlowProgress * 2 // 0 to 1
+              : 1.0 - (animData.targetGlowProgress - 0.5) * 2; // 1 to 0
+          const damageColor = this.getElementColor(animData.element);
+
+          ctx.save();
+          ctx.globalAlpha = glowAlpha * 0.8;
+          ctx.strokeStyle = damageColor;
+          ctx.lineWidth = 4;
+          ctx.strokeRect(unitX - 2, unitY - 2, playerUnitSize + 4, playerUnitSize + 4);
+
+          // Add outer glow effect
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = damageColor;
+          ctx.strokeRect(unitX - 2, unitY - 2, playerUnitSize + 4, playerUnitSize + 4);
+          ctx.restore();
+        }
+      }
+
       // Draw "Leader" text above leader slot
       if (slotIndex === 0) {
         ctx.textAlign = "center";
@@ -649,6 +737,29 @@ export class BattleScene extends Scene {
 
       // Draw element icon overlay (small, top-right)
       this.drawUnitElementIcons(ctx, enemy.unit.elements || [], enemyX, enemyY, enemySize);
+
+      // Draw damage border glow if enemy is being damaged
+      for (const [key, animData] of this.damageAnimations.entries()) {
+        if (animData.isPlayerSource && animData.targetPosition === enemy.position) {
+          const glowAlpha =
+            animData.targetGlowProgress < 0.5
+              ? animData.targetGlowProgress * 2 // 0 to 1
+              : 1.0 - (animData.targetGlowProgress - 0.5) * 2; // 1 to 0
+          const damageColor = this.getElementColor(animData.element);
+
+          ctx.save();
+          ctx.globalAlpha = glowAlpha * 0.8;
+          ctx.strokeStyle = damageColor;
+          ctx.lineWidth = 4;
+          ctx.strokeRect(enemyX - 2, enemyY - 2, enemySize + 4, enemySize + 4);
+
+          // Add outer glow effect
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = damageColor;
+          ctx.strokeRect(enemyX - 2, enemyY - 2, enemySize + 4, enemySize + 4);
+          ctx.restore();
+        }
+      }
 
       // Boss indicator
       if (enemy.unit.tags.includes("Boss")) {
@@ -893,6 +1004,37 @@ export class BattleScene extends Scene {
     // Draw victory panel if victorious
     if (this.isVictorious) {
       this.renderVictoryPanel(ctx);
+    }
+
+    // Draw damage animation icons (raining from source to target) - render last so they appear on top
+    for (const [key, animData] of this.damageAnimations.entries()) {
+      const damageIconPath = elementIconPath(animData.element);
+      const iconSize = 20;
+
+      for (const icon of animData.icons) {
+        if (icon.progress < 1.0) {
+          // Calculate opacity: fade in then fade out
+          const opacity =
+            icon.progress < 0.2
+              ? icon.progress * 5 // 0 to 1.0
+              : icon.progress < 0.7
+              ? 1.0 // Full opacity
+              : 1.0 - (icon.progress - 0.7) / 0.3; // 1.0 to 0.0
+
+          // Calculate scale: slightly grow then maintain
+          const scale =
+            icon.progress < 0.2
+              ? 0.6 + (icon.progress / 0.2) * 0.4 // 0.6 to 1.0
+              : 1.0;
+
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.translate(icon.x, icon.y);
+          ctx.scale(scale, scale);
+          this.drawIcon(ctx, damageIconPath, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+          ctx.restore();
+        }
+      }
     }
   }
 
@@ -1404,6 +1546,22 @@ export class BattleScene extends Scene {
     }
   }
 
+  private findSourcePlayerUnitPosition(cardIds: string[]): number | null {
+    // Find the first matching card in the loadout and return its position
+    const loadout = this.state.loadout;
+    const allCardIds = [loadout.leader, ...loadout.members];
+
+    for (let i = 0; i < allCardIds.length; i++) {
+      if (allCardIds[i] && cardIds.includes(allCardIds[i])) {
+        return i; // Position 0 is leader, 1-3 are members
+      }
+    }
+
+    // If no match found, use the first alive player unit
+    const firstAlive = this.playerUnits.find((u) => u.currentHp > 0);
+    return firstAlive ? firstAlive.position : null;
+  }
+
   private applyDamageToEnemiesWithLogging(damageInstances: ReturnType<typeof computeDamageFromMatches>): void {
     // Apply damage similar to applyDamageToEnemies but with logging
     for (const damage of damageInstances) {
@@ -1412,6 +1570,9 @@ export class BattleScene extends Scene {
         .map((id) => this.cards.find((c) => c.id === id)?.name)
         .filter(Boolean)
         .join(", ");
+
+      // Find source player unit position for animation
+      const sourcePosition = this.findSourcePlayerUnitPosition(damage.cardIds);
 
       if (damage.isAoE) {
         // AoE: Apply to all enemies
@@ -1452,6 +1613,11 @@ export class BattleScene extends Scene {
               targetHpAfter: enemy.currentHp,
               targetMaxHp: enemy.maxHp,
             });
+
+            // Trigger damage animation
+            if (sourcePosition !== null) {
+              this.startDamageAnimation(damage.element, true, sourcePosition, enemy.position);
+            }
           }
         }
       } else {
@@ -1494,6 +1660,11 @@ export class BattleScene extends Scene {
             targetHpAfter: leftmostAlive.currentHp,
             targetMaxHp: leftmostAlive.maxHp,
           });
+
+          // Trigger damage animation
+          if (sourcePosition !== null) {
+            this.startDamageAnimation(damage.element, true, sourcePosition, leftmostAlive.position);
+          }
         }
       }
     }
@@ -1609,6 +1780,89 @@ export class BattleScene extends Scene {
     });
   }
 
+  private startDamageAnimation(
+    element: Element,
+    isPlayerSource: boolean,
+    sourcePosition: number,
+    targetPosition: number
+  ): void {
+    // Calculate source unit position
+    let sourceX: number;
+    let sourceY: number;
+    let targetX: number;
+    let targetY: number;
+    const unitSize = 96;
+
+    if (isPlayerSource) {
+      // Source is a player unit
+      const playerUnitArea = BattleLayout.playerUnits;
+      const playerUnitSlotWidth = playerUnitArea.w / 4;
+      const slotX = playerUnitArea.x + sourcePosition * playerUnitSlotWidth;
+      const unitX = slotX + (playerUnitSlotWidth - unitSize) / 2;
+      const unitY = playerUnitArea.y + (playerUnitArea.h - unitSize) / 2;
+      sourceX = unitX + unitSize / 2;
+      sourceY = unitY + unitSize / 2;
+
+      // Target is an enemy
+      const enemyArea = BattleLayout.enemies;
+      const enemySlotWidth = enemyArea.w / 4;
+      const enemySlotX = enemyArea.x + targetPosition * enemySlotWidth;
+      const enemyX = enemySlotX + (enemySlotWidth - unitSize) / 2;
+      const enemyY = enemyArea.y + (enemyArea.h - unitSize) / 2;
+      targetX = enemyX + unitSize / 2;
+      targetY = enemyY + unitSize / 2;
+    } else {
+      // Source is an enemy
+      const enemyArea = BattleLayout.enemies;
+      const enemySlotWidth = enemyArea.w / 4;
+      const enemySlotX = enemyArea.x + sourcePosition * enemySlotWidth;
+      const enemyX = enemySlotX + (enemySlotWidth - unitSize) / 2;
+      const enemyY = enemyArea.y + (enemyArea.h - unitSize) / 2;
+      sourceX = enemyX + unitSize / 2;
+      sourceY = enemyY + unitSize / 2;
+
+      // Target is a player unit
+      const playerUnitArea = BattleLayout.playerUnits;
+      const playerUnitSlotWidth = playerUnitArea.w / 4;
+      const slotX = playerUnitArea.x + targetPosition * playerUnitSlotWidth;
+      const unitX = slotX + (playerUnitSlotWidth - unitSize) / 2;
+      const unitY = playerUnitArea.y + (playerUnitArea.h - unitSize) / 2;
+      targetX = unitX + unitSize / 2;
+      targetY = unitY + unitSize / 2;
+    }
+
+    // Create 4-6 damage icons that will rain from source to target
+    const numIcons = 4 + Math.floor(Math.random() * 3); // 4-6 icons
+    const icons: Array<{ x: number; y: number; progress: number }> = [];
+
+    for (let i = 0; i < numIcons; i++) {
+      // Randomize starting position slightly around source center
+      const offsetX = (Math.random() - 0.5) * unitSize * 0.4;
+      const offsetY = (Math.random() - 0.5) * unitSize * 0.4;
+      icons.push({
+        x: sourceX + offsetX,
+        y: sourceY + offsetY,
+        progress: Math.random() * 0.15, // Stagger start times slightly
+      });
+    }
+
+    const animationKey = `${isPlayerSource ? "player" : "enemy"}:${sourcePosition}->${
+      isPlayerSource ? "enemy" : "player"
+    }:${targetPosition}`;
+    this.damageAnimations.set(animationKey, {
+      element,
+      sourceX,
+      sourceY,
+      targetX,
+      targetY,
+      progress: 0.0,
+      icons,
+      targetGlowProgress: 0.0,
+      isPlayerSource,
+      targetPosition,
+    });
+  }
+
   private queueEnemyTurn(): void {
     // Queue enemy turn with delay
     this.pendingTurnSwitch = "enemy";
@@ -1662,6 +1916,9 @@ export class BattleScene extends Scene {
           targetHpAfter: rightmostAlivePlayer.currentHp,
           targetMaxHp: rightmostAlivePlayer.maxHp,
         });
+
+        // Trigger damage animation
+        this.startDamageAnimation(enemy.unit.elements[0], false, enemy.position, rightmostAlivePlayer.position);
       }
     }
 

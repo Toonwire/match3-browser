@@ -1,6 +1,6 @@
-- Add damage animations, source unit --> target unit
-  - Small element icons of the type of damage raining down over the target unit.
-  - Glow target unit border the same color as the element of the damage
+- ~~Add damage animations, source unit --> target unit~~ ✅
+  - ~~Small element icons of the type of damage raining down over the target unit.~~ ✅
+  - ~~Glow target unit border the same color as the element of the damage~~ ✅
 - ~~Add healing animations, just target unit~~ ✅
   - ~~Small healing icons rising and fading above the target unit~~ ✅
   - ~~Glow target unit border the same color as the healing element~~ ✅
