@@ -169,9 +169,9 @@
       loot: loot_table_common_coins
 
     - id: world_03_stage_03
-      name: Crystal Caves
-      description: Icy hollows filled with crystals
-      imagePath: /assets/stages/crystal_caves.png
+      name: Frostbite Chasm
+      description: An abyss-shrouded rift into the icy depths
+      imagePath: /assets/stages/frostbite_chasm.png
       units:
         - unitId: unit_slime
           position: 0
@@ -192,18 +192,47 @@
             chance: 0.05
 
     - id: world_03_stage_04
-      name: The Eternal Council
-      description: Where ancients sit forever frozen
-      imagePath: /assets/stages/eternal_council.png
+      name: Icy Descent
+      description: Frozen steps give entrance to ominous glacial cavities
+      imagePath: /assets/stages/icy_descent.png
       units:
-        - unitId: unit_slime_boss
+        - unitId: unit_slime
+          position: 0
+        - unitId: unit_slime_lieutenant
           position: 1
-        - unitId: unit_rimescale
+        - unitId: unit_slime
           position: 2
+        - unitId: unit_slime_lieutenant
+          position: 3
       loot:
+        tableId: loot_table_common_coins
         entries:
-          - item: coin
-            chance: 1.0
-            amount: [40, 50]
           - item: card:card_04_slime
-            chance: 0.3
+            chance: 0.1
+          - item: card:card_05_slimer
+            chance: 0.05
+          - item: item:item_01_healing_potion
+            chance: 0.05
+
+    - id: world_03_stage_05
+      name: Crystal Hollows
+      description: Gem like structures fracture light into a haunting, frozen glow.
+      imagePath: /assets/stages/crystal_hollows.png
+      units:
+        - unitId: unit_slime
+          position: 0
+        - unitId: unit_slime_lieutenant
+          position: 1
+        - unitId: unit_slime_lieutenant
+          position: 2
+        - unitId: unit_rimescale
+          position: 3
+      loot:
+        tableId: loot_table_common_coins
+        entries:
+          - item: card:card_04_slime
+            chance: 0.1
+          - item: card:card_05_slimer
+            chance: 0.05
+          - item: item:item_01_healing_potion
+            chance: 0.05
