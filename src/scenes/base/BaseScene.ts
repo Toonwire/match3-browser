@@ -19,6 +19,7 @@ export class BaseScene extends Scene {
   private npcs: NPC[] = [];
   private iconCache = new Map<string, HTMLImageElement>();
   private activePopup: "shop" | "armory" | "worlds" | null = null;
+  private showMutateView: boolean = false;
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
   private onNavigateToWorld?: OnNavigateToWorld;
@@ -43,6 +44,12 @@ export class BaseScene extends Scene {
       w: number;
       h: number;
     }>;
+    scrollButton: {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    } | null;
   } | null = null;
   private shopRegions: ShopPanelRegions | null = null;
   private galleryScrollOffset: number = 0;
@@ -249,22 +256,31 @@ export class BaseScene extends Scene {
 
         // Handle armory panel clicks
         if (this.activePopup === "armory" && this.armoryRegions) {
-          // Check if click is on a loadout slot (prioritize removing over adding)
-          for (const slotRegion of this.armoryRegions.loadoutSlots) {
-            if (this.pointInRect(x, y, slotRegion)) {
-              this.state.removeCardFromLoadout(slotRegion.slotIndex);
-              return;
-            }
+          // Check if click is on scroll button
+          if (this.armoryRegions.scrollButton && this.pointInRect(x, y, this.armoryRegions.scrollButton)) {
+            this.showMutateView = !this.showMutateView;
+            return;
           }
 
-          // Check if click is on a gallery card (only if enabled)
-          for (const cardRegion of this.armoryRegions.galleryCards) {
-            if (this.pointInRect(x, y, cardRegion) && cardRegion.enabled) {
-              const success = this.state.addCardToLoadout(cardRegion.cardId);
-              if (!success) {
-                console.log("Loadout is full");
+          // Only handle loadout-related clicks when not in mutate view
+          if (!this.showMutateView) {
+            // Check if click is on a loadout slot (prioritize removing over adding)
+            for (const slotRegion of this.armoryRegions.loadoutSlots) {
+              if (this.pointInRect(x, y, slotRegion)) {
+                this.state.removeCardFromLoadout(slotRegion.slotIndex);
+                return;
               }
-              return;
+            }
+
+            // Check if click is on a gallery card (only if enabled)
+            for (const cardRegion of this.armoryRegions.galleryCards) {
+              if (this.pointInRect(x, y, cardRegion) && cardRegion.enabled) {
+                const success = this.state.addCardToLoadout(cardRegion.cardId);
+                if (!success) {
+                  console.log("Loadout is full");
+                }
+                return;
+              }
             }
           }
         }
@@ -276,6 +292,7 @@ export class BaseScene extends Scene {
           this.shopRegions = null;
           this.worldsRegions = null;
           this.galleryScrollOffset = 0; // Reset scroll when closing
+          this.showMutateView = false; // Reset mutate view when closing
         }
         return;
       }
@@ -300,6 +317,7 @@ export class BaseScene extends Scene {
       }
       if (this.pointInPolygon(x, y, this.armoryPoly)) {
         this.activePopup = "armory";
+        this.showMutateView = false; // Reset to loadout view when opening armory
         return;
       }
       if (this.pointInPolygon(x, y, this.worldsPoly)) {
@@ -350,6 +368,7 @@ export class BaseScene extends Scene {
         this.state.cardCollection,
         this.state.loadout,
         this.galleryScrollOffset,
+        this.showMutateView,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
       );
     } else if (kind === "worlds") {

@@ -18,6 +18,12 @@ export interface ArmoryPanelRegions {
     w: number;
     h: number;
   }>;
+  scrollButton: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null;
 }
 
 export function renderArmoryPanel(
@@ -31,11 +37,34 @@ export function renderArmoryPanel(
   cardCollection: Record<string, number>,
   loadout: Loadout,
   scrollOffset: number = 0,
+  showMutateView: boolean = false,
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
 ): ArmoryPanelRegions {
-  drawText(ctx, "Loadout", x, y + 5);
   const loadoutHeight = 140; // Increased from 100 to use more vertical space
-  const loadoutRegions = renderLoadout(ctx, x, y + 10, width, loadoutHeight, cards, loadout, drawIcon);
+  const loadoutY = y + 10;
+
+  let loadoutRegions: {
+    loadoutSlots: Array<{
+      slotIndex: number;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    }>;
+  } = { loadoutSlots: [] };
+
+  if (showMutateView) {
+    // Render mutate view instead of loadout
+    drawText(ctx, "Mutate", x, y + 5);
+    renderMutate(ctx, x, loadoutY, width, loadoutHeight, cards, cardCollection, drawIcon);
+  } else {
+    // Render loadout view
+    drawText(ctx, "Loadout", x, y + 5);
+    loadoutRegions = renderLoadout(ctx, x, loadoutY, width, loadoutHeight, cards, loadout, drawIcon);
+  }
+
+  // Render scroll button aligned with loadout, at the right edge of the panel
+  const scrollButtonRegion = renderScroll(ctx, x, loadoutY, width, loadoutHeight, drawIcon);
 
   const galleryStartY = y + loadoutHeight + 120; // Better spacing between loadout and gallery
   drawText(ctx, "Gallery", x, galleryStartY);
@@ -57,6 +86,7 @@ export function renderArmoryPanel(
   return {
     galleryCards: galleryRegions.galleryCards,
     loadoutSlots: loadoutRegions.loadoutSlots,
+    scrollButton: scrollButtonRegion,
   };
 }
 
@@ -182,6 +212,76 @@ function renderLoadout(
   }
 
   return { loadoutSlots };
+}
+
+function renderMutate(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  cards: Card[],
+  cardCollection: Record<string, number>,
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
+): void {
+  // Placeholder for mutate view - render centered text for now
+  ctx.font = "24px system-ui";
+  ctx.fillStyle = "#9aa3b2";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Mutate View", x + width / 2, y + height / 2);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+function renderScroll(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  loadoutHeight: number,
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
+): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} | null {
+  // Calculate cell size to match loadout cells (same calculation as in renderLoadout)
+  const cols = 4;
+  const cellGap = 8;
+  const gridMarginX = 16;
+  const gridMarginY = 4;
+  const gridStartY = y + gridMarginY;
+  const availableWidth = width - gridMarginX * 2;
+  const totalGapWidth = (cols - 1) * cellGap;
+  const maxCellSizeByWidth = (availableWidth - totalGapWidth) / cols;
+  const availableHeight = loadoutHeight - gridMarginY * 2;
+  const cellSize = Math.min(maxCellSizeByWidth, availableHeight);
+
+  // Position scroll icon at the right edge of the panel, aligned with loadout
+  const scrollIconMargin = 16; // Margin from right edge
+  const scrollIconSize = cellSize; // Make scroll icon same size as loadout cells
+  const scrollIconX = x + width - scrollIconMargin - scrollIconSize;
+  const scrollIconY = gridStartY; // Align with loadout grid Y position
+
+  // Draw scroll icon background
+  ctx.fillStyle = "#23262d";
+  ctx.fillRect(scrollIconX, scrollIconY, scrollIconSize, scrollIconSize);
+  ctx.strokeStyle = "#2b2f3a";
+  ctx.strokeRect(scrollIconX + 0.5, scrollIconY + 0.5, scrollIconSize - 1, scrollIconSize - 1);
+
+  // Draw scroll icon
+  if (drawIcon) {
+    drawIcon("assets/misc/scroll.png", scrollIconX, scrollIconY, scrollIconSize, scrollIconSize);
+  }
+
+  return {
+    x: scrollIconX,
+    y: scrollIconY,
+    w: scrollIconSize,
+    h: scrollIconSize,
+  };
 }
 
 function renderGallery(
