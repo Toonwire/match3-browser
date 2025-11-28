@@ -75,6 +75,10 @@ export class BattleScene extends Scene {
   private onBackToBase?: () => void;
   private isDefeated: boolean = false;
   private isVictorious: boolean = false;
+  private defeatTriggered: boolean = false;
+  private victoryTriggered: boolean = false;
+  private readonly panelDelay = 1.5; // seconds delay before showing panels
+  private panelDelayTimer: number = 0.0;
   private victoryLoot: Array<{
     type: "gold" | "card" | "item";
     id: string;
@@ -155,10 +159,25 @@ export class BattleScene extends Scene {
       targetGlowProgress: number;
       isPlayerSource: boolean;
       targetPosition: number;
+      damageAmount: number;
     }
   > = new Map();
   private readonly damageAnimationDuration = 0.8; // seconds
   private readonly damageGlowDuration = 0.4; // seconds for border glow
+  // Floating damage numbers: Key is unique ID, value contains position, damage, and animation progress
+  private floatingDamageNumbers: Map<
+    string,
+    {
+      x: number;
+      y: number;
+      damage: number;
+      progress: number;
+      isPlayerTarget: boolean;
+      targetPosition: number;
+    }
+  > = new Map();
+  private readonly floatingDamageDuration = 1.5; // seconds
+  private floatingDamageIdCounter = 0;
 
   constructor(
     private worldId: string,
@@ -449,6 +468,14 @@ export class BattleScene extends Scene {
 
       if (newProgress >= 1.0) {
         damageKeysToRemove.push(key);
+        // Spawn floating damage number when animation completes
+        this.spawnFloatingDamageNumber(
+          animData.targetX,
+          animData.targetY,
+          animData.damageAmount,
+          !animData.isPlayerSource,
+          animData.targetPosition
+        );
       } else {
         this.damageAnimations.set(key, {
           ...animData,
@@ -462,6 +489,42 @@ export class BattleScene extends Scene {
     // Remove completed damage animations
     for (const key of damageKeysToRemove) {
       this.damageAnimations.delete(key);
+    }
+
+    // Update floating damage numbers
+    const floatingDamageKeysToRemove: string[] = [];
+    for (const [key, damageData] of this.floatingDamageNumbers.entries()) {
+      const newProgress = damageData.progress + dt / this.floatingDamageDuration;
+      if (newProgress >= 1.0) {
+        floatingDamageKeysToRemove.push(key);
+      } else {
+        // Move upward and fade out
+        this.floatingDamageNumbers.set(key, {
+          ...damageData,
+          progress: newProgress,
+          y: damageData.y - dt * 40, // Move up at 40 pixels per second
+        });
+      }
+    }
+
+    // Remove completed floating damage numbers
+    for (const key of floatingDamageKeysToRemove) {
+      this.floatingDamageNumbers.delete(key);
+    }
+
+    // Update panel delay timer
+    if (this.panelDelayTimer > 0) {
+      this.panelDelayTimer -= dt;
+      if (this.panelDelayTimer <= 0) {
+        this.panelDelayTimer = 0;
+        // Delay complete, show the panel
+        if (this.defeatTriggered) {
+          this.isDefeated = true;
+        }
+        if (this.victoryTriggered) {
+          this.isVictorious = true;
+        }
+      }
     }
   }
 
@@ -1035,6 +1098,39 @@ export class BattleScene extends Scene {
           ctx.restore();
         }
       }
+    }
+
+    // Draw floating damage numbers - render after damage icons so they appear on top
+    for (const [key, damageData] of this.floatingDamageNumbers.entries()) {
+      // Calculate opacity: fade out as progress increases
+      const opacity = 1.0 - damageData.progress;
+
+      // Calculate font size based on damage amount
+      // Scale from 16px (min) to 32px (max) based on damage
+      // Assuming damage range of 1-100, adjust as needed
+      const minDamage = 1;
+      const maxDamage = 100;
+      const minFontSize = 16;
+      const maxFontSize = 68;
+      const normalizedDamage = Math.max(minDamage, Math.min(maxDamage, damageData.damage));
+      const damageRatio = (normalizedDamage - minDamage) / (maxDamage - minDamage);
+      const fontSize = minFontSize + damageRatio * (maxFontSize - minFontSize);
+
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `bold ${fontSize}px system-ui`;
+      ctx.fillStyle = "#ef4444"; // Red color for damage
+      ctx.strokeStyle = "#991b1b"; // Darker red for outline
+      ctx.lineWidth = 2;
+
+      const damageText = `-${damageData.damage}`;
+      // Draw outline
+      ctx.strokeText(damageText, damageData.x, damageData.y);
+      // Draw fill
+      ctx.fillText(damageText, damageData.x, damageData.y);
+      ctx.restore();
     }
   }
 
@@ -1616,7 +1712,7 @@ export class BattleScene extends Scene {
 
             // Trigger damage animation
             if (sourcePosition !== null) {
-              this.startDamageAnimation(damage.element, true, sourcePosition, enemy.position);
+              this.startDamageAnimation(damage.element, true, sourcePosition, enemy.position, finalDamage);
             }
           }
         }
@@ -1663,7 +1759,7 @@ export class BattleScene extends Scene {
 
           // Trigger damage animation
           if (sourcePosition !== null) {
-            this.startDamageAnimation(damage.element, true, sourcePosition, leftmostAlive.position);
+            this.startDamageAnimation(damage.element, true, sourcePosition, leftmostAlive.position, finalDamage);
           }
         }
       }
@@ -1784,7 +1880,8 @@ export class BattleScene extends Scene {
     element: Element,
     isPlayerSource: boolean,
     sourcePosition: number,
-    targetPosition: number
+    targetPosition: number,
+    damageAmount: number
   ): void {
     // Calculate source unit position
     let sourceX: number;
@@ -1860,6 +1957,25 @@ export class BattleScene extends Scene {
       targetGlowProgress: 0.0,
       isPlayerSource,
       targetPosition,
+      damageAmount,
+    });
+  }
+
+  private spawnFloatingDamageNumber(
+    x: number,
+    y: number,
+    damage: number,
+    isPlayerTarget: boolean,
+    targetPosition: number
+  ): void {
+    const id = `damage_${this.floatingDamageIdCounter++}`;
+    this.floatingDamageNumbers.set(id, {
+      x,
+      y: y - 20, // Start slightly above the unit center
+      damage,
+      progress: 0.0,
+      isPlayerTarget,
+      targetPosition,
     });
   }
 
@@ -1918,14 +2034,21 @@ export class BattleScene extends Scene {
         });
 
         // Trigger damage animation
-        this.startDamageAnimation(enemy.unit.elements[0], false, enemy.position, rightmostAlivePlayer.position);
+        this.startDamageAnimation(
+          enemy.unit.elements[0],
+          false,
+          enemy.position,
+          rightmostAlivePlayer.position,
+          finalDamage
+        );
       }
     }
 
     // Check if all player units are dead
     const alivePlayerUnits = this.playerUnits.filter((unit) => unit.currentHp > 0);
-    if (alivePlayerUnits.length === 0) {
-      this.isDefeated = true;
+    if (alivePlayerUnits.length === 0 && !this.defeatTriggered) {
+      this.defeatTriggered = true;
+      this.panelDelayTimer = this.panelDelay;
       console.log("All player units defeated");
       return;
     }
@@ -1958,8 +2081,9 @@ export class BattleScene extends Scene {
   private checkForVictory(): void {
     // Check if all enemies are dead
     const aliveEnemies = this.enemies.filter((e) => e.currentHp > 0);
-    if (aliveEnemies.length === 0 && !this.isVictorious && !this.isDefeated) {
-      this.isVictorious = true;
+    if (aliveEnemies.length === 0 && !this.victoryTriggered && !this.defeatTriggered) {
+      this.victoryTriggered = true;
+      this.panelDelayTimer = this.panelDelay;
       this.rollAndApplyLoot();
       console.log("Victory! All enemies defeated");
     }
