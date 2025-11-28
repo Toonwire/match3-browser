@@ -221,6 +221,25 @@ function renderLoadout(
         const card = cards.find((c) => c.id === cardId);
         if (card && card.imagePath) {
           drawIcon(card.imagePath, cellX, cellY, cellSize, cellSize);
+
+          // Draw stat text at bottom corners
+          const textSize = Math.max(10, cellSize * 0.12);
+          const textMargin = 4;
+          const textY = cellY + cellSize - textMargin;
+
+          // Bottom left - Attack stat
+          ctx.textAlign = "left";
+          ctx.textBaseline = "bottom";
+          const attackText = `⚔ ${card.attack}`;
+          drawTextWithShadow(ctx, attackText, cellX + textMargin, textY, textSize, "#e5e7eb");
+
+          // Bottom right - HP stat
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          const hpText = `♥ ${card.hp}`;
+          drawTextWithShadow(ctx, hpText, cellX + cellSize - textMargin, textY, textSize, "#e5e7eb");
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
         }
       }
     }
@@ -355,6 +374,25 @@ function renderMutate(
       const card = cards.find((c) => c.id === mutateSlots[i]);
       if (card && card.imagePath) {
         drawIcon(card.imagePath, slotX, slotY, slotSize, slotSize);
+
+        // Draw stat text at bottom corners
+        const textSize = Math.max(10, slotSize * 0.12);
+        const textMargin = 4;
+        const textY = slotY + slotSize - textMargin;
+
+        // Bottom left - Attack stat
+        ctx.textAlign = "left";
+        ctx.textBaseline = "bottom";
+        const attackText = `⚔ ${card.attack}`;
+        drawTextWithShadow(ctx, attackText, slotX + textMargin, textY, textSize, "#e5e7eb");
+
+        // Bottom right - HP stat
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        const hpText = `♥ ${card.hp}`;
+        drawTextWithShadow(ctx, hpText, slotX + slotSize - textMargin, textY, textSize, "#e5e7eb");
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
       }
     }
 
@@ -530,6 +568,25 @@ function renderMutate(
       if (drawIcon) {
         drawIcon(resultCard.imagePath, 0, 0, cardSize, cardSize);
       }
+
+      // Draw stat text at bottom corners
+      const textSize = Math.max(10, cardSize * 0.12);
+      const textMargin = 4;
+      const textY = cardSize - textMargin;
+
+      // Bottom left - Attack stat
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
+      const attackText = `⚔ ${resultCard.attack}`;
+      drawTextWithShadow(ctx, attackText, textMargin, textY, textSize, "#e5e7eb");
+
+      // Bottom right - HP stat
+      ctx.textAlign = "right";
+      ctx.textBaseline = "bottom";
+      const hpText = `♥ ${resultCard.hp}`;
+      drawTextWithShadow(ctx, hpText, cardSize - textMargin, textY, textSize, "#e5e7eb");
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
 
       ctx.restore();
     }
@@ -780,6 +837,25 @@ function renderGallery(
               drawIcon(iconPath, iconStartX, iconY, elementIconSize, elementIconSize);
             });
           }
+
+          // Draw stat text at bottom corners
+          const textSize = Math.max(10, cellSize * 0.12);
+          const textMargin = 4;
+          const textY = cellY + cellSize - textMargin;
+
+          // Bottom left - Attack stat
+          ctx.textAlign = "left";
+          ctx.textBaseline = "bottom";
+          const attackText = `⚔ ${card.attack}`;
+          drawTextWithShadow(ctx, attackText, cellX + textMargin, textY, textSize, "#e5e7eb");
+
+          // Bottom right - HP stat
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          const hpText = `♥ ${card.hp}`;
+          drawTextWithShadow(ctx, hpText, cellX + cellSize - textMargin, textY, textSize, "#e5e7eb");
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
         }
       }
     }

@@ -39,7 +39,7 @@ export function drawTextWithShadow(
   shadowColor = "rgba(0, 0, 0, 0.8)"
 ) {
   ctx.font = `${size}px system-ui`;
-  
+
   // Draw shadow/outline by drawing the text multiple times with offset
   ctx.fillStyle = shadowColor;
   for (let dy = -1; dy <= 1; dy++) {
@@ -49,7 +49,7 @@ export function drawTextWithShadow(
       }
     }
   }
-  
+
   // Draw the actual text on top
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
