@@ -129,6 +129,17 @@ export class BattleScene extends Scene {
   private combatLog: CombatLogEntry[] = [];
   private readonly maxCombatLogEntries = 20; // Maximum number of log entries to keep
   private currentRound: number = 1;
+  // Healing animations: Key is unit position, value contains rising icons and glow progress
+  private healingAnimations: Map<
+    number,
+    {
+      progress: number;
+      icons: Array<{ x: number; y: number; progress: number }>;
+      glowProgress: number;
+    }
+  > = new Map();
+  private readonly healingAnimationDuration = 1.0; // seconds
+  private readonly healingGlowDuration = 0.5; // seconds for border glow
 
   constructor(
     private worldId: string,
@@ -358,6 +369,35 @@ export class BattleScene extends Scene {
         this.findAndStartNextMatch();
       }
     }
+
+    // Update healing animations
+    const healingKeysToRemove: number[] = [];
+    for (const [position, animData] of this.healingAnimations.entries()) {
+      const newProgress = animData.progress + dt / this.healingAnimationDuration;
+      const newGlowProgress = animData.glowProgress + dt / this.healingGlowDuration;
+
+      // Update icon positions and progress
+      const updatedIcons = animData.icons.map((icon) => ({
+        ...icon,
+        progress: icon.progress + dt / this.healingAnimationDuration,
+        y: icon.y - dt * 60, // Rise at 60 pixels per second
+      }));
+
+      if (newProgress >= 1.0) {
+        healingKeysToRemove.push(position);
+      } else {
+        this.healingAnimations.set(position, {
+          progress: newProgress,
+          icons: updatedIcons,
+          glowProgress: Math.min(1.0, newGlowProgress),
+        });
+      }
+    }
+
+    // Remove completed healing animations
+    for (const key of healingKeysToRemove) {
+      this.healingAnimations.delete(key);
+    }
   }
 
   private initializeGrid() {
@@ -407,6 +447,18 @@ export class BattleScene extends Scene {
         this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
       }
     }
+  }
+
+  private getElementColor(element: Element): string {
+    const colorMap: Record<Element, string> = {
+      Fire: "#ef4444", // Red
+      Water: "#3b82f6", // Blue
+      Grass: "#10b981", // Green
+      Dark: "#7c3aed", // Purple
+      Light: "#fbbf24", // Yellow/Gold
+      Healing: "#34d399", // Teal/Green for healing
+    };
+    return colorMap[element] || "#9aa3b2";
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -466,6 +518,28 @@ export class BattleScene extends Scene {
       // Draw element icon overlay (small, top-right)
       this.drawUnitElementIcons(ctx, card.elements, unitX, unitY, playerUnitSize);
 
+      // Draw healing border glow if unit is being healed
+      const healingAnim = this.healingAnimations.get(slotIndex);
+      if (healingAnim) {
+        const glowAlpha =
+          healingAnim.glowProgress < 0.5
+            ? healingAnim.glowProgress * 2 // 0 to 1
+            : 1.0 - (healingAnim.glowProgress - 0.5) * 2; // 1 to 0
+        const healingColor = this.getElementColor("Healing");
+
+        ctx.save();
+        ctx.globalAlpha = glowAlpha * 0.8;
+        ctx.strokeStyle = healingColor;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(unitX - 2, unitY - 2, playerUnitSize + 4, playerUnitSize + 4);
+
+        // Add outer glow effect
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = healingColor;
+        ctx.strokeRect(unitX - 2, unitY - 2, playerUnitSize + 4, playerUnitSize + 4);
+        ctx.restore();
+      }
+
       // Draw "Leader" text above leader slot
       if (slotIndex === 0) {
         ctx.textAlign = "center";
@@ -475,6 +549,35 @@ export class BattleScene extends Scene {
         ctx.textBaseline = "alphabetic";
       }
     });
+
+    // Draw healing animation icons (rising and fading)
+    for (const [position, animData] of this.healingAnimations.entries()) {
+      const healingIconPath = elementIconPath("Healing");
+      const iconSize = 24;
+
+      for (const icon of animData.icons) {
+        if (icon.progress < 1.0) {
+          // Calculate opacity: fade out as progress increases
+          const opacity =
+            icon.progress < 0.5
+              ? 1.0 - icon.progress * 2 // 1.0 to 0.0
+              : 0.0; // Fully faded after halfway
+
+          // Calculate scale: slightly grow then shrink
+          const scale =
+            icon.progress < 0.3
+              ? 0.5 + (icon.progress / 0.3) * 0.5 // 0.5 to 1.0
+              : 1.0 - ((icon.progress - 0.3) / 0.7) * 0.3; // 1.0 to 0.7
+
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.translate(icon.x, icon.y);
+          ctx.scale(scale, scale);
+          this.drawIcon(ctx, healingIconPath, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+          ctx.restore();
+        }
+      }
+    }
 
     // Draw player unit HP bars
     const playerUnitHpArea = BattleLayout.playerUnitHp;
@@ -1407,7 +1510,7 @@ export class BattleScene extends Scene {
             unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healing.amount);
             const actualHealing = unit.currentHp - hpBefore;
 
-            if (actualHealing > 0) {
+            if (actualHealing >= 0) {
               // Log healing event
               this.addCombatLogEntry({
                 type: "healing",
@@ -1426,6 +1529,9 @@ export class BattleScene extends Scene {
                 targetHpAfter: unit.currentHp,
                 targetMaxHp: unit.maxHp,
               });
+
+              // Trigger healing animation
+              this.startHealingAnimation(unit.position);
             }
           }
         }
@@ -1442,7 +1548,7 @@ export class BattleScene extends Scene {
           rightmostAlive.currentHp = Math.min(rightmostAlive.maxHp, rightmostAlive.currentHp + healing.amount);
           const actualHealing = rightmostAlive.currentHp - hpBefore;
 
-          if (actualHealing > 0) {
+          if (actualHealing >= 0) {
             // Log healing event
             this.addCombatLogEntry({
               type: "healing",
@@ -1461,10 +1567,46 @@ export class BattleScene extends Scene {
               targetHpAfter: rightmostAlive.currentHp,
               targetMaxHp: rightmostAlive.maxHp,
             });
+
+            // Trigger healing animation
+            this.startHealingAnimation(rightmostAlive.position);
           }
         }
       }
     }
+  }
+
+  private startHealingAnimation(unitPosition: number): void {
+    // Calculate unit position for icon spawning
+    const playerUnitArea = BattleLayout.playerUnits;
+    const playerUnitSlotWidth = playerUnitArea.w / 4;
+    const playerUnitSize = 96;
+    const slotX = playerUnitArea.x + unitPosition * playerUnitSlotWidth;
+    const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
+    const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
+    const unitCenterX = unitX + playerUnitSize / 2;
+    const unitCenterY = unitY + playerUnitSize / 2;
+
+    // Create 3-5 healing icons that will rise and fade
+    const numIcons = 3 + Math.floor(Math.random() * 3); // 3-5 icons
+    const icons: Array<{ x: number; y: number; progress: number }> = [];
+
+    for (let i = 0; i < numIcons; i++) {
+      // Randomize starting position slightly around unit center
+      const offsetX = (Math.random() - 0.5) * playerUnitSize * 0.6;
+      const offsetY = (Math.random() - 0.5) * playerUnitSize * 0.6;
+      icons.push({
+        x: unitCenterX + offsetX,
+        y: unitCenterY + offsetY,
+        progress: Math.random() * 0.2, // Stagger start times slightly
+      });
+    }
+
+    this.healingAnimations.set(unitPosition, {
+      progress: 0.0,
+      icons,
+      glowProgress: 0.0,
+    });
   }
 
   private queueEnemyTurn(): void {
