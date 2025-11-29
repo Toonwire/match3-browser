@@ -5,3 +5,7 @@
   - ~~Small healing icons rising and fading above the target unit~~ ✅
   - ~~Glow target unit border the same color as the healing element~~ ✅
 - Consider a rcv stat for cards that will be used as healing modifier?
+- ~~Introduce the player to mechanics~~ ✅
+  - ~~Weapon triangle and double edged sword (possibly include visuals in the worlds panel)~~ ✅
+  - ~~AoE (L or T matches)~~ ✅
+  -
