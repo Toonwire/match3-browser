@@ -1,7 +1,8 @@
 - id: world_01_green
   name: Green
   difficulty: Easy
-  description: A lush world covered in grass and trees.
+  description: A lush world covered in grass and towering trees, where nature thrives undisturbed and ancient growth protects the land's heart.
+  descriptionLong: Towering trees stretch endlessly toward the sky, their intertwining canopies forming natural fortresses. Emerald grasses ripple like waves across the terrain, hiding ruins of civilizations long reclaimed by nature. The air hums with quiet wisdom—this is a land that grows stronger with time. Here, the roots run deep. Creatures born of bark and vine stand as guardians, and even the light filters through leaves as if asked permission. Travelers who enter feel both embraced and judged, as though the forest itself watches and remembers.
   primaryElement: Grass
   imagePath: /assets/worlds/world_01_green.png
   stages:
@@ -78,7 +79,8 @@
 - id: world_02_red
   name: Red
   difficulty: Medium
-  description: A fiery world covered in lava and ash.
+  description: A fiery world covered in lava and ash, driven by volcanic fury and inhabited by beings forged in flame and shaped by heat.
+  descriptionLong: Rivers of molten lava carve glowing scars across a land of obsidian and ash. The air trembles with heat, each breath tinged with sulfur and embers. Flames dance eternally atop fractured peaks, and the ground rumbles as if the planet's heart beats with wrath. Here, power is born in the fire. Creatures of magma and smoke roam freely, volatile and devastating—true glass cannons forged in intensity. Survival is not granted, but earned in battle against the very elements.
   primaryElement: Fire
   imagePath: /assets/worlds/world_02_red.png
   stages:
@@ -140,7 +142,8 @@
 - id: world_03_blue
   name: Blue
   difficulty: Hard
-  description: A frigid world covered in ice and snow.
+  description: A frigid world covered in ice and snow — stoic, unforgiving, and hauntingly serene.
+  descriptionLong: Endless fields of ice stretch beneath pale skies, the land sculpted by centuries of snowstorms and biting winds. Glaciers rise like ancient monuments, and frost clings to everything—each step a whisper upon frozen earth. The cold here is not just weather, but will. Beneath the ice lie slumbering titans and forgotten relics, preserved by the planet's unwavering chill. Only the hardiest survive, shaped by isolation and resilience, their strength buried deep like heat beneath permafrost.
   primaryElement: Water
   imagePath: /assets/worlds/world_03_blue.png
   stages:

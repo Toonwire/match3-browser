@@ -430,6 +430,8 @@ export class BaseScene extends Scene {
         return;
       }
       if (this.pointInPolygon(x, y, this.worldsPoly)) {
+        // Reload state to get latest progression data when opening worlds panel
+        this.state = GameState.load();
         this.activePopup = "worlds";
         return;
       }
@@ -502,10 +504,12 @@ export class BaseScene extends Scene {
         px,
         py,
         pw,
+        ph,
         this.worlds,
         this.selectedWorldIndex,
         (icon, x, y, iw, ih) => this.drawIcon(ctx, icon, x, y, iw, ih),
-        elementIconPath
+        elementIconPath,
+        (worldId) => this.state.getHighestCompletedStage(worldId)
       );
     }
   }
