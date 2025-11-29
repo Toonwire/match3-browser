@@ -31,7 +31,7 @@ export class GameState {
       this.state = { ...initial } as PersistedState;
     } else {
       this.state = {
-        currencies: { gold: 5, plovmand: 0 },
+        currencies: { gold: 10, plovmand: 0 },
         inventory: {
           cardCollection: {},
           items: {},

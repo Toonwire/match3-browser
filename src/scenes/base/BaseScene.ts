@@ -5,6 +5,7 @@ import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
 import { BaseLayout, CanvasSize } from "../../ui/Layouts";
 import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
+import { renderTutorialPanel, type TutorialPanelRegions } from "../../ui/TutorialPanel";
 import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
 import { renderWorldsPanel, type WorldsPanelRegions } from "./WorldsPanel";
@@ -21,6 +22,9 @@ export class BaseScene extends Scene {
   private iconCache = new Map<string, HTMLImageElement>();
   private activePopup: "shop" | "armory" | "worlds" | null = null;
   private showMutateView: boolean = false;
+  private showTutorial: boolean = false;
+  private tutorialPanelRegions: TutorialPanelRegions | null = null;
+  private tutorialScrollOffset: number = 0;
   private mutateSlots: (string | null)[] = [null, null];
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
@@ -148,6 +152,13 @@ export class BaseScene extends Scene {
 
     // Active popup overlay
     if (this.activePopup) this.renderPopup(ctx, this.activePopup);
+
+    // Draw tutorial panel if shown (on top of everything)
+    if (this.showTutorial) {
+      this.tutorialPanelRegions = renderTutorialPanel(ctx, this.tutorialScrollOffset, (iconPath, x, y, w, h) =>
+        this.drawIcon(ctx, iconPath, x, y, w, h)
+      );
+    }
   }
 
   private async getIcon(path: string): Promise<HTMLImageElement> {
@@ -207,6 +218,16 @@ export class BaseScene extends Scene {
         y: number;
         deltaY: number;
       };
+
+      // Handle wheel events for tutorial scrolling
+      if (this.showTutorial && this.tutorialPanelRegions) {
+        if (this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
+          const scrollSpeed = 20;
+          this.tutorialScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
+          this.tutorialScrollOffset = Math.max(0, this.tutorialScrollOffset);
+          return;
+        }
+      }
 
       // Handle wheel events for gallery scrolling
       if (this.activePopup === "armory") {
@@ -403,7 +424,19 @@ export class BaseScene extends Scene {
         return;
       }
 
-      // Top bar Save/Load
+      // Tutorial panel - close on outside click
+      if (this.showTutorial && this.tutorialPanelRegions) {
+        if (!this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
+          this.showTutorial = false;
+          this.tutorialPanelRegions = null;
+          this.tutorialScrollOffset = 0;
+          return;
+        }
+        // If tutorial is open, block other clicks
+        return;
+      }
+
+      // Top bar Save/Load/Help
       const buttonRegions = getTopBarButtonRegions(CanvasSize.width);
       if (this.pointInRect(x, y, buttonRegions.save)) {
         this.state.save();
@@ -413,6 +446,10 @@ export class BaseScene extends Scene {
       if (this.pointInRect(x, y, buttonRegions.load)) {
         this.state = GameState.load();
         console.log("Game loaded");
+        return;
+      }
+      if (this.pointInRect(x, y, buttonRegions.help)) {
+        this.showTutorial = true;
         return;
       }
 

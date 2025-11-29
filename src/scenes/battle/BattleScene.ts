@@ -21,6 +21,7 @@ import {
   drawTopBar,
   getTopBarButtonRegions,
 } from "../../ui/UiPrimitives";
+import { renderTutorialPanel, type TutorialPanelRegions } from "../../ui/TutorialPanel";
 
 interface BattleUnit {
   unit: Unit;
@@ -178,6 +179,9 @@ export class BattleScene extends Scene {
   > = new Map();
   private readonly floatingDamageDuration = 1.5; // seconds
   private floatingDamageIdCounter = 0;
+  private showTutorial: boolean = false;
+  private tutorialPanelRegions: TutorialPanelRegions | null = null;
+  private tutorialScrollOffset: number = 0;
 
   constructor(
     private worldId: string,
@@ -1069,6 +1073,13 @@ export class BattleScene extends Scene {
       this.renderVictoryPanel(ctx);
     }
 
+    // Draw tutorial panel if shown
+    if (this.showTutorial) {
+      this.tutorialPanelRegions = renderTutorialPanel(ctx, this.tutorialScrollOffset, (iconPath, x, y, w, h) =>
+        this.drawIcon(ctx, iconPath, x, y, w, h)
+      );
+    }
+
     // Draw damage animation icons (raining from source to target) - render last so they appear on top
     for (const [key, animData] of this.damageAnimations.entries()) {
       const damageIconPath = elementIconPath(animData.element);
@@ -1317,10 +1328,41 @@ export class BattleScene extends Scene {
   }
 
   onEvent(e: Event): void {
+    if (e.type === "scene-wheel") {
+      const { x, y, deltaY } = (e as CustomEvent).detail as {
+        x: number;
+        y: number;
+        deltaY: number;
+      };
+
+      // Handle wheel events for tutorial scrolling
+      if (this.showTutorial && this.tutorialPanelRegions) {
+        if (this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
+          const scrollSpeed = 20;
+          this.tutorialScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
+          this.tutorialScrollOffset = Math.max(0, this.tutorialScrollOffset);
+          return;
+        }
+      }
+      return;
+    }
+
     if (e.type === "scene-click") {
       const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
 
-      // Top bar Save/Load
+      // Tutorial panel - close on outside click
+      if (this.showTutorial && this.tutorialPanelRegions) {
+        if (!this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
+          this.showTutorial = false;
+          this.tutorialPanelRegions = null;
+          this.tutorialScrollOffset = 0;
+          return;
+        }
+        // If tutorial is open, block other clicks
+        return;
+      }
+
+      // Top bar Save/Load/Help
       const buttonRegions = getTopBarButtonRegions(CanvasSize.width);
       if (this.pointInRect(x, y, buttonRegions.save)) {
         this.state.save();
@@ -1330,6 +1372,10 @@ export class BattleScene extends Scene {
       if (this.pointInRect(x, y, buttonRegions.load)) {
         this.state = GameState.load();
         console.log("Game loaded");
+        return;
+      }
+      if (this.pointInRect(x, y, buttonRegions.help)) {
+        this.showTutorial = true;
         return;
       }
 
@@ -1368,7 +1414,16 @@ export class BattleScene extends Scene {
 
       // Don't start dragging if clicking on UI elements
       const buttonRegions = getTopBarButtonRegions(CanvasSize.width);
-      if (this.pointInRect(x, y, buttonRegions.save) || this.pointInRect(x, y, buttonRegions.load)) {
+      if (
+        this.pointInRect(x, y, buttonRegions.save) ||
+        this.pointInRect(x, y, buttonRegions.load) ||
+        this.pointInRect(x, y, buttonRegions.help)
+      ) {
+        return;
+      }
+
+      // Don't start dragging if tutorial is open
+      if (this.showTutorial) {
         return;
       }
       if (this.retreatButtonRegion && this.pointInRect(x, y, this.retreatButtonRegion)) {

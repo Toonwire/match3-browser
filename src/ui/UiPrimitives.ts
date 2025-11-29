@@ -160,12 +160,23 @@ export function drawTopBar(
   // Calculate button widths first
   const saveText = "Save";
   const loadText = "Load";
+  const helpText = "?";
   const saveWidth = ctx.measureText(saveText).width + buttonPadding * 2;
   const loadWidth = ctx.measureText(loadText).width + buttonPadding * 2;
+  const helpWidth = ctx.measureText(helpText).width + buttonPadding * 2;
 
   // Position buttons from right to left
   const loadX = canvasWidth - loadWidth - rightPad;
   const saveX = loadX - saveWidth - buttonGap;
+  const helpX = saveX - helpWidth - buttonGap;
+
+  // Help button
+  ctx.fillStyle = "#23262d";
+  ctx.fillRect(helpX, buttonY, helpWidth, buttonHeight);
+  ctx.strokeStyle = "#2b2f3a";
+  ctx.strokeRect(helpX + 0.5, buttonY + 0.5, helpWidth - 1, buttonHeight - 1);
+  ctx.fillStyle = "#f59e0b";
+  ctx.fillText(helpText, helpX + buttonPadding, buttonY + 16);
 
   // Save button
   ctx.fillStyle = "#23262d";
@@ -187,6 +198,7 @@ export function drawTopBar(
 export interface TopBarButtonRegions {
   save: { x: number; y: number; w: number; h: number };
   load: { x: number; y: number; w: number; h: number };
+  help: { x: number; y: number; w: number; h: number };
 }
 
 export function getTopBarButtonRegions(canvasWidth: number): TopBarButtonRegions {
@@ -204,18 +216,22 @@ export function getTopBarButtonRegions(canvasWidth: number): TopBarButtonRegions
     return {
       save: { x: 0, y: 0, w: 0, h: 0 },
       load: { x: 0, y: 0, w: 0, h: 0 },
+      help: { x: 0, y: 0, w: 0, h: 0 },
     };
   }
   ctx.font = "13px system-ui";
   const saveWidth = ctx.measureText("Save").width + buttonPadding * 2;
   const loadWidth = ctx.measureText("Load").width + buttonPadding * 2;
+  const helpWidth = ctx.measureText("?").width + buttonPadding * 2;
 
   // Position buttons from right to left (same as in drawTopBar)
   const loadX = canvasWidth - loadWidth - rightPad;
   const saveX = loadX - saveWidth - buttonGap;
+  const helpX = saveX - helpWidth - buttonGap;
 
   return {
     save: { x: saveX, y: buttonY, w: saveWidth, h: buttonHeight },
     load: { x: loadX, y: buttonY, w: loadWidth, h: buttonHeight },
+    help: { x: helpX, y: buttonY, w: helpWidth, h: buttonHeight },
   };
 }
