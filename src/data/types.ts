@@ -60,6 +60,8 @@ export interface StageUnit {
   position: number; // 0-3, left to right
   tags?: string[]; // Optional override for unit tags (e.g., to make a regular unit a Boss). Defaults to [Enemy] if not provided
   effect?: UnitEffect[]; // Optional override for unit effects
+  attack?: number; // Optional override for unit attack
+  hp?: number; // Optional override for unit hp
 }
 
 export type LootConfig =

@@ -67,7 +67,7 @@ export class BattleScene extends Scene {
   private enemies: BattleUnit[] = [];
   private playerUnits: BattleUnit[] = []; // Player loadout units (leader + members)
   private timer: number = 1.0; // 0.0 to 1.0
-  private readonly dragTimerDuration = 5.0; // seconds
+  private readonly dragTimerDuration = 105.0; // seconds
   private dragTimerRemaining: number = 0.0; // seconds remaining
   private isPlayerTurn: boolean = true;
   private onBackToWorld?: () => void;
@@ -234,8 +234,8 @@ export class BattleScene extends Scene {
           const unit: Unit = {
             id: card.id,
             name: card.name,
-            attack: card.attack,
-            hp: card.hp,
+            attack: stageUnit.attack ?? card.attack, // Use stage override for attack, or default to card attack
+            hp: stageUnit.hp ?? card.hp, // Use stage override for hp, or default to card hp
             elements: card.elements,
             imagePath: card.imagePath,
             // Use stage override for tags, or default to [Enemy]
@@ -2077,6 +2077,10 @@ export class BattleScene extends Scene {
         const multiplier = elementalMultiplier(enemy.unit.elements[0], rightmostAlivePlayer.unit.elements[0]);
         const baseDamage = enemy.unit.attack;
         const finalDamage = Math.floor(baseDamage * multiplier);
+
+        if (finalDamage == 0) {
+          continue;
+        }
 
         // Apply damage
         const hpBefore = rightmostAlivePlayer.currentHp;

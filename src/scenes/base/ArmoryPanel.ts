@@ -222,6 +222,22 @@ function renderLoadout(
         if (card && card.imagePath) {
           drawIcon(card.imagePath, cellX, cellY, cellSize, cellSize);
 
+          // Draw element icons at top right corner
+          if (card.elements && drawIcon) {
+            const elementIconSize = Math.max(12, cellSize * 0.15); // Scale icon size with cell size
+            const iconMargin = 4;
+            const iconGap = 2;
+            const iconStartX = cellX + cellSize - iconMargin - elementIconSize;
+            const iconStartY = cellY + iconMargin;
+
+            // Draw element icons, stacking vertically if multiple
+            card.elements.forEach((element: Element, idx: number) => {
+              const iconY = iconStartY + idx * (elementIconSize + iconGap);
+              const iconPath = elementIconPath(element);
+              drawIcon(iconPath, iconStartX, iconY, elementIconSize, elementIconSize);
+            });
+          }
+
           // Draw stat text at bottom corners
           const textSize = Math.max(10, cellSize * 0.12);
           const textMargin = 4;

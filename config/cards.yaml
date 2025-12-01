@@ -1,3 +1,13 @@
+- id: card_00_boulder
+  name: Boulder
+  description: A large rock that can be used to block enemies
+  rank: 1
+  attack: 0
+  hp: 8
+  elements: [Grass]
+  imagePath: /assets/cards/card_00_boulder.png
+  leaderPassive: null
+
 - id: card_01_whelp
   name: Whelp
   description: A small fire creature

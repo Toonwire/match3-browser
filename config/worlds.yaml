@@ -6,6 +6,29 @@
   primaryElement: Grass
   imagePath: /assets/worlds/world_01_green.png
   stages:
+    - id: world_01_stage_00
+      name: Asteroid Belt
+      description: A belt of asteroids protecting the planet
+      imagePath: /assets/stages/asteroid_belt.png
+      units:
+        - unitId: card_00_boulder
+          position: 0
+          attack: 0
+          hp: 100
+        - unitId: card_00_boulder
+          position: 1
+          attack: 0
+          hp: 100
+        - unitId: card_00_boulder
+          position: 2
+          attack: 0
+          hp: 100
+        - unitId: card_07_wisp
+          position: 3
+          attack: 1
+          hp: 1
+      loot: loot_table_common_coins
+
     - id: world_01_stage_01
       name: Tree Tops
       description: The outer defenses

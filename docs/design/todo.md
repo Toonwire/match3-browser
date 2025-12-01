@@ -9,3 +9,4 @@
   - ~~Weapon triangle and double edged sword (possibly include visuals in the worlds panel)~~ ✅
   - ~~AoE (L or T matches)~~ ✅
   -
+- Make introduction stages
