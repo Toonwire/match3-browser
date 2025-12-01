@@ -9,4 +9,4 @@
   - ~~Weapon triangle and double edged sword (possibly include visuals in the worlds panel)~~ ✅
   - ~~AoE (L or T matches)~~ ✅
   -
-- Make introduction stages
+- Combo multiplier for match3 grid. I.e. 3 matches in a turn gives a higher multiplier than just a single match. Should be non linear scaling. More combos = larger multiplier
