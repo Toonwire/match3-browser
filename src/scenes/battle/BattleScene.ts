@@ -939,8 +939,43 @@ export class BattleScene extends Scene {
         const cellX = gridArea.x + gridOffsetX + col * (cellSize + cellGap);
         const cellY = gridArea.y + gridOffsetY + row * (cellSize + cellGap);
 
-        // Draw cell background
-        ctx.fillStyle = "#23262d";
+        let baseColor = "#23262d"; // Calculate background brightness for adjacent tiles during drag
+        // Draw cell background with brightness based on proximity
+        let backgroundBrightness = 0.0; // 0.0 = normal, 1.0 = maximum brightness
+        if (this.dragState?.isDragging && this.stage?.enableSwapHighlight === true) {
+          // Don't highlight the start position or the current empty space position
+          const isCurrentPosition = row === this.dragState.currentRow && col === this.dragState.currentCol;
+
+          if (!isCurrentPosition) {
+            const isAdjacent = this.isAdjacentToCurrentPosition(row, col);
+            if (isAdjacent) {
+              baseColor = "#032117";
+              // Calculate distance from mouse to closest edge/point on the tile
+              // Clamp mouse coordinates to tile bounds to find the closest point on the tile
+              const closestX = Math.max(cellX, Math.min(cellX + cellSize, this.dragState.mouseX));
+              const closestY = Math.max(cellY, Math.min(cellY + cellSize, this.dragState.mouseY));
+              const dx = this.dragState.mouseX - closestX;
+              const dy = this.dragState.mouseY - closestY;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+
+              // Maximum distance for full brightness (half the diagonal of a cell)
+              const maxDistance = cellSize * 1.5;
+              // Closer = brighter, further = darker
+              const proximity = Math.max(0, 1.0 - distance / maxDistance);
+              // Apply smooth curve for better visual feedback
+              backgroundBrightness = proximity * proximity; // Quadratic easing for smoother transition
+            }
+          }
+        }
+
+        // Draw cell background with brightness based on proximity
+        if (backgroundBrightness > 0) {
+          // Interpolate between base color and lighter color
+          const lightColor = "#69f207"; // Lighter version of base color
+          ctx.fillStyle = this.interpolateColor(baseColor, lightColor, backgroundBrightness);
+        } else {
+          ctx.fillStyle = baseColor;
+        }
         ctx.fillRect(cellX, cellY, cellSize, cellSize);
         ctx.strokeStyle = "#2b2f3a";
         ctx.strokeRect(cellX + 0.5, cellY + 0.5, cellSize - 1, cellSize - 1);
@@ -2494,6 +2529,40 @@ export class BattleScene extends Scene {
     const clampedY = Math.max(gridTop, Math.min(gridBottom, y));
 
     return { clampedX, clampedY };
+  }
+
+  private isAdjacentToCurrentPosition(row: number, col: number): boolean {
+    if (!this.dragState?.isDragging) {
+      return false;
+    }
+    const currentRow = this.dragState.currentRow;
+    const currentCol = this.dragState.currentCol;
+
+    // Check if tile is adjacent (horizontal, vertical, or diagonal, but not the same tile)
+    const rowDiff = Math.abs(row - currentRow);
+    const colDiff = Math.abs(col - currentCol);
+    return rowDiff <= 1 && colDiff <= 1 && !(rowDiff === 0 && colDiff === 0);
+  }
+
+  private interpolateColor(color1: string, color2: string, t: number): string {
+    // Parse hex colors to RGB
+    const parseHex = (hex: string): [number, number, number] => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return [r, g, b];
+    };
+
+    const [r1, g1, b1] = parseHex(color1);
+    const [r2, g2, b2] = parseHex(color2);
+
+    // Interpolate
+    const r = Math.round(r1 + (r2 - r1) * t);
+    const g = Math.round(g1 + (g2 - g1) * t);
+    const b = Math.round(b1 + (b2 - b1) * t);
+
+    // Convert back to hex
+    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
   }
 
   private getGridCellAt(x: number, y: number): { row: number; col: number } | null {

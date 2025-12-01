@@ -76,6 +76,7 @@ export interface StageDef {
   imagePath?: string;
   units: StageUnit[];
   loot?: LootConfig;
+  enableSwapHighlight?: boolean; // Enable/disable swap highlight animation on adjacent tiles
 }
 
 export interface WorldDef {

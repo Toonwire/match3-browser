@@ -10,6 +10,7 @@
       name: Asteroid Belt
       description: A belt of asteroids protecting the planet
       imagePath: /assets/stages/asteroid_belt.png
+      enableSwapHighlight: true
       units:
         - unitId: card_00_boulder
           position: 0
