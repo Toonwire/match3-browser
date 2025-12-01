@@ -23,6 +23,16 @@ export interface Card {
   leaderPassive?: LeaderPassiveAbility[] | null;
 }
 
+export interface UnitEffect {
+  type: string;
+  description?: string;
+  elements?: Element[];
+  multipliers?: number[];
+  targets?: string[];
+  aoe?: boolean;
+  cooldown?: number;
+}
+
 export interface Unit {
   id: string;
   name: string;
@@ -31,6 +41,7 @@ export interface Unit {
   elements?: Element[];
   tags: string[];
   imagePath?: string;
+  effect?: UnitEffect[];
 }
 
 export interface LootEntry {
@@ -45,8 +56,10 @@ export interface LootTable {
 }
 
 export interface StageUnit {
-  unitId: string; // References unit in units.yaml
+  unitId: string; // References card ID in cards.yaml
   position: number; // 0-3, left to right
+  tags?: string[]; // Optional override for unit tags (e.g., to make a regular unit a Boss). Defaults to [Enemy] if not provided
+  effect?: UnitEffect[]; // Optional override for unit effects
 }
 
 export type LootConfig =

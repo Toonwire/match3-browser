@@ -11,9 +11,9 @@
       description: The outer defenses
       imagePath: /assets/stages/tree_tops.png
       units:
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 0
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 1
       loot: loot_table_common_coins
 
@@ -22,11 +22,11 @@
       description: Deeper into the forest
       imagePath: /assets/stages/canopy_layer.png
       units:
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 0
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 1
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 2
       loot: loot_table_common_coins
 
@@ -35,14 +35,23 @@
       description: The heart of the forest
       imagePath: /assets/stages/forest_floor.png
       units:
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 0
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 1
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 2
-        - unitId: unit_wisp_lieutenant
+        - unitId: card_08_wispier
           position: 3
+          effect:
+            - type: damage
+              description: Deal 1x grass dmg to all enemies
+              elements: [Grass]
+              multipliers: [1]
+              targets: [Player]
+              aoe: true
+              cooldown: 2
+          tags: [Enemy, Boss]
       loot:
         tableId: loot_table_common_coins
         entries:
@@ -56,14 +65,23 @@
       description: Ancient roots guard the core
       imagePath: /assets/stages/root_system.png
       units:
-        - unitId: unit_wisp
+        - unitId: card_07_wisp
           position: 0
-        - unitId: unit_wisp_lieutenant
+        - unitId: card_07_wisp
           position: 1
-        - unitId: unit_wisp_lieutenant
+        - unitId: card_08_wispier
           position: 2
-        - unitId: unit_wisp_boss
+        - unitId: card_09_wispiest
           position: 3
+          tags: [Enemy, Boss]
+          effect:
+            - type: damage
+              description: Deal 1x grass and light dmg to all enemies
+              elements: [Grass, Light]
+              multipliers: [1, 1]
+              targets: [Player]
+              aoe: true
+              cooldown: 2
       loot:
         entries:
           - item: coin
@@ -89,9 +107,9 @@
       description: A scorched surface covered in ash and rocks
       imagePath: /assets/stages/ashfall_peaks.png
       units:
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 0
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 1
       loot: loot_table_common_coins
     - id: world_02_stage_02
@@ -99,11 +117,11 @@
       description: Rivers of molten rock cutting through the landscape
       imagePath: /assets/stages/magma_flow_canyons.png
       units:
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 0
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 1
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 2
       loot: loot_table_common_coins
     - id: world_02_stage_03
@@ -111,13 +129,13 @@
       description: A deep underground basin filled with molten rock
       imagePath: /assets/stages/inferno_basin.png
       units:
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 0
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 1
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 2
-        - unitId: unit_whelp
+        - unitId: card_01_whelp
           position: 3
       loot:
         tableId: loot_table_common_coins
@@ -129,8 +147,19 @@
       description: A sacred furnace burning ever bright
       imagePath: /assets/stages/sacred_furnace.png
       units:
-        - unitId: unit_whelp_boss
+        - unitId: card_03_whelpiest
           position: 1
+          tags: [Enemy, Boss]
+          # Example: Override tags or effects at stage level
+          # tags: [Enemy, Boss, Elite]  # Add custom tags
+          # effect:  # Override or add effects
+          #   - type: damage
+          #     description: Special stage ability
+          #     elements: [Fire]
+          #     multipliers: [1.5]
+          #     targets: [Player]
+          #     aoe: true
+          #     cooldown: 1
       loot:
         entries:
           - item: coin
@@ -152,9 +181,9 @@
       description: A frozen wasteland covered in snow and ice
       imagePath: /assets/stages/frozen_wastes.png
       units:
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 0
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 1
       loot: loot_table_common_coins
 
@@ -163,11 +192,11 @@
       description: Massive ice formations pertruding from the ground
       imagePath: /assets/stages/ice_fields.png
       units:
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 0
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 1
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 2
       loot: loot_table_common_coins
 
@@ -176,13 +205,13 @@
       description: An abyss-shrouded rift into the icy depths
       imagePath: /assets/stages/frostbite_chasm.png
       units:
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 0
-        - unitId: unit_slime_lieutenant
+        - unitId: card_04_slime
           position: 1
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 2
-        - unitId: unit_slime_lieutenant
+        - unitId: card_04_slime
           position: 3
       loot:
         tableId: loot_table_common_coins
@@ -199,13 +228,13 @@
       description: Frozen steps give entrance to ominous glacial cavities
       imagePath: /assets/stages/icy_descent.png
       units:
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 0
-        - unitId: unit_slime_lieutenant
+        - unitId: card_04_slime
           position: 1
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 2
-        - unitId: unit_slime_lieutenant
+        - unitId: card_04_slime
           position: 3
       loot:
         tableId: loot_table_common_coins
@@ -222,14 +251,15 @@
       description: Gem like structures fracture light into a haunting, frozen glow.
       imagePath: /assets/stages/crystal_hollows.png
       units:
-        - unitId: unit_slime
+        - unitId: card_04_slime
           position: 0
-        - unitId: unit_slime_lieutenant
+        - unitId: card_04_slime
           position: 1
-        - unitId: unit_slime_lieutenant
+        - unitId: card_04_slime
           position: 2
-        - unitId: unit_rimescale
+        - unitId: card_17_rimescale
           position: 3
+          tags: [Enemy, Boss]
       loot:
         tableId: loot_table_common_coins
         entries:

@@ -1,5 +1,5 @@
 import { loadYaml } from "../../data/loadYaml";
-import type { Card, Unit, WorldDef } from "../../data/types";
+import type { Card, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -9,8 +9,6 @@ import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../u
 export class WorldScene extends Scene {
   private world?: WorldDef;
   private cards: Card[] = [];
-  private units: Unit[] = [];
-  private unitsMap = new Map<string, Unit>();
   private iconCache = new Map<string, HTMLImageElement>();
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
@@ -53,9 +51,7 @@ export class WorldScene extends Scene {
         return;
       }
 
-      // Load units
-      this.units = await loadYaml<Unit[]>("/config/units.yaml");
-      this.unitsMap = new Map(this.units.map((u) => [u.id, u]));
+      // Units are now based on cards, so we just need cards loaded
 
       // Load background
       const bg = new Image();
@@ -206,9 +202,12 @@ export class WorldScene extends Scene {
           ctx.textAlign = "left";
           ctx.textBaseline = "alphabetic";
         } else {
-          // Draw actual unit for unlocked stages
-          const unit = this.unitsMap.get(stageUnit.unitId);
-          if (unit) {
+          // Draw actual unit for unlocked stages (using cards as base)
+          const card = this.cards.find((c) => c.id === stageUnit.unitId);
+          if (card) {
+            // Get tags from stage override or default to [Enemy]
+            const tags = stageUnit.tags ?? ["Enemy"];
+
             // Draw unit icon placeholder (small square)
             ctx.fillStyle = "#23262d";
             ctx.fillRect(unitX, unitsY, unitIconSize, unitIconSize);
@@ -216,21 +215,21 @@ export class WorldScene extends Scene {
             ctx.strokeRect(unitX + 0.5, unitsY + 0.5, unitIconSize - 1, unitIconSize - 1);
 
             // Draw unit image if available
-            if (unit.imagePath) {
-              this.drawIcon(ctx, unit.imagePath, unitX, unitsY, unitIconSize, unitIconSize);
+            if (card.imagePath) {
+              this.drawIcon(ctx, card.imagePath, unitX, unitsY, unitIconSize, unitIconSize);
             }
 
             // Draw element icon overlay (small, top-right)
-            if (unit.elements && unit.elements.length > 0) {
+            if (card.elements && card.elements.length > 0) {
               const elementIconSize = 12;
               const elementIconX = unitX + unitIconSize - elementIconSize - 2;
               const elementIconY = unitsY + 2;
-              const iconPath = elementIconPath(unit.elements[0]);
+              const iconPath = elementIconPath(card.elements[0]);
               this.drawIcon(ctx, iconPath, elementIconX, elementIconY, elementIconSize, elementIconSize);
             }
 
             // Boss indicator
-            if (unit.tags.includes("Boss")) {
+            if (tags.includes("Boss")) {
               ctx.fillStyle = "#ef4444";
               ctx.font = "10px system-ui";
               const bossText = "👑";

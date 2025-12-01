@@ -61,8 +61,6 @@ export class BattleScene extends Scene {
   private world?: WorldDef;
   private cards: Card[] = [];
   private items: Array<{ id: string; name: string; imagePath?: string }> = [];
-  private units: Unit[] = [];
-  private unitsMap = new Map<string, Unit>();
   private iconCache = new Map<string, HTMLImageElement>();
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
@@ -218,17 +216,34 @@ export class BattleScene extends Scene {
         this.background = bg;
       }
 
-      // Load cards, items, and units
+      // Load cards and items
       this.cards = await loadYaml<Card[]>("/config/cards.yaml");
       this.items = await loadYaml<Array<{ id: string; name: string; imagePath?: string }>>("/config/items.yaml");
-      this.units = await loadYaml<Unit[]>("/config/units.yaml");
-      this.unitsMap = new Map(this.units.map((u) => [u.id, u]));
 
-      // Initialize enemies from stage units
+      // Initialize enemies from stage units (using cards as base)
       this.enemies = this.stage.units
         .map((stageUnit) => {
-          const unit = this.unitsMap.get(stageUnit.unitId);
-          if (!unit) return null;
+          // Find the card that matches the unitId
+          const card = this.cards.find((c) => c.id === stageUnit.unitId);
+          if (!card) {
+            console.error(`Card not found for unitId: ${stageUnit.unitId}`);
+            return null;
+          }
+
+          // Convert Card to Unit format with stage-specific overrides
+          const unit: Unit = {
+            id: card.id,
+            name: card.name,
+            attack: card.attack,
+            hp: card.hp,
+            elements: card.elements,
+            imagePath: card.imagePath,
+            // Use stage override for tags, or default to [Enemy]
+            tags: stageUnit.tags ?? ["Enemy"],
+            // Use stage override for effect, or undefined (cards don't have effects by default)
+            effect: stageUnit.effect,
+          };
+
           return {
             unit,
             currentHp: unit.hp,
