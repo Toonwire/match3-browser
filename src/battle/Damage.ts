@@ -17,6 +17,21 @@ export function elementalMultiplier(attacking: Element, defending: Element): num
 }
 
 /**
+ * Calculates a non-linear combo multiplier based on the number of matches in a turn.
+ * More combos = larger multiplier with diminishing returns.
+ *
+ * @param comboCount - Number of matches (combos) in the current turn
+ * @returns Multiplier to apply to damage/healing (1.0 for 1 combo, increasing non-linearly)
+ */
+export function calculateComboMultiplier(comboCount: number): number {
+  if (comboCount <= 1) return 1.0;
+
+  // Non-linear scaling: 1 + (comboCount - 1) * 0.2 * sqrt(comboCount)
+  // This gives: 1 combo = 1.0x, 2 = 1.28x, 3 = 1.55x, 4 = 1.80x, 5 = 2.04x, etc.
+  return 1.0 + (comboCount - 1) * 0.2 * Math.sqrt(comboCount);
+}
+
+/**
  * Represents a damage instance that can be applied to enemies.
  * The damage calculation is separate from application for flexibility.
  */
@@ -36,9 +51,15 @@ export interface DamageInstance {
  * @param matches - Array of matches found in the grid
  * @param loadout - Player's loadout (leader + members)
  * @param cards - All available cards (needed to check card elements and leader passives)
+ * @param comboMultiplier - Optional multiplier from combo count (defaults to 1.0)
  * @returns Array of damage instances ready to be applied
  */
-export function computeDamageFromMatches(matches: Match[], loadout: Loadout, cards: Card[]): DamageInstance[] {
+export function computeDamageFromMatches(
+  matches: Match[],
+  loadout: Loadout,
+  cards: Card[],
+  comboMultiplier: number = 1.0
+): DamageInstance[] {
   // Tally matches by element (skip Healing elements)
   const tally = new Map<Element, { count: number; isAoE: boolean }>();
   for (const m of matches) {
@@ -104,7 +125,7 @@ export function computeDamageFromMatches(matches: Match[], loadout: Loadout, car
         // If card has multiple elements, it deals fractional damage
         const elementFraction = card.elements.length > 1 ? 0.75 : 1;
         const shapeFraction = numMatchedTiles / minShapeSize;
-        const baseDamage = Math.floor(card.attack * elementFraction * shapeFraction);
+        const baseDamage = Math.floor(card.attack * elementFraction * shapeFraction * comboMultiplier);
 
         if (baseDamage > 0) {
           damageInstances.push({
@@ -195,9 +216,10 @@ export interface HealingInstance {
  * where n is the number of matched tiles.
  *
  * @param matches - Array of matches found in the grid
+ * @param comboMultiplier - Optional multiplier from combo count (defaults to 1.0)
  * @returns Array of healing instances ready to be applied
  */
-export function computeHealingFromMatches(matches: Match[]): HealingInstance[] {
+export function computeHealingFromMatches(matches: Match[], comboMultiplier: number = 1.0): HealingInstance[] {
   const healingInstances: HealingInstance[] = [];
 
   for (const m of matches) {
@@ -207,7 +229,7 @@ export function computeHealingFromMatches(matches: Match[]): HealingInstance[] {
     const numMatchedTiles = m.cells.length;
     const isAoE = m.shape === "L" || m.shape === "T";
 
-    const healingAmount = isAoE ? (numMatchedTiles * 2) / 3 : numMatchedTiles;
+    const healingAmount = (isAoE ? (numMatchedTiles * 2) / 3 : numMatchedTiles) * comboMultiplier;
 
     if (healingAmount > 0) {
       healingInstances.push({

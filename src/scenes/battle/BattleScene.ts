@@ -2,6 +2,7 @@ import {
   applyDamageToEnemies,
   computeDamageFromMatches,
   computeHealingFromMatches,
+  calculateComboMultiplier,
   applyHealingToPlayerUnits,
   elementalMultiplier,
 } from "../../battle/Damage";
@@ -41,6 +42,8 @@ type CombatLogEntry =
       isAoE: boolean;
       targetHpAfter: number;
       targetMaxHp: number;
+      comboMultiplier?: number;
+      comboCount?: number;
     }
   | {
       type: "healing";
@@ -50,6 +53,8 @@ type CombatLogEntry =
       isAoE: boolean;
       targetHpAfter: number;
       targetMaxHp: number;
+      comboMultiplier?: number;
+      comboCount?: number;
     }
   | {
       type: "separator";
@@ -116,11 +121,12 @@ export class BattleScene extends Scene {
     mouseX: number;
     mouseY: number;
   } | null = null;
-  private popAnimations: Map<string, { progress: number; element: Element }> = new Map(); // Key: "row,col", Value: { progress, element }
+  private popAnimations: Map<string, { progress: number; element: Element; comboCount: number }> = new Map(); // Key: "row,col", Value: { progress, element, comboCount }
   private readonly popAnimationDuration = 0.3; // seconds
   private readonly cascadeDelay = 0.5; // seconds delay before cascade starts
   private cascadeDelayTimer = 0.0; // Current delay timer
   private refillAnimations: Map<string, { progress: number; element: Element }> = new Map(); // Key: "row,col", Value: { progress, element }
+  private screenShake: { intensity: number; progress: number; duration: number; seed: number } | null = null; // Screen shake effect
   private readonly refillAnimationDuration = 0.15; // seconds
   private isResolvingMatches = false;
   private readonly turnSwitchDelay = 1.0; // seconds delay between turns
@@ -367,6 +373,14 @@ export class BattleScene extends Scene {
       }
     }
 
+    // Update screen shake
+    if (this.screenShake) {
+      this.screenShake.progress += dt / this.screenShake.duration;
+      if (this.screenShake.progress >= 1.0) {
+        this.screenShake = null;
+      }
+    }
+
     // Update pop animations
     const keysToRemove: string[] = [];
     for (const [key, animData] of this.popAnimations.entries()) {
@@ -374,7 +388,11 @@ export class BattleScene extends Scene {
       if (newProgress >= 1.0) {
         keysToRemove.push(key);
       } else {
-        this.popAnimations.set(key, { progress: newProgress, element: animData.element });
+        this.popAnimations.set(key, {
+          progress: newProgress,
+          element: animData.element,
+          comboCount: animData.comboCount,
+        });
       }
     }
 
@@ -609,6 +627,21 @@ export class BattleScene extends Scene {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
+    // Apply screen shake offset
+    let shakeOffsetX = 0;
+    let shakeOffsetY = 0;
+    if (this.screenShake) {
+      const shakeProgress = this.screenShake.progress;
+      const shakeAmount = this.screenShake.intensity * (1.0 - shakeProgress); // Decay over time
+      // Use noise-like function for smoother shake
+      const time = this.screenShake.seed + shakeProgress * 20;
+      shakeOffsetX = (Math.sin(time * 2.3) + Math.cos(time * 1.7)) * shakeAmount * 0.5;
+      shakeOffsetY = (Math.sin(time * 1.9) + Math.cos(time * 2.1)) * shakeAmount * 0.5;
+    }
+
+    ctx.save();
+    ctx.translate(shakeOffsetX, shakeOffsetY);
+
     // Background
     ctx.fillStyle = "#0f1014";
     ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
@@ -994,13 +1027,24 @@ export class BattleScene extends Scene {
             // Draw pop animation (tile is already cleared from grid, but we render the animation)
             ctx.save();
 
+            // Calculate combo intensity (0 = no combo, 1 = max intensity)
+            const comboCount = popAnimData.comboCount;
+            const comboIntensity = Math.min(1.0, (comboCount - 1) / 4.0); // Max intensity at 5+ combos
+
             // Calculate animation values
-            // Scale: goes from 1.0 to 1.3 then back to 1.0
+            // Scale: goes from 1.0 to 1.3 (or more for combos) then back to 1.0
             const scalePhase =
               popAnimData.progress < 0.5
                 ? popAnimData.progress * 2 // 0 to 1
                 : 1 - (popAnimData.progress - 0.5) * 2; // 1 to 0
-            const scale = 1.0 + scalePhase * 0.3;
+
+            // Base scale + combo intensity scaling
+            const baseScale = 1.0 + scalePhase * 0.3;
+            const comboScaleBoost = comboIntensity * scalePhase * 0.4; // Up to 0.4 extra scale for high combos
+            const scale = baseScale + comboScaleBoost;
+
+            // Rotation for combos (more rotation = higher combo)
+            const rotation = comboIntensity * scalePhase * Math.PI * 0.3; // Up to ~54 degrees for high combos
 
             // Opacity: fades out in the second half
             const opacity = popAnimData.progress < 0.5 ? 1.0 : 1.0 - (popAnimData.progress - 0.5) * 2;
@@ -1009,9 +1053,53 @@ export class BattleScene extends Scene {
             const centerX = cellX + cellSize / 2;
             const centerY = cellY + cellSize / 2;
             ctx.translate(centerX, centerY);
+            ctx.rotate(rotation);
             ctx.scale(scale, scale);
             ctx.globalAlpha = opacity;
 
+            // Draw glow effect for combos
+            if (comboIntensity > 0) {
+              ctx.save();
+              const glowSize = cellSize * (1.0 + comboIntensity * 0.8);
+              const glowAlpha = comboIntensity * opacity * 0.6;
+              ctx.globalAlpha = glowAlpha;
+
+              // Create radial gradient for glow
+              const gradient = ctx.createRadialGradient(0, 0, cellSize * 0.3, 0, 0, glowSize / 2);
+              gradient.addColorStop(0, this.getElementColor(popAnimData.element));
+              gradient.addColorStop(0.5, this.getElementColor(popAnimData.element) + "80");
+              gradient.addColorStop(1, this.getElementColor(popAnimData.element) + "00");
+
+              ctx.fillStyle = gradient;
+              ctx.beginPath();
+              ctx.arc(0, 0, glowSize / 2, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+
+            // Draw particles/sparkles for combos
+            if (comboIntensity > 0 && popAnimData.progress < 0.7) {
+              ctx.save();
+              const particleCount = Math.floor(comboIntensity * 8 + 2); // 2-10 particles
+              const particleAlpha = comboIntensity * opacity * 0.8;
+              ctx.globalAlpha = particleAlpha;
+              ctx.fillStyle = "#ffffff";
+
+              for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2 + popAnimData.progress * Math.PI * 2;
+                const distance = cellSize * 0.4 * (1 + popAnimData.progress * 0.5);
+                const particleX = Math.cos(angle) * distance;
+                const particleY = Math.sin(angle) * distance;
+                const particleSize = 2 + comboIntensity * 3;
+
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+                ctx.fill();
+              }
+              ctx.restore();
+            }
+
+            // Draw the icon
             const iconPath = elementIconPath(popAnimData.element);
             const iconSize = cellSize * 1.0;
             const iconX = -iconSize / 2;
@@ -1314,6 +1402,8 @@ export class BattleScene extends Scene {
 
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
+
+    ctx.restore(); // Restore screen shake transform
   }
 
   private async getIcon(path: string): Promise<HTMLImageElement> {
@@ -1643,18 +1733,27 @@ export class BattleScene extends Scene {
           ],
         };
 
+        // Calculate combo multiplier based on number of matches
+        const comboCount = this.accumulatedMatches.length;
+        const comboMultiplier = calculateComboMultiplier(comboCount);
+
         // Compute and apply damage
-        const damageInstances = computeDamageFromMatches(this.accumulatedMatches, filteredLoadout, this.cards);
+        const damageInstances = computeDamageFromMatches(
+          this.accumulatedMatches,
+          filteredLoadout,
+          this.cards,
+          comboMultiplier
+        );
         if (damageInstances.length > 0) {
-          this.applyDamageToEnemiesWithLogging(damageInstances);
+          this.applyDamageToEnemiesWithLogging(damageInstances, comboMultiplier, comboCount);
           // Check for victory after damage
           this.checkForVictory();
         }
 
         // Compute and apply healing
-        const healingInstances = computeHealingFromMatches(this.accumulatedMatches);
+        const healingInstances = computeHealingFromMatches(this.accumulatedMatches, comboMultiplier);
         if (healingInstances.length > 0) {
-          this.applyHealingToPlayerUnitsWithLogging(healingInstances);
+          this.applyHealingToPlayerUnitsWithLogging(healingInstances, comboMultiplier, comboCount);
         }
       }
 
@@ -1691,6 +1790,21 @@ export class BattleScene extends Scene {
     const match = this.pendingMatches[this.currentMatchIndex];
     console.log(`Animating match ${this.currentMatchIndex + 1}/${this.pendingMatches.length}`, match);
 
+    // Calculate current combo count (total matches so far in this turn)
+    const comboCount = this.accumulatedMatches.length;
+
+    // Trigger screen shake for combos (more intense for higher combos)
+    if (comboCount > 1) {
+      const shakeIntensity = Math.min(1.0, (comboCount - 1) / 5.0); // Max at 6+ combos
+      const shakeAmount = shakeIntensity * 8; // Up to 8 pixels
+      this.screenShake = {
+        intensity: shakeAmount,
+        progress: 0.0,
+        duration: 0.2, // 200ms shake
+        seed: Math.random() * 1000, // Random seed for shake pattern
+      };
+    }
+
     // Start pop animations for the current match's tiles
     for (const cell of match.cells) {
       // Match uses x,y but grid uses row,col (y,x)
@@ -1703,8 +1817,8 @@ export class BattleScene extends Scene {
       if (element) {
         // Clear the tile immediately so underlying grid is empty
         this.grid[row][col] = null;
-        // Store animation with element for rendering
-        this.popAnimations.set(animationKey, { progress: 0.0, element });
+        // Store animation with element and combo count for rendering
+        this.popAnimations.set(animationKey, { progress: 0.0, element, comboCount });
       }
     }
 
@@ -1763,7 +1877,11 @@ export class BattleScene extends Scene {
     return firstAlive ? firstAlive.position : null;
   }
 
-  private applyDamageToEnemiesWithLogging(damageInstances: ReturnType<typeof computeDamageFromMatches>): void {
+  private applyDamageToEnemiesWithLogging(
+    damageInstances: ReturnType<typeof computeDamageFromMatches>,
+    comboMultiplier: number,
+    comboCount: number
+  ): void {
     // Apply damage similar to applyDamageToEnemies but with logging
     for (const damage of damageInstances) {
       // Get source card name(s) for logging
@@ -1813,6 +1931,8 @@ export class BattleScene extends Scene {
               isAoE: true,
               targetHpAfter: enemy.currentHp,
               targetMaxHp: enemy.maxHp,
+              comboMultiplier: comboMultiplier > 1 ? comboMultiplier : undefined,
+              comboCount: comboCount > 1 ? comboCount : undefined,
             });
 
             // Trigger damage animation
@@ -1860,6 +1980,8 @@ export class BattleScene extends Scene {
             isAoE: false,
             targetHpAfter: leftmostAlive.currentHp,
             targetMaxHp: leftmostAlive.maxHp,
+            comboMultiplier: comboMultiplier > 1 ? comboMultiplier : undefined,
+            comboCount: comboCount > 1 ? comboCount : undefined,
           });
 
           // Trigger damage animation
@@ -1871,7 +1993,11 @@ export class BattleScene extends Scene {
     }
   }
 
-  private applyHealingToPlayerUnitsWithLogging(healingInstances: ReturnType<typeof computeHealingFromMatches>): void {
+  private applyHealingToPlayerUnitsWithLogging(
+    healingInstances: ReturnType<typeof computeHealingFromMatches>,
+    comboMultiplier: number,
+    comboCount: number
+  ): void {
     // Apply healing similar to applyHealingToPlayerUnits but with logging
     for (const healing of healingInstances) {
       if (healing.isAoE) {
@@ -1900,6 +2026,8 @@ export class BattleScene extends Scene {
                 isAoE: true,
                 targetHpAfter: unit.currentHp,
                 targetMaxHp: unit.maxHp,
+                comboMultiplier: comboMultiplier > 1 ? comboMultiplier : undefined,
+                comboCount: comboCount > 1 ? comboCount : undefined,
               });
 
               // Trigger healing animation
@@ -1938,6 +2066,8 @@ export class BattleScene extends Scene {
               isAoE: false,
               targetHpAfter: rightmostAlive.currentHp,
               targetMaxHp: rightmostAlive.maxHp,
+              comboMultiplier: comboMultiplier > 1 ? comboMultiplier : undefined,
+              comboCount: comboCount > 1 ? comboCount : undefined,
             });
 
             // Trigger healing animation
@@ -2406,6 +2536,19 @@ export class BattleScene extends Scene {
         drawTextWithShadow(ctx, `+${entry.amount} HP`, x, y, 9, "#10b981");
         x += ctx.measureText(`+${entry.amount} HP`).width + 6;
 
+        // Combo multiplier
+        if (entry.comboMultiplier && entry.comboMultiplier > 1) {
+          drawTextWithShadow(
+            ctx,
+            `[${entry.comboCount}x Combo: ${entry.comboMultiplier.toFixed(2)}x]`,
+            x,
+            y,
+            9,
+            "#a855f7"
+          );
+          x += ctx.measureText(`[${entry.comboCount}x Combo: ${entry.comboMultiplier.toFixed(2)}x]`).width + 6;
+        }
+
         // AoE indicator
         if (entry.isAoE) {
           drawTextWithShadow(ctx, "[AoE]", x, y, 9, "#f59e0b");
@@ -2482,6 +2625,19 @@ export class BattleScene extends Scene {
         const multColor = entry.multiplier > 1 ? "#10b981" : "#ef4444";
         drawTextWithShadow(ctx, `${entry.multiplier.toFixed(2)}x`, x, y, 9, multColor);
         x += ctx.measureText(`${entry.multiplier.toFixed(2)}x`).width + 4;
+      }
+
+      // Combo multiplier
+      if (entry.comboMultiplier && entry.comboMultiplier > 1) {
+        drawTextWithShadow(
+          ctx,
+          `[${entry.comboCount}x Combo: ${entry.comboMultiplier.toFixed(2)}x]`,
+          x,
+          y,
+          9,
+          "#a855f7"
+        );
+        x += ctx.measureText(`[${entry.comboCount}x Combo: ${entry.comboMultiplier.toFixed(2)}x]`).width + 4;
       }
 
       // Final damage
