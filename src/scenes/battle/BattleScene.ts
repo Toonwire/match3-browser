@@ -10,6 +10,7 @@ import { findMatches, type Match } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
 import { resolveLootConfig } from "../../data/loot";
 import type { Card, Element, LootEntry, LootTable, StageDef, Unit, WorldDef } from "../../data/types";
+import { AudioManager } from "../../engine/AudioManager";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
@@ -121,7 +122,8 @@ export class BattleScene extends Scene {
     mouseX: number;
     mouseY: number;
   } | null = null;
-  private popAnimations: Map<string, { progress: number; element: Element; comboCount: number }> = new Map(); // Key: "row,col", Value: { progress, element, comboCount }
+  private popAnimations: Map<string, { progress: number; element: Element; comboCount: number; matchIndex: number }> =
+    new Map(); // Key: "row,col", Value: { progress, element, comboCount, matchIndex }
   private readonly popAnimationDuration = 0.3; // seconds
   private readonly cascadeDelay = 0.5; // seconds delay before cascade starts
   private cascadeDelayTimer = 0.0; // Current delay timer
@@ -135,6 +137,7 @@ export class BattleScene extends Scene {
   private pendingMatches: Match[] = [];
   private accumulatedMatches: Match[] = []; // All matches across all cascades in current resolution
   private currentMatchIndex = 0; // Index of the current match being animated
+  private soundPlayedForMatchIndex = -1; // Track which match index has had its sound played
   private combatLog: CombatLogEntry[] = [];
   private readonly maxCombatLogEntries = 20; // Maximum number of log entries to keep
   private currentRound: number = 1;
@@ -383,8 +386,17 @@ export class BattleScene extends Scene {
 
     // Update pop animations
     const keysToRemove: string[] = [];
+    const matchesNeedingSound = new Set<number>(); // Track which match indices need sound
     for (const [key, animData] of this.popAnimations.entries()) {
+      const oldProgress = animData.progress;
       const newProgress = animData.progress + dt / this.popAnimationDuration;
+
+      // Track when animation reaches halfway point (progress 0.5) - this is when the visual "pop" peaks
+      // Only trigger sound for animations that belong to matches that haven't played sound yet
+      if (oldProgress < 0.5 && newProgress >= 0.5 && animData.matchIndex !== this.soundPlayedForMatchIndex) {
+        matchesNeedingSound.add(animData.matchIndex);
+      }
+
       if (newProgress >= 1.0) {
         keysToRemove.push(key);
       } else {
@@ -392,7 +404,16 @@ export class BattleScene extends Scene {
           progress: newProgress,
           element: animData.element,
           comboCount: animData.comboCount,
+          matchIndex: animData.matchIndex,
         });
+      }
+    }
+
+    // Play sound once per match when it reaches the peak
+    for (const matchIndex of matchesNeedingSound) {
+      if (matchIndex !== this.soundPlayedForMatchIndex) {
+        AudioManager.playSound("match_pop.mp3", { volume: 0.7 });
+        this.soundPlayedForMatchIndex = matchIndex;
       }
     }
 
@@ -1774,6 +1795,7 @@ export class BattleScene extends Scene {
     // Store all matches for this round
     this.pendingMatches = matches;
     this.currentMatchIndex = 0;
+    this.soundPlayedForMatchIndex = -1; // Reset sound tracking for new match round
     this.cascadeDelayTimer = 0; // Reset delay timer for new match round
 
     // Start animating the first match
@@ -1817,8 +1839,13 @@ export class BattleScene extends Scene {
       if (element) {
         // Clear the tile immediately so underlying grid is empty
         this.grid[row][col] = null;
-        // Store animation with element and combo count for rendering
-        this.popAnimations.set(animationKey, { progress: 0.0, element, comboCount });
+        // Store animation with element, combo count, and match index for rendering
+        this.popAnimations.set(animationKey, {
+          progress: 0.0,
+          element,
+          comboCount,
+          matchIndex: this.currentMatchIndex,
+        });
       }
     }
 

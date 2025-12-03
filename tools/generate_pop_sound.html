@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop Sound Generator</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #fff;
+        }
+        .controls {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px 0;
+            color: #ccc;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .value {
+            display: inline-block;
+            width: 60px;
+            text-align: right;
+            color: #4a9eff;
+        }
+        button {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #5aaeff;
+        }
+        button:active {
+            background: #3a8eef;
+        }
+        .info {
+            background: #2a4a2a;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Pop Sound Generator</h1>
+    
+    <div class="info">
+        <strong>How to use:</strong><br>
+        1. Adjust the sliders to customize the pop sound<br>
+        2. Click "Play" to preview<br>
+        3. Click "Download" to save as WAV file<br>
+        4. Convert to MP3 using an online converter or Audacity
+    </div>
+
+    <div class="controls">
+        <label>
+            Frequency (Hz): <span class="value" id="freqValue">200</span>
+            <input type="range" id="frequency" min="50" max="800" value="200">
+        </label>
+        
+        <label>
+            Duration (ms): <span class="value" id="durValue">100</span>
+            <input type="range" id="duration" min="20" max="500" value="100">
+        </label>
+        
+        <label>
+            Attack (ms): <span class="value" id="attackValue">5</span>
+            <input type="range" id="attack" min="1" max="50" value="5">
+        </label>
+        
+        <label>
+            Decay (ms): <span class="value" id="decayValue">50</span>
+            <input type="range" id="decay" min="10" max="200" value="50">
+        </label>
+        
+        <label>
+            Volume: <span class="value" id="volValue">0.8</span>
+            <input type="range" id="volume" min="0.1" max="1.0" step="0.1" value="0.8">
+        </label>
+        
+        <label>
+            Noise Amount: <span class="value" id="noiseValue">0.3</span>
+            <input type="range" id="noise" min="0" max="1.0" step="0.1" value="0.3">
+        </label>
+    </div>
+
+    <div>
+        <button onclick="playSound()">▶ Play</button>
+        <button onclick="downloadSound()">💾 Download WAV</button>
+        <button onclick="resetToDefault()">🔄 Reset to Default</button>
+    </div>
+
+    <div class="info" style="margin-top: 30px;">
+        <strong>Tips:</strong><br>
+        • Lower frequency (100-300 Hz) = deeper pop<br>
+        • Higher frequency (400-800 Hz) = sharper pop<br>
+        • Short duration (50-150 ms) = snappy pop<br>
+        • Longer duration (200-500 ms) = sustained pop<br>
+        • More noise = more "bubbly" sound
+    </div>
+
+    <script>
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function updateValues() {
+            document.getElementById('freqValue').textContent = document.getElementById('frequency').value;
+            document.getElementById('durValue').textContent = document.getElementById('duration').value;
+            document.getElementById('attackValue').textContent = document.getElementById('attack').value;
+            document.getElementById('decayValue').textContent = document.getElementById('decay').value;
+            document.getElementById('volValue').textContent = parseFloat(document.getElementById('volume').value).toFixed(1);
+            document.getElementById('noiseValue').textContent = parseFloat(document.getElementById('noise').value).toFixed(1);
+        }
+
+        // Update values when sliders change
+        ['frequency', 'duration', 'attack', 'decay', 'volume', 'noise'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateValues);
+        });
+
+        function generatePopSound() {
+            const frequency = parseFloat(document.getElementById('frequency').value);
+            const duration = parseFloat(document.getElementById('duration').value) / 1000; // Convert to seconds
+            const attack = parseFloat(document.getElementById('attack').value) / 1000;
+            const decay = parseFloat(document.getElementById('decay').value) / 1000;
+            const volume = parseFloat(document.getElementById('volume').value);
+            const noiseAmount = parseFloat(document.getElementById('noise').value);
+
+            const sampleRate = audioContext.sampleRate;
+            const length = Math.floor(sampleRate * duration);
+            const buffer = audioContext.createBuffer(1, length, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            // Generate pop sound: combination of tone and noise
+            for (let i = 0; i < length; i++) {
+                const t = i / sampleRate;
+                const progress = t / duration;
+                
+                // Envelope: quick attack, exponential decay
+                let envelope;
+                if (t < attack) {
+                    envelope = t / attack; // Linear attack
+                } else {
+                    const decayTime = t - attack;
+                    envelope = Math.exp(-decayTime / decay); // Exponential decay
+                }
+                
+                // Tone component (sine wave with frequency sweep)
+                const freqSweep = frequency * (1 + 0.5 * progress); // Slight upward sweep
+                const tone = Math.sin(2 * Math.PI * freqSweep * t);
+                
+                // Noise component (white noise)
+                const noise = (Math.random() * 2 - 1) * noiseAmount;
+                
+                // Combine tone and noise
+                data[i] = (tone * (1 - noiseAmount) + noise) * envelope * volume;
+            }
+
+            return buffer;
+        }
+
+        function playSound() {
+            const buffer = generatePopSound();
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+        }
+
+        function downloadSound() {
+            const buffer = generatePopSound();
+            const wav = bufferToWav(buffer);
+            const blob = new Blob([wav], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'match_pop.wav';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetToDefault() {
+            document.getElementById('frequency').value = 200;
+            document.getElementById('duration').value = 100;
+            document.getElementById('attack').value = 5;
+            document.getElementById('decay').value = 50;
+            document.getElementById('volume').value = 0.8;
+            document.getElementById('noise').value = 0.3;
+            updateValues();
+        }
+
+        // Convert AudioBuffer to WAV format
+        function bufferToWav(buffer) {
+            const length = buffer.length;
+            const numberOfChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const bytesPerSample = 2;
+            const blockAlign = numberOfChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = length * blockAlign;
+            const bufferSize = 44 + dataSize;
+            const arrayBuffer = new ArrayBuffer(bufferSize);
+            const view = new DataView(arrayBuffer);
+
+            // WAV header
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, bufferSize - 8, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true); // fmt chunk size
+            view.setUint16(20, 1, true); // audio format (PCM)
+            view.setUint16(22, numberOfChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, 16, true); // bits per sample
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            // Convert float samples to 16-bit PCM
+            let offset = 44;
+            for (let i = 0; i < length; i++) {
+                for (let channel = 0; channel < numberOfChannels; channel++) {
+                    const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return arrayBuffer;
+        }
+
+        // Initialize values on load
+        updateValues();
+    </script>
+</body>
+</html>
+
