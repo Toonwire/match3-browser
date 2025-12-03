@@ -23,7 +23,7 @@ import {
   drawTopBar,
   getTopBarButtonRegions,
 } from "../../ui/UiPrimitives";
-import { GuidePanelRegions, renderGuidePanel, type guidePanelRegions } from "../../ui/GuidePanel";
+import { renderGuidePanel, type GuidePanelRegions } from "../../ui/GuidePanel";
 
 interface BattleUnit {
   unit: Unit;
@@ -209,6 +209,7 @@ export class BattleScene extends Scene {
   private tutorialStep: number = -1; // -1 = not in tutorial, 0-3 = tutorial steps
   private tutorialOverlayImage: HTMLImageElement | null = null;
   private tutorialHighlightRegion: { x: number; y: number; w: number; h: number } | null = null;
+  private showTutorialOverlayThisTurn: boolean = false; // Flag to show tutorial overlay only once per player turn
 
   constructor(
     private worldId: string,
@@ -341,8 +342,10 @@ export class BattleScene extends Scene {
       this.isTutorial = this.stageId === "world_01_stage_00";
       if (this.isTutorial) {
         this.tutorialStep = 0;
+        this.showTutorialOverlayThisTurn = true; // Show tutorial overlay on first player turn
       } else {
         this.tutorialStep = -1;
+        this.showTutorialOverlayThisTurn = false;
       }
 
       // Initialize and populate the match3 grid
@@ -1317,7 +1320,7 @@ export class BattleScene extends Scene {
 
     // Draw tutorial overlay if in tutorial mode (only when not dragging to avoid blocking)
     // Rendered after combat log so it appears on top
-    if (this.isTutorial && this.tutorialStep >= 0 && this.tutorialStep <= 3 && !this.isResolvingMatches) {
+    if (this.showTutorialOverlayThisTurn) {
       this.renderTutorialOverlay(ctx);
     }
 
@@ -1843,6 +1846,8 @@ export class BattleScene extends Scene {
       // Check if moved from (2,2) to (0,4)
       if (startRow === 2 && startCol === 2 && endRow === 0 && endCol === 4) {
         this.tutorialStep = 1;
+        // Hide tutorial overlay after completing step
+        this.showTutorialOverlayThisTurn = false;
       }
     }
 
@@ -1880,6 +1885,8 @@ export class BattleScene extends Scene {
 
           if (hasRequiredMatch) {
             this.tutorialStep = 2;
+            // Hide tutorial overlay after completing step
+            this.showTutorialOverlayThisTurn = false;
           }
         } else if (this.tutorialStep === 2) {
           // Step 2 -> 3: Must match (0,1), (1,1), (2,1), (2,2), (2,3) in a single match entry (L-shape)
@@ -1906,7 +1913,22 @@ export class BattleScene extends Scene {
 
           if (hasRequiredMatch) {
             this.tutorialStep = 3;
+            // Hide tutorial overlay after completing step
+            this.showTutorialOverlayThisTurn = false;
           }
+        } else if (this.tutorialStep === 3) {
+          // Step 3 --> 4: Must make at least two matches in a turn (showcase combos)
+          const requiredMatches = 2;
+          if (matches.length >= requiredMatches) {
+            this.tutorialStep = 4;
+            // Hide tutorial overlay after completing step
+            this.showTutorialOverlayThisTurn = false;
+          }
+        } else if (this.tutorialStep === 4) {
+          // Step 4 --> Tutorial complete: Just show until next round
+          // Hide tutorial overlay after completing step
+          this.tutorialStep = -1;
+          this.showTutorialOverlayThisTurn = false;
         }
       }
 
@@ -2713,10 +2735,12 @@ export class BattleScene extends Scene {
     // Tutorial: Regenerate tutorial grid for new turn if needed
     if (this.isTutorial) {
       // Regenerate tutorial grid for new turn if needed
-      if (this.tutorialStep >= 0 && this.tutorialStep <= 2) {
+      if (this.tutorialStep >= 0 && this.tutorialStep <= 4) {
         this.initializeGrid();
         this.populateTutorialGrid();
       }
+      // Show tutorial overlay on this player turn
+      this.showTutorialOverlayThisTurn = true;
     }
 
     console.log("Enemy turn complete, switching back to player turn");
@@ -2822,7 +2846,7 @@ export class BattleScene extends Scene {
   }
 
   private renderTutorialOverlay(ctx: CanvasRenderingContext2D): void {
-    if (this.tutorialStep < 0 || this.tutorialStep > 3) return;
+    if (this.tutorialStep < 0 || this.tutorialStep > 4) return;
 
     const gridArea = BattleLayout.grid;
     const combatLogArea = BattleLayout.combatLog;
@@ -3081,7 +3105,19 @@ export class BattleScene extends Scene {
       currentY += lineHeight;
       ctx.fillText("• Multiple matches in one turn create combo multipliers!", panelX + padding, currentY);
       currentY += lineHeight;
-      ctx.fillText("• More combos = higher multiplier (non-linear scaling)", panelX + padding, currentY);
+      ctx.fillText("• More combos = higher multiplier", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Try creating a combo by making at least two matches in one turn!", panelX + padding, currentY);
+    } else if (this.tutorialStep === 4) {
+      // Turn 4: Explain tutorial complete
+      ctx.fillText("Good job!", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText("• Now finish off the remaining enemies to complete the stage", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Good luck!", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
     }
 
     ctx.textAlign = "left";

@@ -19,11 +19,11 @@
         - unitId: card_00_boulder
           position: 1
           attack: 0
-          hp: 15
+          hp: 20
         - unitId: card_00_boulder
           position: 2
           attack: 0
-          hp: 20
+          hp: 30
         - unitId: card_07_wisp
           position: 3
           attack: 1
