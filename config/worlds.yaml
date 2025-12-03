@@ -15,15 +15,15 @@
         - unitId: card_00_boulder
           position: 0
           attack: 0
-          hp: 100
+          hp: 10
         - unitId: card_00_boulder
           position: 1
           attack: 0
-          hp: 100
+          hp: 15
         - unitId: card_00_boulder
           position: 2
           attack: 0
-          hp: 100
+          hp: 20
         - unitId: card_07_wisp
           position: 3
           attack: 1
