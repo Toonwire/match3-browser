@@ -2,15 +2,15 @@ import { elementIconPath } from "./ElementIcons";
 import { drawPanel, drawText, drawTextWithShadow } from "./UiPrimitives";
 import { CanvasSize } from "./Layouts";
 
-export interface TutorialPanelRegions {
+export interface GuidePanelRegions {
   panel: { x: number; y: number; w: number; h: number };
 }
 
-export function renderTutorialPanel(
+export function renderGuidePanel(
   ctx: CanvasRenderingContext2D,
   scrollOffset: number = 0,
   drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
-): TutorialPanelRegions {
+): GuidePanelRegions {
   const panelX = 224;
   const panelY = 80;
   const panelW = 832;

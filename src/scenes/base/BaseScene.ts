@@ -5,7 +5,7 @@ import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
 import { BaseLayout, CanvasSize } from "../../ui/Layouts";
 import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
-import { renderTutorialPanel, type TutorialPanelRegions } from "../../ui/TutorialPanel";
+import { renderGuidePanel, type GuidePanelRegions } from "../../ui/GuidePanel";
 import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
 import { renderWorldsPanel, type WorldsPanelRegions } from "./WorldsPanel";
@@ -22,9 +22,9 @@ export class BaseScene extends Scene {
   private iconCache = new Map<string, HTMLImageElement>();
   private activePopup: "shop" | "armory" | "worlds" | null = null;
   private showMutateView: boolean = false;
-  private showTutorial: boolean = false;
-  private tutorialPanelRegions: TutorialPanelRegions | null = null;
-  private tutorialScrollOffset: number = 0;
+  private showGuide: boolean = false;
+  private guidePanelRegions: GuidePanelRegions | null = null;
+  private guideScrollOffset: number = 0;
   private mutateSlots: (string | null)[] = [null, null];
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
@@ -153,9 +153,9 @@ export class BaseScene extends Scene {
     // Active popup overlay
     if (this.activePopup) this.renderPopup(ctx, this.activePopup);
 
-    // Draw tutorial panel if shown (on top of everything)
-    if (this.showTutorial) {
-      this.tutorialPanelRegions = renderTutorialPanel(ctx, this.tutorialScrollOffset, (iconPath, x, y, w, h) =>
+    // Draw guide panel if shown (on top of everything)
+    if (this.showGuide) {
+      this.guidePanelRegions = renderGuidePanel(ctx, this.guideScrollOffset, (iconPath, x, y, w, h) =>
         this.drawIcon(ctx, iconPath, x, y, w, h)
       );
     }
@@ -219,12 +219,12 @@ export class BaseScene extends Scene {
         deltaY: number;
       };
 
-      // Handle wheel events for tutorial scrolling
-      if (this.showTutorial && this.tutorialPanelRegions) {
-        if (this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
+      // Handle wheel events for guide scrolling
+      if (this.showGuide && this.guidePanelRegions) {
+        if (this.pointInRect(x, y, this.guidePanelRegions.panel)) {
           const scrollSpeed = 20;
-          this.tutorialScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
-          this.tutorialScrollOffset = Math.max(0, this.tutorialScrollOffset);
+          this.guideScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
+          this.guideScrollOffset = Math.max(0, this.guideScrollOffset);
           return;
         }
       }
@@ -424,15 +424,15 @@ export class BaseScene extends Scene {
         return;
       }
 
-      // Tutorial panel - close on outside click
-      if (this.showTutorial && this.tutorialPanelRegions) {
-        if (!this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
-          this.showTutorial = false;
-          this.tutorialPanelRegions = null;
-          this.tutorialScrollOffset = 0;
+      // Guide panel - close on outside click
+      if (this.showGuide && this.guidePanelRegions) {
+        if (!this.pointInRect(x, y, this.guidePanelRegions.panel)) {
+          this.showGuide = false;
+          this.guidePanelRegions = null;
+          this.guideScrollOffset = 0;
           return;
         }
-        // If tutorial is open, block other clicks
+        // If guide is open, block other clicks
         return;
       }
 
@@ -449,7 +449,7 @@ export class BaseScene extends Scene {
         return;
       }
       if (this.pointInRect(x, y, buttonRegions.help)) {
-        this.showTutorial = true;
+        this.showGuide = true;
         return;
       }
 

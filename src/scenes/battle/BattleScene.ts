@@ -23,7 +23,7 @@ import {
   drawTopBar,
   getTopBarButtonRegions,
 } from "../../ui/UiPrimitives";
-import { renderTutorialPanel, type TutorialPanelRegions } from "../../ui/TutorialPanel";
+import { GuidePanelRegions, renderGuidePanel, type guidePanelRegions } from "../../ui/GuidePanel";
 
 interface BattleUnit {
   unit: Unit;
@@ -201,9 +201,14 @@ export class BattleScene extends Scene {
   > = new Map();
   private readonly floatingHealingDuration = 1.5; // seconds
   private floatingHealingIdCounter = 0;
-  private showTutorial: boolean = false;
-  private tutorialPanelRegions: TutorialPanelRegions | null = null;
-  private tutorialScrollOffset: number = 0;
+  private showGuide: boolean = false;
+  private guidePanelRegions: GuidePanelRegions | null = null;
+  private guideScrollOffset: number = 0;
+  // Tutorial system
+  private isTutorial: boolean = false;
+  private tutorialStep: number = -1; // -1 = not in tutorial, 0-3 = tutorial steps
+  private tutorialOverlayImage: HTMLImageElement | null = null;
+  private tutorialHighlightRegion: { x: number; y: number; w: number; h: number } | null = null;
 
   constructor(
     private worldId: string,
@@ -332,9 +337,21 @@ export class BattleScene extends Scene {
         }
       });
 
+      // Check if this is the tutorial stage
+      this.isTutorial = this.stageId === "world_01_stage_00";
+      if (this.isTutorial) {
+        this.tutorialStep = 0;
+      } else {
+        this.tutorialStep = -1;
+      }
+
       // Initialize and populate the match3 grid
       this.initializeGrid();
-      this.populateGrid();
+      if (this.isTutorial) {
+        this.populateTutorialGrid();
+      } else {
+        this.populateGrid();
+      }
 
       // Clear combat log and initialize round
       this.combatLog = [];
@@ -641,6 +658,71 @@ export class BattleScene extends Scene {
       for (let col = 0; col < this.gridCols; col++) {
         if (this.grid[row][col] === null) {
           // Pick a random element
+          const randomIndex = Math.floor(Math.random() * elements.length);
+          this.grid[row][col] = elements[randomIndex];
+        }
+      }
+    }
+  }
+
+  private populateTutorialGrid() {
+    // Get leader element for tutorial grid generation
+    const loadout = this.state.loadout;
+    const leaderCard = loadout.leader ? this.cards.find((c) => c.id === loadout.leader) : null;
+    const leaderElement: Element = leaderCard && leaderCard.elements.length > 0 ? leaderCard.elements[0] : "Fire";
+
+    const elements: Element[] = ["Fire", "Water", "Grass", "Dark", "Light", "Healing"];
+    const otherElements = elements.filter((e) => e !== leaderElement);
+
+    // Generate grid based on tutorial step
+    if (this.tutorialStep === 0) {
+      // Turn 0: Random grid, no specific pattern needed
+      for (let row = 0; row < this.gridRows; row++) {
+        for (let col = 0; col < this.gridCols; col++) {
+          const randomIndex = Math.floor(Math.random() * elements.length);
+          this.grid[row][col] = elements[randomIndex];
+        }
+      }
+    } else if (this.tutorialStep === 1) {
+      // Turn 1: Create a grid with 2 leader elements in a line and a third one tile away
+      // Place two leader elements horizontally at row 2, cols 0 and 1
+      this.grid[2][0] = leaderElement;
+      this.grid[2][1] = leaderElement;
+      // Place the third leader element at row 2, col 3 (one tile away)
+      this.grid[2][3] = leaderElement;
+
+      // Fill rest with random other elements
+      for (let row = 0; row < this.gridRows; row++) {
+        for (let col = 0; col < this.gridCols; col++) {
+          if (this.grid[row][col] === null) {
+            const randomIndex = Math.floor(Math.random() * otherElements.length);
+            this.grid[row][col] = otherElements[randomIndex];
+          }
+        }
+      }
+    } else if (this.tutorialStep === 2) {
+      // Turn 2: Create an L-shape pattern (two-off L shape)
+      // Vertical line: row 0-2, col 1
+      this.grid[0][1] = leaderElement;
+      this.grid[1][1] = leaderElement;
+      this.grid[2][1] = leaderElement;
+      // Horizontal line: row 2, cols 1-3 (overlapping at [2][1])
+      this.grid[2][2] = leaderElement;
+      this.grid[2][3] = leaderElement;
+
+      // Fill rest with random other elements
+      for (let row = 0; row < this.gridRows; row++) {
+        for (let col = 0; col < this.gridCols; col++) {
+          if (this.grid[row][col] === null) {
+            const randomIndex = Math.floor(Math.random() * otherElements.length);
+            this.grid[row][col] = otherElements[randomIndex];
+          }
+        }
+      }
+    } else {
+      // Default: random grid
+      for (let row = 0; row < this.gridRows; row++) {
+        for (let col = 0; col < this.gridCols; col++) {
           const randomIndex = Math.floor(Math.random() * elements.length);
           this.grid[row][col] = elements[randomIndex];
         }
@@ -1233,6 +1315,12 @@ export class BattleScene extends Scene {
     // Draw combat log
     this.renderCombatLog(ctx);
 
+    // Draw tutorial overlay if in tutorial mode (only when not dragging to avoid blocking)
+    // Rendered after combat log so it appears on top
+    if (this.isTutorial && this.tutorialStep >= 0 && this.tutorialStep <= 3 && !this.isResolvingMatches) {
+      this.renderTutorialOverlay(ctx);
+    }
+
     // Draw retreat button
     const retreatButtonX = CanvasSize.width - 120; // Adjusted for larger button
     const retreatButtonY = topBarHeight + 12;
@@ -1272,8 +1360,8 @@ export class BattleScene extends Scene {
     }
 
     // Draw tutorial panel if shown
-    if (this.showTutorial) {
-      this.tutorialPanelRegions = renderTutorialPanel(ctx, this.tutorialScrollOffset, (iconPath, x, y, w, h) =>
+    if (this.showGuide) {
+      this.guidePanelRegions = renderGuidePanel(ctx, this.guideScrollOffset, (iconPath, x, y, w, h) =>
         this.drawIcon(ctx, iconPath, x, y, w, h)
       );
     }
@@ -1568,12 +1656,12 @@ export class BattleScene extends Scene {
         deltaY: number;
       };
 
-      // Handle wheel events for tutorial scrolling
-      if (this.showTutorial && this.tutorialPanelRegions) {
-        if (this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
+      // Handle wheel events for guide scrolling
+      if (this.showGuide && this.guidePanelRegions) {
+        if (this.pointInRect(x, y, this.guidePanelRegions.panel)) {
           const scrollSpeed = 20;
-          this.tutorialScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
-          this.tutorialScrollOffset = Math.max(0, this.tutorialScrollOffset);
+          this.guideScrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
+          this.guideScrollOffset = Math.max(0, this.guideScrollOffset);
           return;
         }
       }
@@ -1583,15 +1671,15 @@ export class BattleScene extends Scene {
     if (e.type === "scene-click") {
       const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
 
-      // Tutorial panel - close on outside click
-      if (this.showTutorial && this.tutorialPanelRegions) {
-        if (!this.pointInRect(x, y, this.tutorialPanelRegions.panel)) {
-          this.showTutorial = false;
-          this.tutorialPanelRegions = null;
-          this.tutorialScrollOffset = 0;
+      // Guide panel - close on outside click
+      if (this.showGuide && this.guidePanelRegions) {
+        if (!this.pointInRect(x, y, this.guidePanelRegions.panel)) {
+          this.showGuide = false;
+          this.guidePanelRegions = null;
+          this.guideScrollOffset = 0;
           return;
         }
-        // If tutorial is open, block other clicks
+        // If guide is open, block other clicks
         return;
       }
 
@@ -1608,7 +1696,7 @@ export class BattleScene extends Scene {
         return;
       }
       if (this.pointInRect(x, y, buttonRegions.help)) {
-        this.showTutorial = true;
+        this.showGuide = true;
         return;
       }
 
@@ -1665,8 +1753,8 @@ export class BattleScene extends Scene {
         return;
       }
 
-      // Don't start dragging if tutorial is open
-      if (this.showTutorial) {
+      // Don't start dragging if guide is open
+      if (this.showGuide) {
         return;
       }
       if (this.retreatButtonRegion && this.pointInRect(x, y, this.retreatButtonRegion)) {
@@ -1744,6 +1832,20 @@ export class BattleScene extends Scene {
       return;
     }
 
+    // Capture drag positions before clearing dragState
+    const startRow = this.dragState.startRow;
+    const startCol = this.dragState.startCol;
+    const endRow = this.dragState.currentRow;
+    const endCol = this.dragState.currentCol;
+
+    // Tutorial step 0 -> 1: Check if player moved center tile (2,2) to (0,4)
+    if (this.isTutorial && this.tutorialStep === 0) {
+      // Check if moved from (2,2) to (0,4)
+      if (startRow === 2 && startCol === 2 && endRow === 0 && endCol === 4) {
+        this.tutorialStep = 1;
+      }
+    }
+
     // Stop dragging
     this.dragState = null;
     this.dragTimerRemaining = 0.0;
@@ -1752,6 +1854,61 @@ export class BattleScene extends Scene {
     const matches = findMatches(convertedGrid);
     if (matches.length > 0) {
       console.log(`Found ${matches.length} match(es)`, matches);
+
+      // Tutorial progression logic
+      if (this.isTutorial) {
+        if (this.tutorialStep === 1) {
+          // Step 1 -> 2: Must match (2,0), (2,1), and (2,2) in a single match entry
+          const requiredCells = new Set([
+            "2,0", // row 2, col 0
+            "2,1", // row 2, col 1
+            "2,2", // row 2, col 2
+          ]);
+
+          const hasRequiredMatch = matches.some((match) => {
+            // Check if this is a horizontal match (line shape)
+            if (match.shape !== "line") return false;
+
+            // Get all cell positions in this match as "row,col" strings
+            const matchCells = new Set(match.cells.map((c) => `${c.y},${c.x}`));
+
+            // Must include all three required cells
+            return (
+              requiredCells.size === matchCells.size && Array.from(requiredCells).every((cell) => matchCells.has(cell))
+            );
+          });
+
+          if (hasRequiredMatch) {
+            this.tutorialStep = 2;
+          }
+        } else if (this.tutorialStep === 2) {
+          // Step 2 -> 3: Must match (0,1), (1,1), (2,1), (2,2), (2,3) in a single match entry (L-shape)
+          const requiredCells = new Set([
+            "0,1", // row 0, col 1
+            "1,1", // row 1, col 1
+            "2,1", // row 2, col 1
+            "2,2", // row 2, col 2
+            "2,3", // row 2, col 3
+          ]);
+
+          const hasRequiredMatch = matches.some((match) => {
+            // Check if this is an L or T shape match
+            if (match.shape !== "L" && match.shape !== "T") return false;
+
+            // Get all cell positions in this match as "row,col" strings
+            const matchCells = new Set(match.cells.map((c) => `${c.y},${c.x}`));
+
+            // Must include all five required cells
+            return (
+              requiredCells.size === matchCells.size && Array.from(requiredCells).every((cell) => matchCells.has(cell))
+            );
+          });
+
+          if (hasRequiredMatch) {
+            this.tutorialStep = 3;
+          }
+        }
+      }
 
       // Clear matched tiles, cascade, and resolve all matches
       // This will also calculate and apply damage for all matches including cascades
@@ -2553,6 +2710,15 @@ export class BattleScene extends Scene {
     this.currentRound++;
     this.addCombatLogEntry({ type: "separator", round: this.currentRound });
 
+    // Tutorial: Regenerate tutorial grid for new turn if needed
+    if (this.isTutorial) {
+      // Regenerate tutorial grid for new turn if needed
+      if (this.tutorialStep >= 0 && this.tutorialStep <= 2) {
+        this.initializeGrid();
+        this.populateTutorialGrid();
+      }
+    }
+
     console.log("Enemy turn complete, switching back to player turn");
   }
 
@@ -2653,6 +2819,273 @@ export class BattleScene extends Scene {
 
     // Store rolled loot for display
     this.victoryLoot = rolledLoot;
+  }
+
+  private renderTutorialOverlay(ctx: CanvasRenderingContext2D): void {
+    if (this.tutorialStep < 0 || this.tutorialStep > 3) return;
+
+    const gridArea = BattleLayout.grid;
+    const combatLogArea = BattleLayout.combatLog;
+    const cellGap = 6;
+    const cellSize = Math.min(
+      (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+    );
+
+    const match3GridWidth = this.gridCols * cellSize + (this.gridCols - 1) * cellGap;
+    const match3GridAreaX = gridArea.x + (gridArea.w - match3GridWidth) / 2;
+
+    // Dim the entire scene except grid area and tutorial panel
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+
+    // Draw dimming in rectangles, excluding grid area and tutorial panel area
+    // Top area (above both grid and tutorial panel)
+    ctx.fillRect(0, 0, CanvasSize.width, gridArea.y);
+    // Bottom area (below both grid and tutorial panel)
+    ctx.fillRect(0, gridArea.y + gridArea.h, CanvasSize.width, CanvasSize.height - (gridArea.y + gridArea.h));
+    // Left of grid
+    ctx.fillRect(0, gridArea.y, match3GridAreaX, gridArea.h);
+    // right of grid until combat log area
+    ctx.fillRect(
+      match3GridAreaX + match3GridWidth,
+      gridArea.y,
+      combatLogArea.x - (match3GridAreaX + match3GridWidth),
+      gridArea.h
+    );
+    // Between grid and tutorial panel (if there's a gap)
+    if (gridArea.x + gridArea.w < combatLogArea.x) {
+      ctx.fillRect(gridArea.x + gridArea.w, gridArea.y, combatLogArea.x - (gridArea.x + gridArea.w), gridArea.h);
+    }
+
+    ctx.restore();
+
+    // Draw tutorial panel overlay at combat log position with same dimensions
+    const panelX = combatLogArea.x;
+    const panelY = combatLogArea.y;
+    const panelW = combatLogArea.w;
+    const panelH = combatLogArea.h;
+    const padding = 16;
+    const lineHeight = 20;
+
+    drawPanel(ctx, panelX, panelY, panelW, panelH, "Tutorial");
+
+    let currentY = panelY + 32 + padding;
+    ctx.fillStyle = "#e5e7eb";
+    ctx.font = "14px system-ui";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+
+    if (this.tutorialStep === 0) {
+      // Turn 0: Explain how to make a move
+      ctx.fillText("How to Make a Move", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText("• Click and hold on any element tile", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Drag to a neighboring tile to swap elements", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• You can make multiple swaps in one turn", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText(
+        "• Release the mouse button or wait for the timer to complete your move",
+        panelX + padding,
+        currentY
+      );
+      currentY += lineHeight * 1.5;
+      ctx.fillText(
+        "• Try to pick up the center element and drag it to the highlighted tile",
+        panelX + padding,
+        currentY
+      );
+      currentY += lineHeight * 1.5;
+
+      // Draw tutorial image placeholder (3x3 grid with center element and arrows)
+      const imageX = panelX + padding;
+      const imageY = currentY;
+      const imageSize = 90; // Smaller to fit in combat log area
+      const miniCellSize = imageSize / 3;
+
+      // Draw grid background
+      ctx.fillStyle = "#1a1d24";
+      ctx.fillRect(imageX, imageY, imageSize, imageSize);
+      ctx.strokeStyle = "#2b2f3a";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(imageX + i * miniCellSize, imageY);
+        ctx.lineTo(imageX + i * miniCellSize, imageY + imageSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(imageX, imageY + i * miniCellSize);
+        ctx.lineTo(imageX + imageSize, imageY + i * miniCellSize);
+        ctx.stroke();
+      }
+
+      // Draw center element
+      const centerX = imageX + miniCellSize;
+      const centerY = imageY + miniCellSize;
+      const loadout = this.state.loadout;
+      const leaderCard = loadout.leader ? this.cards.find((c) => c.id === loadout.leader) : null;
+      const leaderElement: Element = leaderCard && leaderCard.elements.length > 0 ? leaderCard.elements[0] : "Fire";
+      const iconPath = elementIconPath(leaderElement);
+      this.drawIcon(
+        ctx,
+        iconPath,
+        centerX + miniCellSize / 4,
+        centerY + miniCellSize / 4,
+        miniCellSize / 2,
+        miniCellSize / 2
+      );
+
+      // Draw arrows in 8 directions
+      ctx.strokeStyle = "#3b82f6";
+      ctx.fillStyle = "#3b82f6";
+      ctx.lineWidth = 2;
+      const arrowLength = miniCellSize * 0.3;
+      const arrowHeadSize = 4;
+      const centerCellX = imageX + miniCellSize + miniCellSize / 2;
+      const centerCellY = imageY + miniCellSize + miniCellSize / 2;
+
+      const directions = [
+        { dx: 0, dy: -1, angle: -Math.PI / 2 }, // Up
+        { dx: 1, dy: -1, angle: -Math.PI / 4 }, // Up-right
+        { dx: 1, dy: 0, angle: 0 }, // Right
+        { dx: 1, dy: 1, angle: Math.PI / 4 }, // Down-right
+        { dx: 0, dy: 1, angle: Math.PI / 2 }, // Down
+        { dx: -1, dy: 1, angle: (3 * Math.PI) / 4 }, // Down-left
+        { dx: -1, dy: 0, angle: Math.PI }, // Left
+        { dx: -1, dy: -1, angle: (-3 * Math.PI) / 4 }, // Up-left
+      ];
+
+      for (const dir of directions) {
+        const endX = centerCellX + dir.dx * arrowLength;
+        const endY = centerCellY + dir.dy * arrowLength;
+
+        // Draw arrow line
+        ctx.beginPath();
+        ctx.moveTo(centerCellX, centerCellY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // Draw arrowhead
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(
+          endX - arrowHeadSize * Math.cos(dir.angle - Math.PI / 6),
+          endY - arrowHeadSize * Math.sin(dir.angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+          endX - arrowHeadSize * Math.cos(dir.angle + Math.PI / 6),
+          endY - arrowHeadSize * Math.sin(dir.angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Highlight the the center tile and the tile two rows up and two cols to the right
+      const highlightCells = [
+        { row: 2, col: 2 },
+        { row: 0, col: 4 },
+      ];
+
+      for (const cell of highlightCells) {
+        const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
+        const cellY = gridArea.y + cell.row * (cellSize + cellGap);
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
+        ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+      }
+    } else if (this.tutorialStep === 1) {
+      // Turn 1: Explain element matching
+      const loadout = this.state.loadout;
+      const leaderCard = loadout.leader ? this.cards.find((c) => c.id === loadout.leader) : null;
+      const leaderElement: Element = leaderCard && leaderCard.elements.length > 0 ? leaderCard.elements[0] : "Fire";
+      const leaderElementName = leaderCard ? leaderCard.name : "your leader";
+
+      ctx.fillText("Element Matching", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText(`• Match 3 or more ${leaderElement} elements in a line`, panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText(
+        `• ${leaderElementName} will attack when you match ${leaderElement} elements`,
+        panelX + padding,
+        currentY
+      );
+      currentY += lineHeight;
+      ctx.fillText("• Try to complete the match shown in the grid!", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+
+      // Highlight the specific tiles needed for the match
+      // Grid has 2 leader elements at [2][0] and [2][1], need to move [2][3] to [2][2]
+      const highlightRow = 2;
+      const highlightCols = [0, 1, 3]; // The three tiles that form the match
+
+      // Draw highlight on the three tiles
+      for (const col of highlightCols) {
+        const cellX = match3GridAreaX + col * (cellSize + cellGap);
+        const cellY = gridArea.y + highlightRow * (cellSize + cellGap);
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
+        ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+      }
+    } else if (this.tutorialStep === 2) {
+      // Turn 2: Explain targeting (AoE)
+      ctx.fillText("Area of Effect (AoE)", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText("• Line matches (3+ in a row) = Single target damage", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• L or T shape matches = AoE damage to ALL enemies", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Try to create an L or T shape in the grid!", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+
+      // Highlight L-shape: vertical line at col 1 (rows 0-2) and horizontal at row 2 (cols 1-3)
+      const lShapeCells = [
+        { row: 0, col: 1 },
+        { row: 1, col: 1 },
+        { row: 2, col: 1 },
+        { row: 2, col: 2 },
+        { row: 2, col: 3 },
+      ];
+
+      for (const cell of lShapeCells) {
+        const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
+        const cellY = gridArea.y + cell.row * (cellSize + cellGap);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
+        ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+      }
+    } else if (this.tutorialStep === 3) {
+      // Turn 3: Explain multipliers and combos
+      ctx.fillText("Multipliers & Combos", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText("• Element weapon triangles: Fire > Grass > Water > Fire", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Matching elements deal 1.5x damage to weak elements", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Dark and Light deal 1.5x damage to each other", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Multiple matches in one turn create combo multipliers!", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• More combos = higher multiplier (non-linear scaling)", panelX + padding, currentY);
+    }
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
   }
 
   private renderConsumables(ctx: CanvasRenderingContext2D): void {
