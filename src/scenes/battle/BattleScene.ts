@@ -707,11 +707,11 @@ export class BattleScene extends Scene {
       // Turn 2: Create an L-shape pattern (two-off L shape)
       // Vertical line: row 0-2, col 1
       this.grid[0][1] = leaderElement;
-      this.grid[1][1] = leaderElement;
+      this.grid[1][2] = leaderElement;
       this.grid[2][1] = leaderElement;
       // Horizontal line: row 2, cols 1-3 (overlapping at [2][1])
       this.grid[2][2] = leaderElement;
-      this.grid[2][3] = leaderElement;
+      this.grid[3][3] = leaderElement;
 
       // Fill rest with random other elements
       for (let row = 0; row < this.gridRows; row++) {
@@ -3047,17 +3047,28 @@ export class BattleScene extends Scene {
 
       // Highlight the specific tiles needed for the match
       // Grid has 2 leader elements at [2][0] and [2][1], need to move [2][3] to [2][2]
-      const highlightRow = 2;
-      const highlightCols = [0, 1, 3]; // The three tiles that form the match
-
-      // Draw highlight on the three tiles
-      for (const col of highlightCols) {
-        const cellX = match3GridAreaX + col * (cellSize + cellGap);
-        const cellY = gridArea.y + highlightRow * (cellSize + cellGap);
+      const requiredShapeCells = [
+        { row: 2, col: 0 },
+        { row: 2, col: 1 },
+        { row: 2, col: 2 },
+      ];
+      const missingInShapeCells = [{ row: 2, col: 3 }];
+      for (const cell of requiredShapeCells) {
+        const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
+        const cellY = gridArea.y + cell.row * (cellSize + cellGap);
         ctx.strokeStyle = "#3b82f6";
         ctx.lineWidth = 3;
         ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
         ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+      }
+      for (const cell of missingInShapeCells) {
+        const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
+        const cellY = gridArea.y + cell.row * (cellSize + cellGap);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
+        ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
         ctx.fillRect(cellX, cellY, cellSize, cellSize);
       }
     } else if (this.tutorialStep === 2) {
@@ -3074,15 +3085,27 @@ export class BattleScene extends Scene {
       currentY += lineHeight * 1.2;
 
       // Highlight L-shape: vertical line at col 1 (rows 0-2) and horizontal at row 2 (cols 1-3)
-      const lShapeCells = [
+      const requiredShapeCells = [
         { row: 0, col: 1 },
         { row: 1, col: 1 },
         { row: 2, col: 1 },
         { row: 2, col: 2 },
         { row: 2, col: 3 },
       ];
-
-      for (const cell of lShapeCells) {
+      const missingInShapeCells = [
+        { row: 1, col: 2 },
+        { row: 3, col: 3 },
+      ];
+      for (const cell of requiredShapeCells) {
+        const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
+        const cellY = gridArea.y + cell.row * (cellSize + cellGap);
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
+        ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+      }
+      for (const cell of missingInShapeCells) {
         const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
         const cellY = gridArea.y + cell.row * (cellSize + cellGap);
         ctx.strokeStyle = "#f59e0b";
