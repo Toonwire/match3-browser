@@ -2986,42 +2986,51 @@ export class BattleScene extends Scene {
       ctx.strokeStyle = "#3b82f6";
       ctx.fillStyle = "#3b82f6";
       ctx.lineWidth = 2;
-      const arrowLength = miniCellSize * 0.3;
       const arrowHeadSize = 4;
-      const centerCellX = imageX + miniCellSize + miniCellSize / 2;
+      const centerCellX = imageX + miniCellSize + miniCellSize / 2; // Center of middle cell (col 1, row 1)
       const centerCellY = imageY + miniCellSize + miniCellSize / 2;
 
+      // Offset from center to start arrows (start a bit out of center)
+      const startOffset = miniCellSize * 0.35;
+
+      // 8 directions: Up, Up-right, Right, Down-right, Down, Down-left, Left, Up-left
       const directions = [
-        { dx: 0, dy: -1, angle: -Math.PI / 2 }, // Up
-        { dx: 1, dy: -1, angle: -Math.PI / 4 }, // Up-right
-        { dx: 1, dy: 0, angle: 0 }, // Right
-        { dx: 1, dy: 1, angle: Math.PI / 4 }, // Down-right
-        { dx: 0, dy: 1, angle: Math.PI / 2 }, // Down
-        { dx: -1, dy: 1, angle: (3 * Math.PI) / 4 }, // Down-left
-        { dx: -1, dy: 0, angle: Math.PI }, // Left
-        { dx: -1, dy: -1, angle: (-3 * Math.PI) / 4 }, // Up-left
+        { col: 1, row: 0, dx: 0, dy: -1 }, // Up
+        { col: 2, row: 0, dx: 1, dy: -1 }, // Up-right
+        { col: 2, row: 1, dx: 1, dy: 0 }, // Right
+        { col: 2, row: 2, dx: 1, dy: 1 }, // Down-right
+        { col: 1, row: 2, dx: 0, dy: 1 }, // Down
+        { col: 0, row: 2, dx: -1, dy: 1 }, // Down-left
+        { col: 0, row: 1, dx: -1, dy: 0 }, // Left
+        { col: 0, row: 0, dx: -1, dy: -1 }, // Up-left
       ];
 
       for (const dir of directions) {
-        const endX = centerCellX + dir.dx * arrowLength;
-        const endY = centerCellY + dir.dy * arrowLength;
+        // Start point: slightly offset from center in the direction of the arrow
+        const startX = centerCellX + dir.dx * startOffset;
+        const startY = centerCellY + dir.dy * startOffset;
+
+        // End point: center of the target tile (halfway into that tile)
+        const endX = imageX + (dir.col + 0.5) * miniCellSize;
+        const endY = imageY + (dir.row + 0.5) * miniCellSize;
 
         // Draw arrow line
         ctx.beginPath();
-        ctx.moveTo(centerCellX, centerCellY);
+        ctx.moveTo(startX, startY);
         ctx.lineTo(endX, endY);
         ctx.stroke();
 
         // Draw arrowhead
+        const angle = Math.atan2(endY - startY, endX - startX);
         ctx.beginPath();
         ctx.moveTo(endX, endY);
         ctx.lineTo(
-          endX - arrowHeadSize * Math.cos(dir.angle - Math.PI / 6),
-          endY - arrowHeadSize * Math.sin(dir.angle - Math.PI / 6)
+          endX - arrowHeadSize * Math.cos(angle - Math.PI / 6),
+          endY - arrowHeadSize * Math.sin(angle - Math.PI / 6)
         );
         ctx.lineTo(
-          endX - arrowHeadSize * Math.cos(dir.angle + Math.PI / 6),
-          endY - arrowHeadSize * Math.sin(dir.angle + Math.PI / 6)
+          endX - arrowHeadSize * Math.cos(angle + Math.PI / 6),
+          endY - arrowHeadSize * Math.sin(angle + Math.PI / 6)
         );
         ctx.closePath();
         ctx.fill();
