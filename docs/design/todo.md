@@ -10,3 +10,16 @@
   - ~~AoE (L or T matches)~~ ✅
   -
 - Combo multiplier for match3 grid. I.e. 3 matches in a turn gives a higher multiplier than just a single match. Should be non linear scaling. More combos = larger multiplier
+- Balance the cards and units - playtest to see what fits
+- For tutorial stage (asteroid belt), add panel overlays that write helpful text on turn 0, 1 and 2.
+  - The match3 grid should be custom generated for the first three rounds to highlight certain mechanics. Grab the loadout leader's element so that we can generate the grid guaranteeing matches that result in an attack.
+  - Turn 0: Explains how a move is made on the grid. Drag (left mousebutton press) and drop (left mousebutton release), or drag until the timer runs out. When picking up an element and dragging it to a neighbouring tile, the elements swap. You can make as many swaps as you like within the timer. Shows visual of 3x3 grid with only the center rendering an element. Show a mouse pointer over it and 8 arrows in the different valid drag directions to facilitate a swap. This visual is probably easier to show an a rendered image instead of dynamically rendered. Make a folder /assets/tutorial for tutorial related images.
+    - Shown on every turn until a swap is made in a turn
+  - Turn 1: Explains how each element matched (3+ in a line), generates an attack for units of the matching element. E.g. whelp (fire), needs matched fire elements in the grid to make an attack.
+    - Highlight the move needed to match a line of 3 elements matching the leader element. Custom grid should have 2 elements already in line and a third on tile away to complete the match. Highlight should be shown as dimming the scene everywhere but the area to be highlighted.
+  - Turn 2: Explains how targeting works. Matched line segments = Single target damage, closets target. Matched 'T' or 'L' shapes = AoE damage, hitting all targets.
+    - Highlights a two-off 'L' shape. To make the player comfortable with multiple swaps in a turn and to force AoE damage.
+  - Turn 3: Multipliers: Explain element weapon triangles and combos.
+  - Every turn X tutorial step requires the previous step to be completed.
+- Add consumable items to the left of the match3 grid (using the empty space in the region). Consumables should be shown with their icon and should be clickable to consume them, triggering its effect and removing it from the player inventory. E.g. healing potion.
+  - Consumables should only be clickable on player turn.

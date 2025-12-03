@@ -9,7 +9,7 @@ import {
 import { findMatches, type Match } from "../../battle/MatchLogic";
 import { loadYaml } from "../../data/loadYaml";
 import { resolveLootConfig } from "../../data/loot";
-import type { Card, Element, LootEntry, LootTable, StageDef, Unit, WorldDef } from "../../data/types";
+import type { Card, Element, Item, LootEntry, LootTable, StageDef, Unit, WorldDef } from "../../data/types";
 import { AudioManager } from "../../engine/AudioManager";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
@@ -66,8 +66,9 @@ export class BattleScene extends Scene {
   private stage?: StageDef;
   private world?: WorldDef;
   private cards: Card[] = [];
-  private items: Array<{ id: string; name: string; imagePath?: string }> = [];
+  private items: Item[] = [];
   private iconCache = new Map<string, HTMLImageElement>();
+  private consumableRegions: Array<{ itemId: string; region: { x: number; y: number; w: number; h: number } }> = [];
   private background?: HTMLImageElement;
   private state: GameState = GameState.load();
   private enemies: BattleUnit[] = [];
@@ -186,6 +187,20 @@ export class BattleScene extends Scene {
   > = new Map();
   private readonly floatingDamageDuration = 1.5; // seconds
   private floatingDamageIdCounter = 0;
+  // Floating healing numbers: Key is unique ID, value contains position, healing amount, and animation progress
+  private floatingHealingNumbers: Map<
+    string,
+    {
+      x: number;
+      y: number;
+      healing: number;
+      progress: number;
+      isPlayerTarget: boolean;
+      targetPosition: number;
+    }
+  > = new Map();
+  private readonly floatingHealingDuration = 1.5; // seconds
+  private floatingHealingIdCounter = 0;
   private showTutorial: boolean = false;
   private tutorialPanelRegions: TutorialPanelRegions | null = null;
   private tutorialScrollOffset: number = 0;
@@ -227,7 +242,7 @@ export class BattleScene extends Scene {
 
       // Load cards and items
       this.cards = await loadYaml<Card[]>("/config/cards.yaml");
-      this.items = await loadYaml<Array<{ id: string; name: string; imagePath?: string }>>("/config/items.yaml");
+      this.items = await loadYaml<Item[]>("/config/items.yaml");
 
       // Initialize enemies from stage units (using cards as base)
       this.enemies = this.stage.units
@@ -568,6 +583,27 @@ export class BattleScene extends Scene {
     // Remove completed floating damage numbers
     for (const key of floatingDamageKeysToRemove) {
       this.floatingDamageNumbers.delete(key);
+    }
+
+    // Update floating healing numbers
+    const floatingHealingKeysToRemove: string[] = [];
+    for (const [key, healingData] of this.floatingHealingNumbers.entries()) {
+      const newProgress = healingData.progress + dt / this.floatingHealingDuration;
+      if (newProgress >= 1.0) {
+        floatingHealingKeysToRemove.push(key);
+      } else {
+        // Move upward and fade out
+        this.floatingHealingNumbers.set(key, {
+          ...healingData,
+          progress: newProgress,
+          y: healingData.y - dt * 40, // Move up at 40 pixels per second
+        });
+      }
+    }
+
+    // Remove completed floating healing numbers
+    for (const key of floatingHealingKeysToRemove) {
+      this.floatingHealingNumbers.delete(key);
     }
 
     // Update panel delay timer
@@ -1186,6 +1222,9 @@ export class BattleScene extends Scene {
       ctx.restore();
     }
 
+    // Draw consumables to the left of the grid
+    this.renderConsumables(ctx);
+
     // Draw turn indicator
     const turnText = this.isPlayerTurn ? "Your Turn" : "Enemy Turn";
     const turnColor = this.isPlayerTurn ? "#3b82f6" : "#ef4444";
@@ -1300,6 +1339,39 @@ export class BattleScene extends Scene {
       ctx.strokeText(damageText, damageData.x, damageData.y);
       // Draw fill
       ctx.fillText(damageText, damageData.x, damageData.y);
+      ctx.restore();
+    }
+
+    // Draw floating healing numbers - render after damage numbers so they appear on top
+    for (const [key, healingData] of this.floatingHealingNumbers.entries()) {
+      // Calculate opacity: fade out as progress increases
+      const opacity = 1.0 - healingData.progress;
+
+      // Calculate font size based on healing amount
+      // Scale from 16px (min) to 32px (max) based on healing
+      // Assuming healing range of 1-100, adjust as needed
+      const minHealing = 1;
+      const maxHealing = 100;
+      const minFontSize = 16;
+      const maxFontSize = 68;
+      const normalizedHealing = Math.max(minHealing, Math.min(maxHealing, healingData.healing));
+      const healingRatio = (normalizedHealing - minHealing) / (maxHealing - minHealing);
+      const fontSize = minFontSize + healingRatio * (maxFontSize - minFontSize);
+
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `bold ${fontSize}px system-ui`;
+      ctx.fillStyle = "#10b981"; // Green color for healing
+      ctx.strokeStyle = "#047857"; // Darker green for outline
+      ctx.lineWidth = 2;
+
+      const healingText = `+${healingData.healing}`;
+      // Draw outline
+      ctx.strokeText(healingText, healingData.x, healingData.y);
+      // Draw fill
+      ctx.fillText(healingText, healingData.x, healingData.y);
       ctx.restore();
     }
   }
@@ -1563,6 +1635,16 @@ export class BattleScene extends Scene {
         }
         return;
       }
+
+      // Consumables (only clickable on player turn)
+      if (this.isPlayerTurn && !this.isResolvingMatches && !this.dragState?.isDragging) {
+        for (const consumableRegion of this.consumableRegions) {
+          if (this.pointInRect(x, y, consumableRegion.region)) {
+            this.consumeItem(consumableRegion.itemId);
+            return;
+          }
+        }
+      }
     }
 
     if (e.type === "scene-mousedown") {
@@ -1589,6 +1671,15 @@ export class BattleScene extends Scene {
       }
       if (this.retreatButtonRegion && this.pointInRect(x, y, this.retreatButtonRegion)) {
         return;
+      }
+
+      // Don't start dragging if clicking on consumables
+      if (this.isPlayerTurn && !this.isResolvingMatches) {
+        for (const consumableRegion of this.consumableRegions) {
+          if (this.pointInRect(x, y, consumableRegion.region)) {
+            return; // Consumables are handled in click event, not mousedown
+          }
+        }
       }
 
       // Check if clicking on grid
@@ -2059,6 +2150,17 @@ export class BattleScene extends Scene {
 
               // Trigger healing animation
               this.startHealingAnimation(unit.position);
+
+              // Spawn floating healing number
+              const playerUnitArea = BattleLayout.playerUnits;
+              const playerUnitSlotWidth = playerUnitArea.w / 4;
+              const playerUnitSize = 96;
+              const slotX = playerUnitArea.x + unit.position * playerUnitSlotWidth;
+              const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
+              const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
+              const unitCenterX = unitX + playerUnitSize / 2;
+              const unitCenterY = unitY + playerUnitSize / 2;
+              this.spawnFloatingHealingNumber(unitCenterX, unitCenterY, actualHealing, true, unit.position);
             }
           }
         }
@@ -2099,10 +2201,102 @@ export class BattleScene extends Scene {
 
             // Trigger healing animation
             this.startHealingAnimation(rightmostAlive.position);
+
+            // Spawn floating healing number
+            const playerUnitArea = BattleLayout.playerUnits;
+            const playerUnitSlotWidth = playerUnitArea.w / 4;
+            const playerUnitSize = 96;
+            const slotX = playerUnitArea.x + rightmostAlive.position * playerUnitSlotWidth;
+            const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
+            const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
+            const unitCenterX = unitX + playerUnitSize / 2;
+            const unitCenterY = unitY + playerUnitSize / 2;
+            this.spawnFloatingHealingNumber(unitCenterX, unitCenterY, actualHealing, true, rightmostAlive.position);
           }
         }
       }
     }
+  }
+
+  private consumeItem(itemId: string): void {
+    // Check if item exists in inventory
+    const inventory = this.state.inventory.items;
+    const count = inventory[itemId] || 0;
+    if (count <= 0) {
+      return; // Item not available
+    }
+
+    // Find item definition
+    const item = this.items.find((i) => i.id === itemId);
+    if (!item || !item.effect) {
+      return; // Item not found or has no effect
+    }
+
+    // Apply item effects
+    const effects = Array.isArray(item.effect) ? item.effect : [item.effect];
+    for (const effect of effects) {
+      if (typeof effect === "object" && effect !== null) {
+        const effectObj = effect as { type?: string; amount?: number; targets?: string[] };
+        if (effectObj.type === "heal" && effectObj.amount) {
+          const healAmount = effectObj.amount;
+          const targets = effectObj.targets || [];
+
+          // Apply healing based on targets
+          if (targets.includes("Player")) {
+            // Heal all alive player units
+            for (const unit of this.playerUnits) {
+              if (unit.currentHp > 0) {
+                const hpBefore = unit.currentHp;
+                unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healAmount);
+                const actualHealing = unit.currentHp - hpBefore;
+
+                if (actualHealing > 0) {
+                  // Log healing event
+                  this.addCombatLogEntry({
+                    type: "healing",
+                    source: {
+                      name: item.name,
+                      isPlayer: true,
+                      element: "Healing",
+                    },
+                    target: {
+                      name: unit.unit.name,
+                      isPlayer: true,
+                      element: unit.unit.elements?.[0],
+                    },
+                    amount: actualHealing,
+                    isAoE: true, // Consumables heal all units
+                    targetHpAfter: unit.currentHp,
+                    targetMaxHp: unit.maxHp,
+                  });
+
+                  // Trigger healing animation
+                  this.startHealingAnimation(unit.position);
+
+                  // Spawn floating healing number
+                  const playerUnitArea = BattleLayout.playerUnits;
+                  const playerUnitSlotWidth = playerUnitArea.w / 4;
+                  const playerUnitSize = 96;
+                  const slotX = playerUnitArea.x + unit.position * playerUnitSlotWidth;
+                  const unitX = slotX + (playerUnitSlotWidth - playerUnitSize) / 2;
+                  const unitY = playerUnitArea.y + (playerUnitArea.h - playerUnitSize) / 2;
+                  const unitCenterX = unitX + playerUnitSize / 2;
+                  const unitCenterY = unitY + playerUnitSize / 2;
+                  this.spawnFloatingHealingNumber(unitCenterX, unitCenterY, actualHealing, true, unit.position);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Remove item from inventory
+    inventory[itemId] = count - 1;
+    if (inventory[itemId] === 0) {
+      delete inventory[itemId];
+    }
+    this.state.save();
   }
 
   private startHealingAnimation(unitPosition: number): void {
@@ -2235,6 +2429,24 @@ export class BattleScene extends Scene {
       x,
       y: y - 20, // Start slightly above the unit center
       damage,
+      progress: 0.0,
+      isPlayerTarget,
+      targetPosition,
+    });
+  }
+
+  private spawnFloatingHealingNumber(
+    x: number,
+    y: number,
+    healing: number,
+    isPlayerTarget: boolean,
+    targetPosition: number
+  ): void {
+    const id = `healing_${this.floatingHealingIdCounter++}`;
+    this.floatingHealingNumbers.set(id, {
+      x,
+      y: y - 20, // Start slightly above the unit center
+      healing,
       progress: 0.0,
       isPlayerTarget,
       targetPosition,
@@ -2441,6 +2653,91 @@ export class BattleScene extends Scene {
 
     // Store rolled loot for display
     this.victoryLoot = rolledLoot;
+  }
+
+  private renderConsumables(ctx: CanvasRenderingContext2D): void {
+    const gridArea = BattleLayout.grid;
+    const consumablesAreaX = 8; // Left of grid with some padding
+    const consumablesAreaY = gridArea.y;
+    const consumablesAreaH = gridArea.h;
+    const consumableSize = 48;
+    const consumableGap = 8;
+    const maxConsumables = Math.floor(consumablesAreaH / (consumableSize + consumableGap));
+
+    // Get consumables from inventory
+    const inventory = this.state.inventory.items;
+    const availableConsumables: Array<{ item: Item; count: number }> = [];
+
+    for (const [itemId, count] of Object.entries(inventory)) {
+      if (count > 0) {
+        const item = this.items.find((i) => i.id === itemId);
+        if (item && item.effect) {
+          // Only show items with effects (consumables)
+          availableConsumables.push({ item, count });
+        }
+      }
+    }
+
+    // Limit to max consumables that fit
+    const consumablesToShow = availableConsumables.slice(0, maxConsumables);
+    this.consumableRegions = [];
+
+    // Draw each consumable
+    for (let i = 0; i < consumablesToShow.length; i++) {
+      const { item, count } = consumablesToShow[i];
+      const consumableY = consumablesAreaY + i * (consumableSize + consumableGap);
+      const consumableX = consumablesAreaX;
+
+      // Determine if clickable (only on player turn and not during animations)
+      const isClickable = this.isPlayerTurn && !this.isResolvingMatches && !this.dragState?.isDragging;
+
+      // Draw consumable background
+      ctx.fillStyle = isClickable ? "#2b2f3a" : "#1a1d24";
+      ctx.fillRect(consumableX, consumableY, consumableSize, consumableSize);
+      ctx.strokeStyle = isClickable ? "#3b82f6" : "#2b2f3a";
+      ctx.lineWidth = isClickable ? 2 : 1;
+      ctx.strokeRect(consumableX + 0.5, consumableY + 0.5, consumableSize - 1, consumableSize - 1);
+
+      // Draw item icon
+      if (item.imagePath) {
+        ctx.save();
+        if (!isClickable) {
+          ctx.globalAlpha = 0.5; // Dim if not clickable
+        }
+        this.drawIcon(ctx, item.imagePath, consumableX, consumableY, consumableSize, consumableSize);
+        ctx.restore();
+      }
+
+      // Draw count badge
+      if (count > 1) {
+        ctx.fillStyle = "#3b82f6";
+        ctx.beginPath();
+        const badgeSize = 16;
+        const badgeX = consumableX + consumableSize - badgeSize;
+        const badgeY = consumableY;
+        ctx.arc(badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "10px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(count.toString(), badgeX + badgeSize / 2, badgeY + badgeSize / 2);
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+      }
+
+      // Store region for click detection
+      this.consumableRegions.push({
+        itemId: item.id,
+        region: {
+          x: consumableX,
+          y: consumableY,
+          w: consumableSize,
+          h: consumableSize,
+        },
+      });
+    }
   }
 
   private renderCombatLog(ctx: CanvasRenderingContext2D): void {
