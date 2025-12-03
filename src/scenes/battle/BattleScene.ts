@@ -206,7 +206,7 @@ export class BattleScene extends Scene {
   private guideScrollOffset: number = 0;
   // Tutorial system
   private isTutorial: boolean = false;
-  private tutorialStep: number = -1; // -1 = not in tutorial, 0-3 = tutorial steps
+  private tutorialStep: number = -1; // -1 = not in tutorial, 0-4 = tutorial steps (0-3: mechanics, 4: healing)
   private tutorialOverlayImage: HTMLImageElement | null = null;
   private tutorialHighlightRegion: { x: number; y: number; w: number; h: number } | null = null;
   private showTutorialOverlayThisTurn: boolean = false; // Flag to show tutorial overlay only once per player turn
@@ -719,6 +719,22 @@ export class BattleScene extends Scene {
           if (this.grid[row][col] === null) {
             const randomIndex = Math.floor(Math.random() * otherElements.length);
             this.grid[row][col] = otherElements[randomIndex];
+          }
+        }
+      }
+    } else if (this.tutorialStep === 4) {
+      // Turn 4: Create a grid with healing elements to be matched
+      this.grid[0][4] = "Healing";
+      this.grid[2][1] = "Healing";
+      this.grid[3][1] = "Healing";
+      this.grid[4][3] = "Healing";
+
+      // Fill rest with random other elements
+      for (let row = 0; row < this.gridRows; row++) {
+        for (let col = 0; col < this.gridCols; col++) {
+          if (this.grid[row][col] === null) {
+            const randomIndex = Math.floor(Math.random() * elements.length);
+            this.grid[row][col] = elements[randomIndex];
           }
         }
       }
@@ -1925,8 +1941,15 @@ export class BattleScene extends Scene {
             this.showTutorialOverlayThisTurn = false;
           }
         } else if (this.tutorialStep === 4) {
-          // Step 4 --> Tutorial complete: Just show until next round
-          // Hide tutorial overlay after completing step
+          // Step 4 --> 5: Must make a healing match
+          const hasHealingMatch = matches.some((match) => match.element === "Healing");
+          if (hasHealingMatch) {
+            this.tutorialStep = 5;
+            // Hide tutorial overlay after completing step
+            this.showTutorialOverlayThisTurn = false;
+          }
+        } else if (this.tutorialStep === 5) {
+          // Step 5 --> Tutorial complete
           this.tutorialStep = -1;
           this.showTutorialOverlayThisTurn = false;
         }
@@ -2846,7 +2869,7 @@ export class BattleScene extends Scene {
   }
 
   private renderTutorialOverlay(ctx: CanvasRenderingContext2D): void {
-    if (this.tutorialStep < 0 || this.tutorialStep > 4) return;
+    if (this.tutorialStep < 0 || this.tutorialStep > 5) return;
 
     const gridArea = BattleLayout.grid;
     const combatLogArea = BattleLayout.combatLog;
@@ -2902,28 +2925,24 @@ export class BattleScene extends Scene {
 
     if (this.tutorialStep === 0) {
       // Turn 0: Explain how to make a move
-      ctx.fillText("How to Make a Move", panelX + padding, currentY);
+      ctx.fillText("How to make a move", panelX + padding, currentY);
       currentY += lineHeight * 1.2;
       ctx.font = "12px system-ui";
       ctx.fillStyle = "#9aa3b2";
-      ctx.fillText("• Click and hold on any element tile", panelX + padding, currentY);
+      ctx.fillText("• Click and hold on any element tile to start your turn", panelX + padding, currentY);
       currentY += lineHeight;
-      ctx.fillText("• Drag to a neighboring tile to swap elements", panelX + padding, currentY);
+      ctx.fillText("• Drag the element to a neighboring tile to swap elements", panelX + padding, currentY);
       currentY += lineHeight;
-      ctx.fillText("• You can make multiple swaps in one turn", panelX + padding, currentY);
+      ctx.fillText("• Swaps can be made in cardinal directions and diagonals", panelX + padding, currentY);
       currentY += lineHeight;
-      ctx.fillText(
-        "• Release the mouse button or wait for the timer to complete your move",
-        panelX + padding,
-        currentY
-      );
-      currentY += lineHeight * 1.5;
-      ctx.fillText(
-        "• Try to pick up the center element and drag it to the highlighted tile",
-        panelX + padding,
-        currentY
-      );
-      currentY += lineHeight * 1.5;
+      ctx.fillText("• Your turn ends once you let go of the element", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Your turn also ends if the timer above the grid expires", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• You can make any amount of swaps in one turn", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+      ctx.fillText("• Try to move the center element to the highlighted tile", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
 
       // Draw tutorial image placeholder (3x3 grid with center element and arrows)
       const imageX = panelX + padding;
@@ -3028,22 +3047,27 @@ export class BattleScene extends Scene {
       const loadout = this.state.loadout;
       const leaderCard = loadout.leader ? this.cards.find((c) => c.id === loadout.leader) : null;
       const leaderElement: Element = leaderCard && leaderCard.elements.length > 0 ? leaderCard.elements[0] : "Fire";
-      const leaderElementName = leaderCard ? leaderCard.name : "your leader";
 
       ctx.fillText("Element Matching", panelX + padding, currentY);
       currentY += lineHeight * 1.2;
       ctx.font = "12px system-ui";
       ctx.fillStyle = "#9aa3b2";
-      ctx.fillText(`• Match 3 or more ${leaderElement} elements in a line`, panelX + padding, currentY);
+      ctx.fillText(
+        `• Match 3+ elements in one of the cardinal directions to make them pop`,
+        panelX + padding,
+        currentY
+      );
+      currentY += lineHeight;
+      ctx.fillText(`• Matching elements fuels the attack of units of the matched element`, panelX + padding, currentY);
       currentY += lineHeight;
       ctx.fillText(
-        `• ${leaderElementName} will attack when you match ${leaderElement} elements`,
+        `  > Your ${leaderElement} based unit needs ${leaderElement} elements to attack`,
         panelX + padding,
         currentY
       );
       currentY += lineHeight;
       ctx.fillText("• Try to complete the match shown in the grid!", panelX + padding, currentY);
-      currentY += lineHeight * 1.2;
+      currentY += lineHeight;
 
       // Highlight the specific tiles needed for the match
       // Grid has 2 leader elements at [2][0] and [2][1], need to move [2][3] to [2][2]
@@ -3132,11 +3156,62 @@ export class BattleScene extends Scene {
       currentY += lineHeight;
       ctx.fillText("• Try creating a combo by making at least two matches in one turn!", panelX + padding, currentY);
     } else if (this.tutorialStep === 4) {
-      // Turn 4: Explain tutorial complete
+      // Turn 4: Explain healing
+      ctx.fillText("Healing", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#9aa3b2";
+      ctx.fillText("• Match Healing elements to restore HP to your units", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText(
+        "• Healing works the same as damage, restoring HP to your unit in front",
+        panelX + padding,
+        currentY
+      );
+      currentY += lineHeight;
+      ctx.fillText("• Likewise, matching 'T' or 'L' shapes (AoE) heals all your units", panelX + padding, currentY);
+      currentY += lineHeight;
+      ctx.fillText("• Try to complete the Healing match shown in the grid!", panelX + padding, currentY);
+      currentY += lineHeight * 1.2;
+
+      // Highlight the specific tiles needed for the healing match
+      // Grid has 2 healing elements at (4, 3) and (0, 4)
+      const requiredShapeCells = [
+        { row: 1, col: 1 },
+        { row: 2, col: 1 },
+        { row: 3, col: 1 },
+        { row: 4, col: 1 },
+      ];
+      const missingInShapeCells = [
+        { row: 4, col: 3 },
+        { row: 0, col: 4 },
+      ];
+      for (const cell of requiredShapeCells) {
+        const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
+        const cellY = gridArea.y + cell.row * (cellSize + cellGap);
+        ctx.strokeStyle = "#34d399"; // Teal/green for healing
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
+        ctx.fillStyle = "rgba(52, 211, 153, 0.2)";
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+      }
+      for (const cell of missingInShapeCells) {
+        const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
+        const cellY = gridArea.y + cell.row * (cellSize + cellGap);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
+        ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+      }
+    } else if (this.tutorialStep === 5) {
+      // Turn 5: Explain tutorial complete
       ctx.fillText("Good job!", panelX + padding, currentY);
       currentY += lineHeight * 1.2;
       ctx.font = "12px system-ui";
       ctx.fillStyle = "#9aa3b2";
+      ctx.fillText("• You've learned all the basic mechanics!", panelX + padding, currentY);
+      currentY += lineHeight;
       ctx.fillText("• Now finish off the remaining enemies to complete the stage", panelX + padding, currentY);
       currentY += lineHeight;
       ctx.fillText("• Good luck!", panelX + padding, currentY);
