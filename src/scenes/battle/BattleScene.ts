@@ -3061,13 +3061,7 @@ export class BattleScene extends Scene {
       currentY += lineHeight * 1.2;
       ctx.font = "12px system-ui";
       ctx.fillStyle = "#9aa3b2";
-      ctx.fillText(
-        `• Match 3+ elements in one of the cardinal directions to make them pop`,
-        panelX + padding,
-        currentY
-      );
-      currentY += lineHeight;
-      ctx.fillText(`• Matching elements fuels the attack of units of the matched element`, panelX + padding, currentY);
+      ctx.fillText(`• Matching elements fuels the attack of units`, panelX + padding, currentY);
       currentY += lineHeight;
       ctx.fillText(
         `  > Your ${leaderElement} based unit needs ${leaderElement} elements to attack`,
