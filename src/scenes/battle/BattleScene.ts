@@ -74,7 +74,7 @@ export class BattleScene extends Scene {
   private enemies: BattleUnit[] = [];
   private playerUnits: BattleUnit[] = []; // Player loadout units (leader + members)
   private timer: number = 1.0; // 0.0 to 1.0
-  private readonly dragTimerDuration = 105.0; // seconds
+  private dragTimerDuration = 5.0; // seconds (30.0 for tutorial, 5.0 otherwise)
   private dragTimerRemaining: number = 0.0; // seconds remaining
   private isPlayerTurn: boolean = true;
   private onBackToWorld?: () => void;
@@ -343,9 +343,11 @@ export class BattleScene extends Scene {
       if (this.isTutorial) {
         this.tutorialStep = 0;
         this.showTutorialOverlayThisTurn = true; // Show tutorial overlay on first player turn
+        this.dragTimerDuration = 30.0; // 30 seconds for tutorial
       } else {
         this.tutorialStep = -1;
         this.showTutorialOverlayThisTurn = false;
+        this.dragTimerDuration = 5.0; // 5 seconds for normal battles
       }
 
       // Initialize and populate the match3 grid
