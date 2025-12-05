@@ -28,7 +28,8 @@ export function renderShopPanel(
   items: Item[],
   gold: number,
   plovmand: number,
-  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void,
+  inventory?: Record<string, number> // Player's inventory to filter out scrolls
 ): ShopPanelRegions {
   const iconSize = 16;
   const iconGap = 6;
@@ -199,6 +200,13 @@ export function renderShopPanel(
 
   // Render consumable items
   for (const shopItem of shop.items.consumables) {
+    // Skip mutation scrolls if player already has them in inventory
+    const isMutationScroll =
+      shopItem.id === "item_02_mutation_scroll_basic" || shopItem.id === "item_03_mutation_scroll_advanced";
+    if (isMutationScroll && inventory && (inventory[shopItem.id] || 0) > 0) {
+      continue; // Skip this scroll if already in inventory
+    }
+
     // Check if player can afford this item
     const canAfford = shopItem.unit === "gold" ? gold >= shopItem.cost : plovmand >= shopItem.cost;
     const hasStock = shopItem.stock > 0;

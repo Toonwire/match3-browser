@@ -555,7 +555,8 @@ export class BaseScene extends Scene {
         this.items,
         this.state.currencies.gold,
         this.state.currencies.plovmand,
-        (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
+        (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih),
+        this.state.inventory.items // Pass inventory to filter out scrolls
       );
     } else if (kind === "armory") {
       // Ensure mutate slots array has correct length based on advanced scroll

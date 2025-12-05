@@ -1,2 +1,1 @@
 - Balance the cards and units - playtest to see what fits
-- Maybe remove the scrolls from the shop once acquired in inventory
