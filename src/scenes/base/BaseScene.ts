@@ -121,6 +121,14 @@ export class BaseScene extends Scene {
     } catch {}
   }
 
+  /**
+   * Reloads the game state from storage.
+   * Call this when returning to base scene to ensure state is up to date after battles.
+   */
+  reloadState(): void {
+    this.state = GameState.load();
+  }
+
   update(dt: number): void {
     // Update mutate button animation
     if (this.mutateButtonAnimation.type !== null) {

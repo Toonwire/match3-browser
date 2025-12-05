@@ -38,6 +38,8 @@ const navigateToBattle = (worldId: string, stageId: string) => {
       const worldScene = new WorldScene(
         worldId,
         () => {
+          // Reload state to ensure coins and other loot are up to date
+          baseScene.reloadState();
           game.setScene(baseScene);
         },
         navigateToBattle
@@ -47,6 +49,8 @@ const navigateToBattle = (worldId: string, stageId: string) => {
     },
     () => {
       // Return to base scene (on defeat)
+      // Reload state to ensure coins and other loot are up to date
+      baseScene.reloadState();
       game.setScene(baseScene);
     }
   );

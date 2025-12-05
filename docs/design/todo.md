@@ -1,5 +1,4 @@
 - Balance the cards and units - playtest to see what fits
-- Reload game state after loot has been awarded (coins are not updating when going from battle scene back to base).
 - Add unique one-time reward when completing a certain stage for the first time (not in game state progression yet). This is to be configurable in the worlds yaml ideally. E.g. always reward a mutagen card when first completing the final stage of the green world.
 - Make icons bigger in the shop. May need to increase row height to fit.
 - Maybe remove the scrolls from the shop once acquired in inventory
