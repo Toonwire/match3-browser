@@ -36,7 +36,7 @@ export function renderShopPanel(
   const npcIconSize = 64;
   const headerY = y + 96;
   const itemStartY = headerY + 24;
-  const elementIconSize = 16;
+  const elementIconSize = 24;
 
   // Set font for text measurement
   ctx.font = `${textSize}px system-ui`;
@@ -76,9 +76,9 @@ export function renderShopPanel(
   const costColX = elementColX + 80;
   const stockColX = costColX + 80;
   const buyColX = x + width - 60; // Rightmost column for buy button
-  const rowHeight = 32;
+  const rowHeight = 42; // Increased to fit larger icons
   const buyButtonSize = 18;
-  const itemIconSize = 24; // Size for card/item icons before name
+  const itemIconSize = 36; // Size for card/item icons before name (increased from 24)
   const itemIconGap = 8; // Gap between icon and name
 
   // drawText(ctx, "NAME", nameColX, headerY);
