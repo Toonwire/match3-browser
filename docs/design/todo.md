@@ -1,4 +1,2 @@
 - Balance the cards and units - playtest to see what fits
 - Maybe remove the scrolls from the shop once acquired in inventory
-- Restock shop items after defeat
-- Fix an issue where damage or healing can become a non-integer. All changes to HP during battle must be integer.

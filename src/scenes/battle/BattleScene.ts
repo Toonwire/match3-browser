@@ -86,7 +86,7 @@ export class BattleScene extends Scene {
   private readonly panelDelay = 1.5; // seconds delay before showing panels
   private panelDelayTimer: number = 0.0;
   private victoryLoot: Array<{
-    type: "gold" | "card" | "item";
+    type: "gold" | "plovmand" | "card" | "item";
     id: string;
     name: string;
     amount: number;
@@ -2232,7 +2232,8 @@ export class BattleScene extends Scene {
             const totalMultiplier = leaderMultiplier * elementalMult;
             const finalDamage = Math.floor(damage.baseDamage * totalMultiplier);
             const hpBefore = enemy.currentHp;
-            enemy.currentHp = Math.max(0, enemy.currentHp - finalDamage);
+            // Ensure HP is always an integer after damage
+            enemy.currentHp = Math.max(0, Math.floor(enemy.currentHp - finalDamage));
 
             // Log damage event
             this.addCombatLogEntry({
@@ -2281,7 +2282,8 @@ export class BattleScene extends Scene {
           const totalMultiplier = leaderMultiplier * elementalMult;
           const finalDamage = Math.floor(damage.baseDamage * totalMultiplier);
           const hpBefore = leftmostAlive.currentHp;
-          leftmostAlive.currentHp = Math.max(0, leftmostAlive.currentHp - finalDamage);
+          // Ensure HP is always an integer after damage
+          leftmostAlive.currentHp = Math.max(0, Math.floor(leftmostAlive.currentHp - finalDamage));
 
           // Log damage event
           this.addCombatLogEntry({
@@ -2327,7 +2329,9 @@ export class BattleScene extends Scene {
         for (const unit of this.playerUnits) {
           if (unit.currentHp > 0) {
             const hpBefore = unit.currentHp;
-            unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healing.amount);
+            // Ensure healing amount is integer before applying
+            const integerHealing = Math.floor(healing.amount);
+            unit.currentHp = Math.min(unit.maxHp, Math.floor(unit.currentHp + integerHealing));
             const actualHealing = unit.currentHp - hpBefore;
 
             if (actualHealing >= 0) {
@@ -2378,7 +2382,12 @@ export class BattleScene extends Scene {
 
         if (rightmostAlive) {
           const hpBefore = rightmostAlive.currentHp;
-          rightmostAlive.currentHp = Math.min(rightmostAlive.maxHp, rightmostAlive.currentHp + healing.amount);
+          // Ensure healing amount is integer before applying
+          const integerHealing = Math.floor(healing.amount);
+          rightmostAlive.currentHp = Math.min(
+            rightmostAlive.maxHp,
+            Math.floor(rightmostAlive.currentHp + integerHealing)
+          );
           const actualHealing = rightmostAlive.currentHp - hpBefore;
 
           if (actualHealing >= 0) {
@@ -2442,7 +2451,8 @@ export class BattleScene extends Scene {
       if (typeof effect === "object" && effect !== null) {
         const effectObj = effect as { type?: string; amount?: number; targets?: string[] };
         if (effectObj.type === "heal" && effectObj.amount) {
-          const healAmount = effectObj.amount;
+          // Ensure heal amount is integer
+          const healAmount = Math.floor(effectObj.amount);
           const targets = effectObj.targets || [];
 
           // Apply healing based on targets
@@ -2451,7 +2461,7 @@ export class BattleScene extends Scene {
             for (const unit of this.playerUnits) {
               if (unit.currentHp > 0) {
                 const hpBefore = unit.currentHp;
-                unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healAmount);
+                unit.currentHp = Math.min(unit.maxHp, Math.floor(unit.currentHp + healAmount));
                 const actualHealing = unit.currentHp - hpBefore;
 
                 if (actualHealing > 0) {
@@ -2692,7 +2702,8 @@ export class BattleScene extends Scene {
 
         // Apply damage
         const hpBefore = rightmostAlivePlayer.currentHp;
-        rightmostAlivePlayer.currentHp = Math.max(0, rightmostAlivePlayer.currentHp - finalDamage);
+        // Ensure HP is always an integer after damage
+        rightmostAlivePlayer.currentHp = Math.max(0, Math.floor(rightmostAlivePlayer.currentHp - finalDamage));
 
         // Log damage event
         this.addCombatLogEntry({

@@ -174,7 +174,8 @@ export function applyDamageToEnemies<T extends { unit: Unit; currentHp: number }
 
           const elementalMult = elementalMultiplier(damage.element, enemy.unit.elements[0]);
           const finalDamage = Math.floor(damage.baseDamage * leaderMultiplier * elementalMult);
-          enemy.currentHp = Math.max(0, enemy.currentHp - finalDamage);
+          // Ensure HP is always an integer after damage
+          enemy.currentHp = Math.max(0, Math.floor(enemy.currentHp - finalDamage));
         }
       }
     } else {
@@ -194,7 +195,8 @@ export function applyDamageToEnemies<T extends { unit: Unit; currentHp: number }
 
         const elementalMult = elementalMultiplier(damage.element, leftmostAlive.unit.elements[0]);
         const finalDamage = Math.floor(damage.baseDamage * leaderMultiplier * elementalMult);
-        leftmostAlive.currentHp = Math.max(0, leftmostAlive.currentHp - finalDamage);
+        // Ensure HP is always an integer after damage
+        leftmostAlive.currentHp = Math.max(0, Math.floor(leftmostAlive.currentHp - finalDamage));
       }
     }
   }
@@ -230,10 +232,12 @@ export function computeHealingFromMatches(matches: Match[], comboMultiplier: num
     const isAoE = m.shape === "L" || m.shape === "T";
 
     const healingAmount = (isAoE ? (numMatchedTiles * 2) / 3 : numMatchedTiles) * comboMultiplier;
+    // Ensure healing amount is always an integer
+    const integerHealingAmount = Math.floor(healingAmount);
 
-    if (healingAmount > 0) {
+    if (integerHealingAmount > 0) {
       healingInstances.push({
-        amount: healingAmount,
+        amount: integerHealingAmount,
         isAoE,
       });
     }
@@ -262,7 +266,9 @@ export function applyHealingToPlayerUnits<
       for (const unit of updatedUnits) {
         if (unit.currentHp > 0) {
           const hpBefore = unit.currentHp;
-          unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healing.amount);
+          // Ensure healing amount is integer before applying
+          const integerHealing = Math.floor(healing.amount);
+          unit.currentHp = Math.min(unit.maxHp, Math.floor(unit.currentHp + integerHealing));
         }
       }
     } else {
@@ -275,7 +281,12 @@ export function applyHealingToPlayerUnits<
 
       if (rightmostAlive) {
         const hpBefore = rightmostAlive.currentHp;
-        rightmostAlive.currentHp = Math.min(rightmostAlive.maxHp, rightmostAlive.currentHp + healing.amount);
+        // Ensure healing amount is integer before applying
+        const integerHealing = Math.floor(healing.amount);
+        rightmostAlive.currentHp = Math.min(
+          rightmostAlive.maxHp,
+          Math.floor(rightmostAlive.currentHp + integerHealing)
+        );
       }
     }
   }

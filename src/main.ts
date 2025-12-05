@@ -51,6 +51,8 @@ const navigateToBattle = (worldId: string, stageId: string) => {
       // Return to base scene (on defeat)
       // Reload state to ensure coins and other loot are up to date
       baseScene.reloadState();
+      // Restock shop items after defeat
+      baseScene.restockShop();
       game.setScene(baseScene);
     }
   );

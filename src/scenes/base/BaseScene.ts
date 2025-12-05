@@ -17,6 +17,7 @@ export class BaseScene extends Scene {
   private items: Item[] = [];
   private worlds: WorldDef[] = [];
   private shop?: Shop;
+  private originalShopStock: Map<string, number> = new Map(); // Maps itemId -> original stock value
   private npcs: NPC[] = [];
   private mutations: Mutation[] = [];
   private iconCache = new Map<string, HTMLImageElement>();
@@ -109,6 +110,10 @@ export class BaseScene extends Scene {
       this.worlds = await loadYaml<WorldDef[]>("/config/worlds.yaml");
       const shops = await loadYaml<Shop[]>("/config/shops.yaml");
       this.shop = shops.find((shop) => shop.id === "shop_01_base");
+      // Store original stock values for restocking after defeat
+      if (this.shop) {
+        this.storeOriginalShopStock(this.shop);
+      }
       this.npcs = await loadYaml<NPC[]>("/config/npcs.yaml");
       this.mutations = await loadYaml<Mutation[]>("/config/mutations.yaml");
       const bg = new Image();
@@ -127,6 +132,46 @@ export class BaseScene extends Scene {
    */
   reloadState(): void {
     this.state = GameState.load();
+  }
+
+  /**
+   * Stores the original stock values from the shop configuration.
+   * Used to restock items after defeat.
+   */
+  private storeOriginalShopStock(shop: Shop): void {
+    this.originalShopStock.clear();
+    // Store stock for card items
+    for (const item of shop.items.cards) {
+      this.originalShopStock.set(item.id, item.stock);
+    }
+    // Store stock for consumable items
+    for (const item of shop.items.consumables) {
+      this.originalShopStock.set(item.id, item.stock);
+    }
+  }
+
+  /**
+   * Restocks all shop items to their original values.
+   * Called after defeat to restore shop inventory.
+   */
+  restockShop(): void {
+    if (!this.shop) return;
+
+    // Restock card items
+    for (const item of this.shop.items.cards) {
+      const originalStock = this.originalShopStock.get(item.id);
+      if (originalStock !== undefined) {
+        item.stock = originalStock;
+      }
+    }
+
+    // Restock consumable items
+    for (const item of this.shop.items.consumables) {
+      const originalStock = this.originalShopStock.get(item.id);
+      if (originalStock !== undefined) {
+        item.stock = originalStock;
+      }
+    }
   }
 
   update(dt: number): void {
