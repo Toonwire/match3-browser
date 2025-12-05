@@ -7,6 +7,7 @@ export interface PlayerCurrencies {
 
 export interface Progression {
   worldStages: Record<string, number>; // worldId -> highest completed stage index (0-based, -1 means world discovered but no stages completed)
+  firstTimeCompletions?: string[]; // Array of stage IDs that have been completed for the first time
 }
 
 export interface Inventory {
@@ -29,6 +30,10 @@ export class GameState {
   constructor(initial?: Partial<PersistedState>) {
     if (initial) {
       this.state = { ...initial } as PersistedState;
+      // Ensure firstTimeCompletions exists
+      if (!this.state.progression.firstTimeCompletions) {
+        this.state.progression.firstTimeCompletions = [];
+      }
     } else {
       this.state = {
         currencies: { gold: 10, plovmand: 0 },
@@ -36,7 +41,7 @@ export class GameState {
           cardCollection: {},
           items: {},
         },
-        progression: { worldStages: {} },
+        progression: { worldStages: {}, firstTimeCompletions: [] },
         loadout: { leader: "", members: ["", "", ""] },
       } as PersistedState;
     }
@@ -221,6 +226,26 @@ export class GameState {
       // The value indicates the highest completed stage
       // (-1 = discovered but none completed, 0+ = highest completed stage index).
       this.state.progression.worldStages[worldId] = -1;
+      this.save();
+    }
+  }
+
+  /**
+   * Check if a stage has been completed for the first time.
+   */
+  isFirstTimeCompletion(stageId: string): boolean {
+    const completions = this.state.progression.firstTimeCompletions || [];
+    return !completions.includes(stageId);
+  }
+
+  /**
+   * Mark a stage as completed for the first time.
+   */
+  markFirstTimeCompletion(stageId: string): void {
+    const completions = this.state.progression.firstTimeCompletions || [];
+    if (!completions.includes(stageId)) {
+      completions.push(stageId);
+      this.state.progression.firstTimeCompletions = completions;
       this.save();
     }
   }

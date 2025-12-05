@@ -2796,7 +2796,7 @@ export class BattleScene extends Scene {
 
     // Roll loot for each entry
     const rolledLoot: Array<{
-      type: "gold" | "card" | "item";
+      type: "gold" | "plovmand" | "card" | "item";
       id: string;
       name: string;
       amount: number;
@@ -2859,7 +2859,76 @@ export class BattleScene extends Scene {
     if (this.world && this.stage) {
       const stageIndex = this.world.stages.findIndex((s) => s.id === this.stage!.id);
       if (stageIndex >= 0) {
+        const isFirstTime = this.state.isFirstTimeCompletion(this.stage.id);
         this.state.completeStage(this.worldId, stageIndex);
+
+        // Apply first-time reward if this is the first completion and reward is configured
+        if (isFirstTime) {
+          // Mark stage as completed for the first time (do this before applying reward)
+          this.state.markFirstTimeCompletion(this.stage.id);
+
+          if (this.stage.firstTimeReward) {
+            const reward = this.stage.firstTimeReward;
+            // Determine amount
+            let amount = 1;
+            if (reward.amount) {
+              const [min, max] = reward.amount;
+              amount = Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            // Parse item string
+            if (reward.item === "coin") {
+              rolledLoot.push({
+                type: "gold",
+                id: "coin",
+                name: "Gold",
+                amount,
+                imagePath: "/assets/currencies/coin.png",
+              });
+              // Apply gold to state
+              this.state.currencies.gold += amount;
+            } else if (reward.item === "plovmand") {
+              rolledLoot.push({
+                type: "plovmand",
+                id: "plovmand",
+                name: "Plovmand",
+                amount,
+                imagePath: "/assets/currencies/plovmand.png",
+              });
+              // Apply plovmand to state
+              this.state.currencies.plovmand += amount;
+            } else if (reward.item.startsWith("card:")) {
+              const cardId = reward.item.substring(5);
+              const card = this.cards.find((c) => c.id === cardId);
+              if (card) {
+                rolledLoot.push({
+                  type: "card",
+                  id: cardId,
+                  name: card.name,
+                  amount,
+                  imagePath: card.imagePath,
+                });
+                // Apply card to collection
+                this.state.inventory.cardCollection[cardId] =
+                  (this.state.inventory.cardCollection[cardId] || 0) + amount;
+              }
+            } else if (reward.item.startsWith("item:")) {
+              const itemId = reward.item.substring(5);
+              const item = this.items.find((i) => i.id === itemId);
+              if (item) {
+                rolledLoot.push({
+                  type: "item",
+                  id: itemId,
+                  name: item.name,
+                  amount,
+                  imagePath: item.imagePath,
+                });
+                // Apply item to inventory
+                this.state.inventory.items[itemId] = (this.state.inventory.items[itemId] || 0) + amount;
+              }
+            }
+          }
+        }
       }
     }
 

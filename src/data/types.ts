@@ -77,6 +77,7 @@ export interface StageDef {
   units: StageUnit[];
   loot?: LootConfig;
   enableSwapHighlight?: boolean; // Enable/disable swap highlight animation on adjacent tiles
+  firstTimeReward?: LootEntry; // One-time reward when completing this stage for the first time
 }
 
 export interface WorldDef {

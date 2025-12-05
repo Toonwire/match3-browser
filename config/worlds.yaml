@@ -127,6 +127,10 @@
             chance: 0.1
           - item: plovmand
             chance: 0.1
+      firstTimeReward:
+        item: card:card_10_mutagen
+        chance: 1.0
+        amount: [1, 1]
 
 - id: world_02_red
   name: Red

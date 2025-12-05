@@ -1,5 +1,4 @@
 - Balance the cards and units - playtest to see what fits
-- Add unique one-time reward when completing a certain stage for the first time (not in game state progression yet). This is to be configurable in the worlds yaml ideally. E.g. always reward a mutagen card when first completing the final stage of the green world.
 - Maybe remove the scrolls from the shop once acquired in inventory
 - Restock shop items after defeat
 - Fix an issue where damage or healing can become a non-integer. All changes to HP during battle must be integer.
