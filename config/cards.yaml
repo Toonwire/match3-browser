@@ -4,7 +4,7 @@
   rank: 1
   attack: 0
   hp: 8
-  elements: [Grass]
+  elements: [Dark]
   imagePath: /assets/cards/card_00_boulder.png
   leaderPassive: null
 

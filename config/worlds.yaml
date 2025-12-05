@@ -50,16 +50,22 @@
           position: 0
         - unitId: card_07_wisp
           position: 1
-        - unitId: card_07_wisp
+        - unitId: card_04_slime
           position: 2
-      loot: loot_table_common_coins
+      loot:
+        tableId: loot_table_common_coins
+        entries:
+          - item: card:card_07_wisp
+            chance: 0.2
+          - item: card:card_04_slime
+            chance: 0.1
 
     - id: world_01_stage_03
       name: Forest Floor
       description: The heart of the forest
       imagePath: /assets/stages/forest_floor.png
       units:
-        - unitId: card_07_wisp
+        - unitId: card_04_slime
           position: 0
         - unitId: card_07_wisp
           position: 1
@@ -80,6 +86,8 @@
         tableId: loot_table_common_coins
         entries:
           - item: card:card_07_wisp
+            chance: 0.2
+          - item: card:card_04_slime
             chance: 0.1
           - item: item:item_01_healing_potion
             chance: 0.05
@@ -89,7 +97,7 @@
       description: Ancient roots guard the core
       imagePath: /assets/stages/root_system.png
       units:
-        - unitId: card_07_wisp
+        - unitId: card_05_slimer
           position: 0
         - unitId: card_07_wisp
           position: 1
@@ -114,9 +122,11 @@
           - item: card:card_07_wisp
             chance: 0.3
           - item: card:card_08_wispier
-            chance: 0.05
-          - item: card:card_09_wispiest
-            chance: 0.01
+            chance: 0.1
+          - item: card:card_08_wispier
+            chance: 0.1
+          - item: plovmand
+            chance: 0.1
 
 - id: world_02_red
   name: Red
@@ -135,44 +145,50 @@
           position: 0
         - unitId: card_01_whelp
           position: 1
+        - unitId: card_01_whelp
+          position: 2
+        - unitId: card_02_whelpier
+          position: 3
       loot: loot_table_common_coins
     - id: world_02_stage_02
       name: Magma Flow Canyons
       description: Rivers of molten rock cutting through the landscape
       imagePath: /assets/stages/magma_flow_canyons.png
       units:
-        - unitId: card_01_whelp
+        - unitId: card_01_whelpier
           position: 0
-        - unitId: card_01_whelp
+        - unitId: card_02_whelpier
           position: 1
-        - unitId: card_01_whelp
+        - unitId: card_03_whelpiest
           position: 2
+        - unitId: card_15_firebro
+          position: 3
       loot: loot_table_common_coins
     - id: world_02_stage_03
       name: Inferno Basin
       description: A deep underground basin filled with molten rock
       imagePath: /assets/stages/inferno_basin.png
       units:
-        - unitId: card_01_whelp
+        - unitId: card_03_whelpiest
           position: 0
-        - unitId: card_01_whelp
+        - unitId: card_03_whelpiest
           position: 1
-        - unitId: card_01_whelp
+        - unitId: card_15_firebro
           position: 2
-        - unitId: card_01_whelp
+        - unitId: card_15_firebro
           position: 3
       loot:
-        tableId: loot_table_common_coins
+        tableId: loot_table_uncommon_coins
         entries:
-          - item: card:card_01_whelp
-            chance: 0.1
+          - item: card:card_15_firebro
+            chance: 0.2
     - id: world_02_stage_04
       name: Sacred Furnace
       description: A sacred furnace burning ever bright
       imagePath: /assets/stages/sacred_furnace.png
       units:
         - unitId: card_03_whelpiest
-          position: 1
+          position: 0
           tags: [Enemy, Boss]
           # Example: Override tags or effects at stage level
           # tags: [Enemy, Boss, Elite]  # Add custom tags
@@ -184,13 +200,22 @@
           #     targets: [Player]
           #     aoe: true
           #     cooldown: 1
+        - unitId: card_15_firebro
+          position: 1
+        - unitId: card_16_coregolem
+          position: 2
+          tags: [Enemy, Boss]
+        - unitId: card_16_coregolem
+          position: 3
+          tags: [Enemy, Boss]
       loot:
+        tableId: loot_table_uncommon_plovmand
         entries:
           - item: coin
             chance: 1.0
-            amount: [30, 40]
-          - item: card:card_01_whelp
-            chance: 0.3
+            amount: [10, 15]
+          - item: card:card_15_firebro
+            chance: 0.1
 
 - id: world_03_blue
   name: Blue
@@ -207,61 +232,68 @@
       units:
         - unitId: card_04_slime
           position: 0
-        - unitId: card_04_slime
+        - unitId: card_05_slimer
           position: 1
-      loot: loot_table_common_coins
+        - unitId: card_05_slimer
+          position: 2
+        - unitId: card_06_slimest
+          position: 3
+          tags: [Enemy, Boss]
+      loot: loot_table_uncommon_coins
 
     - id: world_03_stage_02
       name: Ice fields
       description: Massive ice formations pertruding from the ground
       imagePath: /assets/stages/ice_fields.png
       units:
-        - unitId: card_04_slime
+        - unitId: card_06_slimest
           position: 0
-        - unitId: card_04_slime
+        - unitId: card_06_slimest
           position: 1
-        - unitId: card_04_slime
+        - unitId: card_05_slimer
           position: 2
-      loot: loot_table_common_coins
+        - unitId: card_11_icy
+          position: 3
+          tags: [Enemy, Boss]
+      loot: loot_table_uncommon_coins
 
     - id: world_03_stage_03
       name: Frostbite Chasm
       description: An abyss-shrouded rift into the icy depths
       imagePath: /assets/stages/frostbite_chasm.png
       units:
-        - unitId: card_04_slime
+        - unitId: card_06_slimest
           position: 0
-        - unitId: card_04_slime
+        - unitId: card_06_slimest
           position: 1
-        - unitId: card_04_slime
+        - unitId: card_11_icy
           position: 2
-        - unitId: card_04_slime
+        - unitId: card_11_icy
           position: 3
       loot:
-        tableId: loot_table_common_coins
+        tableId: loot_table_uncommon_coins
         entries:
-          - item: card:card_04_slime
-            chance: 0.1
-          - item: card:card_05_slimer
-            chance: 0.05
+          - item: card:card_11_icy
+            chance: 0.2
           - item: item:item_01_healing_potion
-            chance: 0.05
+            chance: 0.1
 
     - id: world_03_stage_04
       name: Icy Descent
       description: Frozen steps give entrance to ominous glacial cavities
       imagePath: /assets/stages/icy_descent.png
       units:
-        - unitId: card_04_slime
+        - unitId: card_11_icy
           position: 0
-        - unitId: card_04_slime
+        - unitId: card_11_icy
           position: 1
-        - unitId: card_04_slime
+        - unitId: card_11_icy
           position: 2
-        - unitId: card_04_slime
+        - unitId: card_12_glacier
           position: 3
+          tags: [Enemy, Elite, Boss]
       loot:
-        tableId: loot_table_common_coins
+        tableId: loot_table_uncommon_coins
         entries:
           - item: card:card_04_slime
             chance: 0.1
@@ -275,21 +307,30 @@
       description: Gem like structures fracture light into a haunting, frozen glow.
       imagePath: /assets/stages/crystal_hollows.png
       units:
-        - unitId: card_04_slime
+        - unitId: card_12_glacier
+          tags: [Enemy, Elite]
           position: 0
-        - unitId: card_04_slime
+        - unitId: card_12_glacier
+          tags: [Enemy, Elite]
           position: 1
-        - unitId: card_04_slime
+        - unitId: card_12_glacier
           position: 2
+          tags: [Enemy, Elite]
         - unitId: card_17_rimescale
           position: 3
           tags: [Enemy, Boss]
+          effect: # Override or add effects
+            - type: damage
+              description: Deal 0.75x fire dmg to all enemies and 0.75x water dmg to all enemies
+              elements: [Fire, Water]
+              multipliers: [0.75, 0.75]
+              targets: [Player]
+              aoe: true
+              cooldown: 3
       loot:
-        tableId: loot_table_common_coins
+        tableId: loot_table_uncommon_coins
         entries:
-          - item: card:card_04_slime
+          - item: card:card_12_glacier
             chance: 0.1
-          - item: card:card_05_slimer
-            chance: 0.05
-          - item: item:item_01_healing_potion
-            chance: 0.05
+          - item: card:card_17_rimescale
+            chance: 0.03

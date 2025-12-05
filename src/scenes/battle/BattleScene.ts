@@ -3192,7 +3192,7 @@ export class BattleScene extends Scene {
       for (const cell of requiredShapeCells) {
         const cellX = match3GridAreaX + cell.col * (cellSize + cellGap);
         const cellY = gridArea.y + cell.row * (cellSize + cellGap);
-        ctx.strokeStyle = "#34d399"; // Teal/green for healing
+        ctx.strokeStyle = "#3b82f6";
         ctx.lineWidth = 3;
         ctx.strokeRect(cellX - 2, cellY - 2, cellSize + 4, cellSize + 4);
         ctx.fillStyle = "rgba(52, 211, 153, 0.2)";
