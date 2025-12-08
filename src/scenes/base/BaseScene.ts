@@ -9,6 +9,7 @@ import { renderGuidePanel, type GuidePanelRegions } from "../../ui/GuidePanel";
 import { renderArmoryPanel } from "./ArmoryPanel";
 import { renderShopPanel, type ShopPanelRegions } from "./ShopPanel";
 import { renderWorldsPanel, type WorldsPanelRegions } from "./WorldsPanel";
+import { renderDialogPanel, type DialogPanelRegions } from "./DialogPanel";
 
 export type OnNavigateToWorld = (worldId: string) => void;
 
@@ -22,6 +23,8 @@ export class BaseScene extends Scene {
   private mutations: Mutation[] = [];
   private iconCache = new Map<string, HTMLImageElement>();
   private activePopup: "shop" | "armory" | "worlds" | null = null;
+  private showDialog: boolean = false;
+  private dialogPanelRegions: DialogPanelRegions | null = null;
   private showMutateView: boolean = false;
   private showGuide: boolean = false;
   private guidePanelRegions: GuidePanelRegions | null = null;
@@ -121,6 +124,11 @@ export class BaseScene extends Scene {
       await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 
+      // Show intro dialog on first load
+      if (!this.state.progression.introDialogShown) {
+        this.showDialog = true;
+      }
+
       // Initialize test collection with cards from cards.yaml
       // this.state.initializeTestCollection(this.cards);
     } catch {}
@@ -205,6 +213,39 @@ export class BaseScene extends Scene {
 
     // Active popup overlay
     if (this.activePopup) this.renderPopup(ctx, this.activePopup);
+
+    // Draw dialog panel if shown (on top of popups but below guide)
+    if (this.showDialog) {
+      // Dim background
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(0, 0, CanvasSize.width, CanvasSize.height);
+
+      const npc = this.npcs.find((npc) => npc.id === "npc_01_edgars"); // Use Edgars for intro dialog
+      const dialogText = [
+        "Welcome aboard, brave one! I'm Edgars, and I have been tasked to provide for your journey.",
+        "Your task is to defeat the enemy forces that have risen to power and restore peace to the realm.",
+        "",
+        "You'll need to assemble a team and venture into different worlds to battle enemies.",
+        "Visit my humble shop to get you started, I have some real cuties at hand - for a price of course.",
+        "In the armory to the right, you can manage your team and prepare for battle.",
+        "",
+        "Good luck, brave one! I am sure you will do better than the previous guy...",
+      ];
+      const px = 224,
+        py = 120,
+        pw = 832,
+        ph = 456; // Same dimensions as other panels
+      this.dialogPanelRegions = renderDialogPanel(
+        ctx,
+        px,
+        py,
+        pw,
+        ph,
+        npc,
+        dialogText,
+        (iconPath: string, x: number, y: number, iw: number, ih: number) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
+      );
+    }
 
     // Draw guide panel if shown (on top of everything)
     if (this.showGuide) {
@@ -309,6 +350,19 @@ export class BaseScene extends Scene {
 
     if (e.type === "scene-click") {
       const { x, y } = (e as CustomEvent).detail as { x: number; y: number };
+
+      // Dialog panel - close on outside click (check first to block other interactions)
+      if (this.showDialog && this.dialogPanelRegions) {
+        // If click is outside the panel, close the dialog
+        if (!this.pointInRect(x, y, this.dialogPanelRegions.panel)) {
+          this.showDialog = false;
+          this.dialogPanelRegions = null;
+          this.state.progression.introDialogShown = true;
+          this.state.save();
+        }
+        // Block other clicks when dialog is open
+        return;
+      }
 
       // Handle clicks inside popup
       if (this.activePopup) {

@@ -8,6 +8,7 @@ export interface PlayerCurrencies {
 export interface Progression {
   worldStages: Record<string, number>; // worldId -> highest completed stage index (0-based, -1 means world discovered but no stages completed)
   firstTimeCompletions?: string[]; // Array of stage IDs that have been completed for the first time
+  introDialogShown?: boolean; // Whether the introductory dialog has been shown
 }
 
 export interface Inventory {
@@ -41,7 +42,7 @@ export class GameState {
           cardCollection: {},
           items: {},
         },
-        progression: { worldStages: {}, firstTimeCompletions: [] },
+        progression: { worldStages: {}, firstTimeCompletions: [], introDialogShown: false },
         loadout: { leader: "", members: ["", "", ""] },
       } as PersistedState;
     }

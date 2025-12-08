@@ -1,1 +1,2 @@
-- Balance the cards and units - playtest to see what fits
+- Add a settings menu (top right in topbar together with save, load etc.). To control audio for starters; Music on/off switch, SFX on/off switch, Music volume slider, SFX volume slider, etc.
+  - Should integrate with audio manager to act on the settings.
