@@ -1,4 +1,5 @@
-import { loadYaml } from "../../data/loadYaml";
+import { resolvePath } from "../../data/loadData";
+import { loadYaml } from "../../data/loadData";
 import type { Card, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
@@ -33,7 +34,7 @@ export class WorldScene extends Scene {
   constructor(
     private worldId: string,
     onBackToBase?: () => void,
-    onEnterBattle?: (worldId: string, stageId: string) => void
+    onEnterBattle?: (worldId: string, stageId: string) => void,
   ) {
     super();
     this.onBackToBase = onBackToBase;
@@ -55,7 +56,7 @@ export class WorldScene extends Scene {
 
       // Load background
       const bg = new Image();
-      bg.src = this.world.imagePath;
+      bg.src = resolvePath(this.world.imagePath);
       await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 
@@ -82,7 +83,7 @@ export class WorldScene extends Scene {
 
     // Top bar
     drawTopBar(ctx, CanvasSize.width, this.state, this.cards, (iconPath, x, y, w, h) =>
-      this.drawIcon(ctx, iconPath, x, y, w, h)
+      this.drawIcon(ctx, iconPath, x, y, w, h),
     );
 
     if (!this.world) {
@@ -267,7 +268,7 @@ export class WorldScene extends Scene {
     x: number,
     y: number,
     w: number,
-    h: number
+    h: number,
   ) {
     const imgAspect = img.naturalWidth / img.naturalHeight;
     const targetAspect = w / h;
@@ -288,13 +289,14 @@ export class WorldScene extends Scene {
   }
 
   private drawIcon(ctx: CanvasRenderingContext2D, path: string, x: number, y: number, w: number, h: number) {
-    const cached = this.iconCache.get(path);
+    const fullPath = resolvePath(path);
+    const cached = this.iconCache.get(fullPath);
     if (cached) {
       this.drawIconWithAspectRatio(ctx, cached, x, y, w, h);
       return;
     }
-    this.getIcon(path).then(() => {
-      const img = this.iconCache.get(path)!;
+    this.getIcon(fullPath).then(() => {
+      const img = this.iconCache.get(fullPath)!;
       this.drawIconWithAspectRatio(ctx, img, x, y, w, h);
     });
   }

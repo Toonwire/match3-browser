@@ -7,7 +7,7 @@ import {
   elementalMultiplier,
 } from "../../battle/Damage";
 import { findMatches, type Match } from "../../battle/MatchLogic";
-import { loadYaml } from "../../data/loadYaml";
+import { resolvePath, loadYaml } from "../../data/loadData";
 import { resolveLootConfig } from "../../data/loot";
 import type { Card, Element, Item, LootEntry, LootTable, StageDef, Unit, WorldDef } from "../../data/types";
 import { AudioManager } from "../../engine/AudioManager";
@@ -24,7 +24,6 @@ import {
   getTopBarButtonRegions,
 } from "../../ui/UiPrimitives";
 import { renderGuidePanel, type GuidePanelRegions } from "../../ui/GuidePanel";
-
 interface BattleUnit {
   unit: Unit;
   currentHp: number;
@@ -215,7 +214,7 @@ export class BattleScene extends Scene {
     private worldId: string,
     private stageId: string,
     onBackToWorld?: () => void,
-    onBackToBase?: () => void
+    onBackToBase?: () => void,
   ) {
     super();
     this.onBackToWorld = onBackToWorld;
@@ -241,7 +240,7 @@ export class BattleScene extends Scene {
       // Load background image from stage
       if (this.stage.imagePath) {
         const bg = new Image();
-        bg.src = this.stage.imagePath;
+        bg.src = resolvePath(this.stage.imagePath);
         await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
         this.background = bg;
       }
@@ -569,7 +568,7 @@ export class BattleScene extends Scene {
           animData.targetY,
           animData.damageAmount,
           !animData.isPlayerSource,
-          animData.targetPosition
+          animData.targetPosition,
         );
       } else {
         this.damageAnimations.set(key, {
@@ -756,7 +755,7 @@ export class BattleScene extends Scene {
     elements: Element[],
     unitX: number,
     unitY: number,
-    unitSize: number
+    unitSize: number,
   ) {
     // Draw element icons
     if (elements.length > 0) {
@@ -816,7 +815,7 @@ export class BattleScene extends Scene {
 
     // Top bar
     drawTopBar(ctx, CanvasSize.width, this.state, this.cards, (iconPath, x, y, w, h) =>
-      this.drawIcon(ctx, iconPath, x, y, w, h)
+      this.drawIcon(ctx, iconPath, x, y, w, h),
     );
 
     if (!this.stage) {
@@ -982,7 +981,7 @@ export class BattleScene extends Scene {
         hpBarX + playerUnitHpBarWidth / 2,
         hpBarY + playerUnitHpBarHeight / 2,
         12,
-        "#e5e7eb"
+        "#e5e7eb",
       );
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
@@ -1065,7 +1064,7 @@ export class BattleScene extends Scene {
         hpBarX + enemyHpBarWidth / 2,
         hpBarY + enemyHpBarHeight / 2,
         12,
-        "#e5e7eb"
+        "#e5e7eb",
       );
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
@@ -1106,7 +1105,7 @@ export class BattleScene extends Scene {
     const cellGap = 6; // Increased from 4 to 6 for better spacing with larger grid
     const cellSize = Math.min(
       (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
-      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows,
     );
 
     // Calculate total grid width and height
@@ -1311,7 +1310,7 @@ export class BattleScene extends Scene {
       const cellGap = 6;
       const cellSize = Math.min(
         (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
-        (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+        (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows,
       );
 
       // Draw only the icon at clamped position with transparency
@@ -1359,7 +1358,7 @@ export class BattleScene extends Scene {
       retreatButtonX + retreatButtonW / 2,
       retreatButtonY + retreatButtonH / 2,
       16,
-      "#ffffff"
+      "#ffffff",
     );
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
@@ -1383,7 +1382,7 @@ export class BattleScene extends Scene {
     // Draw tutorial panel if shown
     if (this.showGuide) {
       this.guidePanelRegions = renderGuidePanel(ctx, this.guideScrollOffset, (iconPath, x, y, w, h) =>
-        this.drawIcon(ctx, iconPath, x, y, w, h)
+        this.drawIcon(ctx, iconPath, x, y, w, h),
       );
     }
 
@@ -1399,8 +1398,8 @@ export class BattleScene extends Scene {
             icon.progress < 0.2
               ? icon.progress * 5 // 0 to 1.0
               : icon.progress < 0.7
-              ? 1.0 // Full opacity
-              : 1.0 - (icon.progress - 0.7) / 0.3; // 1.0 to 0.0
+                ? 1.0 // Full opacity
+                : 1.0 - (icon.progress - 0.7) / 0.3; // 1.0 to 0.0
 
           // Calculate scale: slightly grow then maintain
           const scale =
@@ -1609,11 +1608,12 @@ export class BattleScene extends Scene {
   }
 
   private async getIcon(path: string): Promise<HTMLImageElement> {
-    if (this.iconCache.has(path)) return this.iconCache.get(path)!;
+    const fullPath = resolvePath(path);
+    if (this.iconCache.has(fullPath)) return this.iconCache.get(fullPath)!;
     const img = new Image();
-    img.src = path;
+    img.src = fullPath;
     await img.decode().catch(() => new Promise((res) => (img.onload = () => res(undefined))));
-    this.iconCache.set(path, img);
+    this.iconCache.set(fullPath, img);
     return img;
   }
 
@@ -1624,7 +1624,7 @@ export class BattleScene extends Scene {
     y: number,
     w: number,
     h: number,
-    desaturate: boolean = false
+    desaturate: boolean = false,
   ) {
     ctx.save();
     if (desaturate) {
@@ -1656,15 +1656,16 @@ export class BattleScene extends Scene {
     y: number,
     w: number,
     h: number,
-    desaturate: boolean = false
+    desaturate: boolean = false,
   ) {
-    const cached = this.iconCache.get(path);
+    const fullPath = resolvePath(path);
+    const cached = this.iconCache.get(fullPath);
     if (cached) {
       this.drawIconWithAspectRatio(ctx, cached, x, y, w, h, desaturate);
       return;
     }
-    this.getIcon(path).then(() => {
-      const img = this.iconCache.get(path)!;
+    this.getIcon(fullPath).then(() => {
+      const img = this.iconCache.get(fullPath)!;
       this.drawIconWithAspectRatio(ctx, img, x, y, w, h, desaturate);
     });
   }
@@ -2045,7 +2046,7 @@ export class BattleScene extends Scene {
           members: loadout.members.map((id, index) => (id && alivePositions.has(index + 1) ? id : "")) as [
             string,
             string,
-            string
+            string,
           ],
         };
 
@@ -2058,7 +2059,7 @@ export class BattleScene extends Scene {
           this.accumulatedMatches,
           filteredLoadout,
           this.cards,
-          comboMultiplier
+          comboMultiplier,
         );
         if (damageInstances.length > 0) {
           this.applyDamageToEnemiesWithLogging(damageInstances, comboMultiplier, comboCount);
@@ -2202,7 +2203,7 @@ export class BattleScene extends Scene {
   private applyDamageToEnemiesWithLogging(
     damageInstances: ReturnType<typeof computeDamageFromMatches>,
     comboMultiplier: number,
-    comboCount: number
+    comboCount: number,
   ): void {
     // Apply damage similar to applyDamageToEnemies but with logging
     for (const damage of damageInstances) {
@@ -2320,7 +2321,7 @@ export class BattleScene extends Scene {
   private applyHealingToPlayerUnitsWithLogging(
     healingInstances: ReturnType<typeof computeHealingFromMatches>,
     comboMultiplier: number,
-    comboCount: number
+    comboCount: number,
   ): void {
     // Apply healing similar to applyHealingToPlayerUnits but with logging
     for (const healing of healingInstances) {
@@ -2386,7 +2387,7 @@ export class BattleScene extends Scene {
           const integerHealing = Math.floor(healing.amount);
           rightmostAlive.currentHp = Math.min(
             rightmostAlive.maxHp,
-            Math.floor(rightmostAlive.currentHp + integerHealing)
+            Math.floor(rightmostAlive.currentHp + integerHealing),
           );
           const actualHealing = rightmostAlive.currentHp - hpBefore;
 
@@ -2551,7 +2552,7 @@ export class BattleScene extends Scene {
     isPlayerSource: boolean,
     sourcePosition: number,
     targetPosition: number,
-    damageAmount: number
+    damageAmount: number,
   ): void {
     // Calculate source unit position
     let sourceX: number;
@@ -2636,7 +2637,7 @@ export class BattleScene extends Scene {
     y: number,
     damage: number,
     isPlayerTarget: boolean,
-    targetPosition: number
+    targetPosition: number,
   ): void {
     const id = `damage_${this.floatingDamageIdCounter++}`;
     this.floatingDamageNumbers.set(id, {
@@ -2654,7 +2655,7 @@ export class BattleScene extends Scene {
     y: number,
     healing: number,
     isPlayerTarget: boolean,
-    targetPosition: number
+    targetPosition: number,
   ): void {
     const id = `healing_${this.floatingHealingIdCounter++}`;
     this.floatingHealingNumbers.set(id, {
@@ -2732,7 +2733,7 @@ export class BattleScene extends Scene {
           false,
           enemy.position,
           rightmostAlivePlayer.position,
-          finalDamage
+          finalDamage,
         );
       }
     }
@@ -2958,7 +2959,7 @@ export class BattleScene extends Scene {
     const cellGap = 6;
     const cellSize = Math.min(
       (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
-      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows,
     );
 
     const match3GridWidth = this.gridCols * cellSize + (this.gridCols - 1) * cellGap;
@@ -2980,7 +2981,7 @@ export class BattleScene extends Scene {
       match3GridAreaX + match3GridWidth,
       gridArea.y,
       combatLogArea.x - (match3GridAreaX + match3GridWidth),
-      gridArea.h
+      gridArea.h,
     );
     // Between grid and tutorial panel (if there's a gap)
     if (gridArea.x + gridArea.w < combatLogArea.x) {
@@ -3061,7 +3062,7 @@ export class BattleScene extends Scene {
         centerX + miniCellSize / 4,
         centerY + miniCellSize / 4,
         miniCellSize / 2,
-        miniCellSize / 2
+        miniCellSize / 2,
       );
 
       // Draw arrows in 8 directions
@@ -3108,11 +3109,11 @@ export class BattleScene extends Scene {
         ctx.moveTo(endX, endY);
         ctx.lineTo(
           endX - arrowHeadSize * Math.cos(angle - Math.PI / 6),
-          endY - arrowHeadSize * Math.sin(angle - Math.PI / 6)
+          endY - arrowHeadSize * Math.sin(angle - Math.PI / 6),
         );
         ctx.lineTo(
           endX - arrowHeadSize * Math.cos(angle + Math.PI / 6),
-          endY - arrowHeadSize * Math.sin(angle + Math.PI / 6)
+          endY - arrowHeadSize * Math.sin(angle + Math.PI / 6),
         );
         ctx.closePath();
         ctx.fill();
@@ -3148,7 +3149,7 @@ export class BattleScene extends Scene {
       ctx.fillText(
         `  > Your ${leaderElement} based unit needs ${leaderElement} elements to attack`,
         panelX + padding,
-        currentY
+        currentY,
       );
       currentY += lineHeight;
       ctx.fillText("• Try to complete the match shown in the grid!", panelX + padding, currentY);
@@ -3251,7 +3252,7 @@ export class BattleScene extends Scene {
       ctx.fillText(
         "• Healing works the same as damage, restoring HP to your unit in front",
         panelX + padding,
-        currentY
+        currentY,
       );
       currentY += lineHeight;
       ctx.fillText("• Likewise, matching 'T' or 'L' shapes (AoE) heals all your units", panelX + padding, currentY);
@@ -3520,7 +3521,7 @@ export class BattleScene extends Scene {
             x,
             y,
             9,
-            "#a855f7"
+            "#a855f7",
           );
           x += ctx.measureText(`[${entry.comboCount}x Combo: ${entry.comboMultiplier.toFixed(2)}x]`).width + 6;
         }
@@ -3611,7 +3612,7 @@ export class BattleScene extends Scene {
           x,
           y,
           9,
-          "#a855f7"
+          "#a855f7",
         );
         x += ctx.measureText(`[${entry.comboCount}x Combo: ${entry.comboMultiplier.toFixed(2)}x]`).width + 4;
       }
@@ -3642,7 +3643,7 @@ export class BattleScene extends Scene {
     const cellGap = 6;
     const cellSize = Math.min(
       (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
-      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows,
     );
 
     // Calculate grid boundaries
@@ -3702,7 +3703,7 @@ export class BattleScene extends Scene {
     const cellGap = 6;
     const cellSize = Math.min(
       (gridArea.w - (this.gridCols - 1) * cellGap) / this.gridCols,
-      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows
+      (gridArea.h - (this.gridRows - 1) * cellGap) / this.gridRows,
     );
 
     const totalGridWidth = this.gridCols * cellSize + (this.gridCols - 1) * cellGap;

@@ -1,4 +1,4 @@
-import { loadYaml } from "../../data/loadYaml";
+import { resolvePath, loadYaml } from "../../data/loadData";
 import type { Card, Item, Mutation, NPC, Shop, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
@@ -120,7 +120,7 @@ export class BaseScene extends Scene {
       this.npcs = await loadYaml<NPC[]>("/config/npcs.yaml");
       this.mutations = await loadYaml<Mutation[]>("/config/mutations.yaml");
       const bg = new Image();
-      bg.src = "/assets/backgrounds/base_background_v5.png";
+      bg.src = resolvePath("/assets/backgrounds/base_background_v5.png");
       await bg.decode().catch(() => new Promise((res) => (bg.onload = () => res(undefined))));
       this.background = bg;
 
@@ -208,7 +208,7 @@ export class BaseScene extends Scene {
 
     // Top bar
     drawTopBar(ctx, CanvasSize.width, this.state, this.cards, (iconPath, x, y, w, h) =>
-      this.drawIcon(ctx, iconPath, x, y, w, h)
+      this.drawIcon(ctx, iconPath, x, y, w, h),
     );
 
     // Active popup overlay
@@ -243,14 +243,14 @@ export class BaseScene extends Scene {
         ph,
         npc,
         dialogText,
-        (iconPath: string, x: number, y: number, iw: number, ih: number) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
+        (iconPath: string, x: number, y: number, iw: number, ih: number) => this.drawIcon(ctx, iconPath, x, y, iw, ih),
       );
     }
 
     // Draw guide panel if shown (on top of everything)
     if (this.showGuide) {
       this.guidePanelRegions = renderGuidePanel(ctx, this.guideScrollOffset, (iconPath, x, y, w, h) =>
-        this.drawIcon(ctx, iconPath, x, y, w, h)
+        this.drawIcon(ctx, iconPath, x, y, w, h),
       );
     }
   }
@@ -270,7 +270,7 @@ export class BaseScene extends Scene {
     x: number,
     y: number,
     w: number,
-    h: number
+    h: number,
   ) {
     // Preserve aspect ratio
     const imgAspect = img.naturalWidth / img.naturalHeight;
@@ -294,13 +294,14 @@ export class BaseScene extends Scene {
   }
 
   private drawIcon(ctx: CanvasRenderingContext2D, path: string, x: number, y: number, w: number, h: number) {
-    const cached = this.iconCache.get(path);
+    const fullPath = resolvePath(path);
+    const cached = this.iconCache.get(fullPath);
     if (cached) {
       this.drawIconWithAspectRatio(ctx, cached, x, y, w, h);
       return;
     }
-    this.getIcon(path).then(() => {
-      const img = this.iconCache.get(path)!;
+    this.getIcon(fullPath).then(() => {
+      const img = this.iconCache.get(fullPath)!;
       this.drawIconWithAspectRatio(ctx, img, x, y, w, h);
     });
   }
@@ -380,7 +381,7 @@ export class BaseScene extends Scene {
                 itemRegion.itemType,
                 itemRegion.shopItem.cost,
                 itemRegion.shopItem.unit,
-                itemRegion.shopItem.stock
+                itemRegion.shopItem.stock,
               );
               if (success) {
                 console.log(`Bought ${itemRegion.itemId}`);
@@ -610,7 +611,7 @@ export class BaseScene extends Scene {
         this.state.currencies.gold,
         this.state.currencies.plovmand,
         (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih),
-        this.state.inventory.items // Pass inventory to filter out scrolls
+        this.state.inventory.items, // Pass inventory to filter out scrolls
       );
     } else if (kind === "armory") {
       // Ensure mutate slots array has correct length based on advanced scroll
@@ -639,7 +640,7 @@ export class BaseScene extends Scene {
         this.mutateSlots,
         this.state.inventory.items,
         this.mutateButtonAnimation,
-        (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih)
+        (iconPath, x, y, iw, ih) => this.drawIcon(ctx, iconPath, x, y, iw, ih),
       );
     } else if (kind === "worlds") {
       this.worldsRegions = renderWorldsPanel(
@@ -654,7 +655,7 @@ export class BaseScene extends Scene {
         this.selectedWorldIndex,
         (icon, x, y, iw, ih) => this.drawIcon(ctx, icon, x, y, iw, ih),
         elementIconPath,
-        (worldId) => this.state.getHighestCompletedStage(worldId)
+        (worldId) => this.state.getHighestCompletedStage(worldId),
       );
     }
   }

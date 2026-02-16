@@ -1,5 +1,5 @@
 import type { LootConfig, LootEntry, LootTable } from "./types";
-import { loadYaml } from "./loadYaml";
+import { loadYaml } from "./loadData";
 
 /**
  * Resolves a LootConfig to a LootTable with entries.

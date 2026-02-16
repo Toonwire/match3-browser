@@ -1,9 +1,11 @@
+import { resolvePath } from "../data/loadData";
+
 /**
  * AudioManager - Handles loading and playing sound effects
- * 
+ *
  * Sound files should be placed in: assets/sounds/
  * Supported formats: .mp3, .wav, .ogg
- * 
+ *
  * Usage:
  *   AudioManager.playSound("match_pop.mp3");
  *   AudioManager.playSound("combo_3.mp3", { volume: 0.8 });
@@ -38,7 +40,7 @@ export class AudioManager {
    * @param soundPath - Path to sound file relative to assets/sounds/
    */
   static async preloadSound(soundPath: string): Promise<void> {
-    const fullPath = `/assets/sounds/${soundPath}`;
+    const fullPath = resolvePath(`/assets/sounds/${soundPath}`);
     if (this.soundCache.has(fullPath)) {
       return; // Already loaded
     }
@@ -73,7 +75,7 @@ export class AudioManager {
    * @returns The Audio element (can be used to stop/pause if needed)
    */
   static playSound(soundPath: string, options: SoundOptions = {}): HTMLAudioElement | null {
-    const fullPath = `/assets/sounds/${soundPath}`;
+    const fullPath = resolvePath(`/assets/sounds/${soundPath}`);
     let audio = this.soundCache.get(fullPath);
 
     // If not cached, create new audio element
@@ -117,4 +119,3 @@ export class AudioManager {
     this.soundCache.clear();
   }
 }
-
