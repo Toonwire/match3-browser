@@ -42,7 +42,7 @@ const navigateToBattle = (worldId: string, stageId: string) => {
           baseScene.reloadState();
           game.setScene(baseScene);
         },
-        navigateToBattle
+        navigateToBattle,
       );
       game.setScene(worldScene);
       worldScene.init();
@@ -54,7 +54,7 @@ const navigateToBattle = (worldId: string, stageId: string) => {
       // Restock shop items after defeat
       baseScene.restockShop();
       game.setScene(baseScene);
-    }
+    },
   );
   game.setScene(battleScene);
   battleScene.init();
@@ -67,7 +67,7 @@ const navigateToWorld = (worldId: string) => {
       // Return to base scene
       game.setScene(baseScene);
     },
-    navigateToBattle
+    navigateToBattle,
   );
   game.setScene(worldScene);
   worldScene.init();

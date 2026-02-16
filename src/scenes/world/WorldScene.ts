@@ -1,4 +1,4 @@
-import { resolvePath } from "../../data/loadData";
+import { IMG_URL_PLACEHOLDER, resolvePath } from "../../data/loadData";
 import { loadYaml } from "../../data/loadData";
 import type { Card, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
@@ -257,7 +257,15 @@ export class WorldScene extends Scene {
     if (this.iconCache.has(path)) return this.iconCache.get(path)!;
     const img = new Image();
     img.src = path;
-    await img.decode().catch(() => new Promise((res) => (img.onload = () => res(undefined))));
+    await img.decode().catch(
+      () =>
+        new Promise<void>((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => {
+            img.src = IMG_URL_PLACEHOLDER;
+          };
+        }),
+    );
     this.iconCache.set(path, img);
     return img;
   }

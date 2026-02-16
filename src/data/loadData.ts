@@ -28,3 +28,7 @@ export async function loadYaml<T = unknown>(path: string): Promise<T> {
   yamlCache.set(resolvedPath, promise);
   return promise as Promise<T>;
 }
+
+const red10x10png =
+  "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAnklEQVR4AUSQARLEIAgDF///5uY22M45RiEkYHsyJFw8zBtPnplk0drkoIqBQg9pjCstCLd+jpT7q/YupOrU5SbGHf0OvgIH0mK7XPlsuKPrUC0fRbO3B1XsCyaOlh8RjzVYMa2mX4Hfs/cpaR96366eMdOIiLGZHd8g/FcLSehfaEeMTrvRFUwvylW8mXzuG+tbCj6pKgf1DSCnjh8AAAD//x3esDEAAAAGSURBVAMA5hFXBkQL0msAAAAASUVORK5CYII=";
+export const IMG_URL_PLACEHOLDER = "data:image/png;base64," + red10x10png;

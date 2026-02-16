@@ -7,7 +7,7 @@ import {
   elementalMultiplier,
 } from "../../battle/Damage";
 import { findMatches, type Match } from "../../battle/MatchLogic";
-import { resolvePath, loadYaml } from "../../data/loadData";
+import { resolvePath, loadYaml, IMG_URL_PLACEHOLDER } from "../../data/loadData";
 import { resolveLootConfig } from "../../data/loot";
 import type { Card, Element, Item, LootEntry, LootTable, StageDef, Unit, WorldDef } from "../../data/types";
 import { AudioManager } from "../../engine/AudioManager";
@@ -1612,7 +1612,15 @@ export class BattleScene extends Scene {
     if (this.iconCache.has(fullPath)) return this.iconCache.get(fullPath)!;
     const img = new Image();
     img.src = fullPath;
-    await img.decode().catch(() => new Promise((res) => (img.onload = () => res(undefined))));
+    await img.decode().catch(
+      () =>
+        new Promise<void>((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => {
+            img.src = IMG_URL_PLACEHOLDER;
+          };
+        }),
+    );
     this.iconCache.set(fullPath, img);
     return img;
   }

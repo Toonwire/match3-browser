@@ -19,7 +19,7 @@ export function drawText(
   x: number,
   y: number,
   size = 16,
-  color = "#e5e7eb"
+  color = "#e5e7eb",
 ) {
   ctx.fillStyle = color;
   ctx.font = `${size}px system-ui`;
@@ -36,7 +36,7 @@ export function drawTextWithShadow(
   y: number,
   size = 16,
   color = "#e5e7eb",
-  shadowColor = "rgba(0, 0, 0, 0.8)"
+  shadowColor = "rgba(0, 0, 0, 0.8)",
 ) {
   ctx.font = `${size}px system-ui`;
 
@@ -63,7 +63,7 @@ export function drawProgressBar(
   h: number,
   ratio: number,
   fg = "#3b82f6",
-  bg = "#23262d"
+  bg = "#23262d",
 ) {
   ctx.fillStyle = bg;
   ctx.fillRect(x, y, w, h);
@@ -78,7 +78,7 @@ export function drawTopBar(
   canvasWidth: number,
   state: GameState,
   cards: Card[],
-  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void
+  drawIcon?: (iconPath: string, x: number, y: number, w: number, h: number) => void,
 ) {
   const height = 36;
   // Background strip
@@ -105,11 +105,11 @@ export function drawTopBar(
   // map reduce loadout leader and member attack and hp
   const loadoutAttack = [state.loadout.leader, ...state.loadout.members].reduce(
     (acc, cardId) => acc + (cards.find((card) => card.id === cardId)?.attack ?? 0),
-    0
+    0,
   );
   const loadoutHp = [state.loadout.leader, ...state.loadout.members].reduce(
     (acc, cardId) => acc + (cards.find((card) => card.id === cardId)?.hp ?? 0),
-    0
+    0,
   );
 
   // Gold: amount + icon
@@ -122,7 +122,7 @@ export function drawTopBar(
       leftPad + goldTextWidth + iconGap,
       (height - iconSize) / 2,
       iconSize,
-      iconSize
+      iconSize,
     );
   }
   const goldTotalWidth = goldTextWidth + (drawIcon ? iconSize + iconGap : 0);
@@ -137,7 +137,7 @@ export function drawTopBar(
       leftPad + goldTotalWidth + gap + plovmandTextWidth + iconGap,
       (height - iconSize) / 2,
       iconSize,
-      iconSize
+      iconSize,
     );
   }
 
