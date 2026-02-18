@@ -1,4 +1,4 @@
-import { IMG_URL_PLACEHOLDER, resolvePath } from "../../data/loadData";
+import { resolvePath } from "../../data/loadData";
 import { loadYaml } from "../../data/loadData";
 import type { Card, WorldDef } from "../../data/types";
 import { Assets } from "../../engine/Assets";

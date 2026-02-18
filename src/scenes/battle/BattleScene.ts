@@ -7,7 +7,7 @@ import {
   elementalMultiplier,
 } from "../../battle/Damage";
 import { findMatches, type Match } from "../../battle/MatchLogic";
-import { resolvePath, loadYaml, IMG_URL_PLACEHOLDER } from "../../data/loadData";
+import { resolvePath, loadYaml } from "../../data/loadData";
 import { resolveLootConfig } from "../../data/loot";
 import type { Card, Element, Item, LootEntry, LootTable, StageDef, Unit, WorldDef } from "../../data/types";
 import { AudioManager } from "../../engine/AudioManager";

@@ -1,4 +1,4 @@
-import { resolvePath, loadYaml, IMG_URL_PLACEHOLDER } from "../../data/loadData";
+import { resolvePath, loadYaml } from "../../data/loadData";
 import type { Card, Item, Mutation, NPC, Shop, WorldDef } from "../../data/types";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
