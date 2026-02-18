@@ -9,15 +9,14 @@ export class Assets {
     if (this.imageCache.has(src)) return this.imageCache.get(src)!;
     const img = new Image();
     img.src = src;
-    await img.decode().catch(
-      () =>
-        new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => {
-            img.src = IMG_URL_PLACEHOLDER;
-          };
-        }),
-    );
+    await img.decode().catch(() => {
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => {
+          img.src = IMG_URL_PLACEHOLDER;
+        };
+      });
+    });
     this.imageCache.set(src, img);
     return img;
   }

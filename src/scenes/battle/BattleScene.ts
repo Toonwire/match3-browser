@@ -24,6 +24,7 @@ import {
   getTopBarButtonRegions,
 } from "../../ui/UiPrimitives";
 import { renderGuidePanel, type GuidePanelRegions } from "../../ui/GuidePanel";
+import { Assets } from "../../engine/Assets";
 interface BattleUnit {
   unit: Unit;
   currentHp: number;
@@ -61,6 +62,7 @@ type CombatLogEntry =
       round: number;
     };
 
+const assets = new Assets();
 export class BattleScene extends Scene {
   private stage?: StageDef;
   private world?: WorldDef;
@@ -1607,24 +1609,6 @@ export class BattleScene extends Scene {
     ctx.restore(); // Restore screen shake transform
   }
 
-  private async getIcon(path: string): Promise<HTMLImageElement> {
-    const fullPath = resolvePath(path);
-    if (this.iconCache.has(fullPath)) return this.iconCache.get(fullPath)!;
-    const img = new Image();
-    img.src = fullPath;
-    await img.decode().catch(
-      () =>
-        new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => {
-            img.src = IMG_URL_PLACEHOLDER;
-          };
-        }),
-    );
-    this.iconCache.set(fullPath, img);
-    return img;
-  }
-
   private drawIconWithAspectRatio(
     ctx: CanvasRenderingContext2D,
     img: HTMLImageElement,
@@ -1667,13 +1651,7 @@ export class BattleScene extends Scene {
     desaturate: boolean = false,
   ) {
     const fullPath = resolvePath(path);
-    const cached = this.iconCache.get(fullPath);
-    if (cached) {
-      this.drawIconWithAspectRatio(ctx, cached, x, y, w, h, desaturate);
-      return;
-    }
-    this.getIcon(fullPath).then(() => {
-      const img = this.iconCache.get(fullPath)!;
+    assets.loadImage(fullPath).then((img) => {
       this.drawIconWithAspectRatio(ctx, img, x, y, w, h, desaturate);
     });
   }

@@ -4,7 +4,10 @@ export class Game {
   private currentScene: Scene;
   private lastTime = performance.now();
 
-  constructor(private readonly canvas: HTMLCanvasElement, scene: Scene) {
+  constructor(
+    private readonly canvas: HTMLCanvasElement,
+    scene: Scene,
+  ) {
     this.currentScene = scene;
     // Forward pointer clicks to the active scene with canvas-space coordinates
     this.canvas.addEventListener("click", (e) => {

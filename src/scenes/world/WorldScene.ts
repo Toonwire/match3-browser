@@ -1,12 +1,14 @@
 import { IMG_URL_PLACEHOLDER, resolvePath } from "../../data/loadData";
 import { loadYaml } from "../../data/loadData";
 import type { Card, WorldDef } from "../../data/types";
+import { Assets } from "../../engine/Assets";
 import { Scene } from "../../engine/Scene";
 import { GameState } from "../../state/GameState";
 import { elementIconPath } from "../../ui/ElementIcons";
 import { CanvasSize } from "../../ui/Layouts";
 import { drawPanel, drawText, drawTopBar, getTopBarButtonRegions } from "../../ui/UiPrimitives";
 
+const assets = new Assets();
 export class WorldScene extends Scene {
   private world?: WorldDef;
   private cards: Card[] = [];
@@ -253,23 +255,6 @@ export class WorldScene extends Scene {
     });
   }
 
-  private async getIcon(path: string): Promise<HTMLImageElement> {
-    if (this.iconCache.has(path)) return this.iconCache.get(path)!;
-    const img = new Image();
-    img.src = path;
-    await img.decode().catch(
-      () =>
-        new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => {
-            img.src = IMG_URL_PLACEHOLDER;
-          };
-        }),
-    );
-    this.iconCache.set(path, img);
-    return img;
-  }
-
   private drawIconWithAspectRatio(
     ctx: CanvasRenderingContext2D,
     img: HTMLImageElement,
@@ -298,13 +283,7 @@ export class WorldScene extends Scene {
 
   private drawIcon(ctx: CanvasRenderingContext2D, path: string, x: number, y: number, w: number, h: number) {
     const fullPath = resolvePath(path);
-    const cached = this.iconCache.get(fullPath);
-    if (cached) {
-      this.drawIconWithAspectRatio(ctx, cached, x, y, w, h);
-      return;
-    }
-    this.getIcon(fullPath).then(() => {
-      const img = this.iconCache.get(fullPath)!;
+    assets.loadImage(fullPath).then((img) => {
       this.drawIconWithAspectRatio(ctx, img, x, y, w, h);
     });
   }
