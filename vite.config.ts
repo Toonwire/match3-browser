@@ -7,7 +7,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    assetsDir: "assets",
+    assetsDir: "public/assets",
     emptyOutDir: true,
   },
 });
